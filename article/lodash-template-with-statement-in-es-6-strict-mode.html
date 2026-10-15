@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.template with Statement in ES6 Strict Mode - lodash</title>
+    <meta name="description" content="In ECMAScript 6 (ES6) strict mode, the JavaScript with statement is prohibited and results in an immediate syntax error. By default, Lodash&#39;s .template utility generates code wrapped within a with block to allow template strings to reference data properti">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-template-with-statement-in-es-6-strict-mode">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.template with Statement in ES6 Strict Mode - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-template-with-statement-in-es-6-strict-mode" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In ECMAScript 6 (ES6) strict mode, the JavaScript with statement is prohibited and results in an immediate syntax error. By default, Lodash&#39;s .template utility generates code wrapped within a with block to allow template strings to reference data properti" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_template-with-statement-in-es6-strict-mode">Lodash
+_.template with Statement in ES6 Strict Mode</h1>
+<p>In ECMAScript 6 (ES6) strict mode, the JavaScript <code>with</code>
+statement is prohibited and results in an immediate syntax error. By
+default, Lodash's <code>_.template</code> utility generates code wrapped
+within a <code>with</code> block to allow template strings to reference
+data properties directly without requiring an explicit object namespace.
+When operating in an ES6 strict environment, developers must configure
+the <code>variable</code> option to bypass this behavior, ensuring
+templates compile and execute without violating strict mode
+constraints.</p>
+<h3 id="the-default-behavior-of-_template">The Default Behavior of
+<code>_.template</code></h3>
+<p>Under normal conditions, <code>_.template</code> creates dynamic
+functions using the <code>Function</code> constructor. To allow
+developers to write templates like <code>&lt;%= name %&gt;</code>
+instead of <code>&lt;%= data.name %&gt;</code>, Lodash wraps the
+evaluation logic in a <code>with (obj || {}) { ... }</code> block.</p>
+<p>This construct places the provided data object at the top of the
+scope chain during template evaluation, making all object properties
+locally accessible within the template's interpolation tags.</p>
+<h3 id="the-conflict-with-es6-strict-mode">The Conflict with ES6 Strict
+Mode</h3>
+<p>ES6 modules and strict mode scripts (<code>"use strict";</code>)
+explicitly ban the <code>with</code> statement. The <code>with</code>
+statement obscures variable lookups at compile time, hindering modern
+JavaScript engine optimizations and introducing ambiguity regarding
+variable scoping.</p>
+<p>If a template compiled by Lodash is evaluated in a context enforcing
+strict mode, or if <code>"use strict";</code> is introduced directly
+into the generated template function, the JavaScript engine halts
+execution and throws a
+<code>SyntaxError: Strict mode code may not include a with statement</code>.</p>
+<h3 id="resolving-the-issue-using-the-variable-option">Resolving the
+Issue Using the <code>variable</code> Option</h3>
+<p>Lodash provides a built-in mechanism to disable the <code>with</code>
+statement: the <code>variable</code> option. Setting this property
+forces Lodash to scope the template's data directly to a designated
+variable name instead of relying on a <code>with</code> block.</p>
+<p>You can set this on an individual template:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> compiled <span class="op">=</span> _<span class="op">.</span><span class="fu">template</span>(<span class="st">&#39;Hello &lt;%= data.name %&gt;!&#39;</span><span class="op">,</span> { <span class="dt">variable</span><span class="op">:</span> <span class="st">&#39;data&#39;</span> })<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">compiled</span>({ <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;World&#39;</span> })<span class="op">;</span></span></code></pre></div>
+<p>Alternatively, you can apply this configuration globally across all
+templates:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="at">templateSettings</span><span class="op">.</span><span class="at">variable</span> <span class="op">=</span> <span class="st">&#39;data&#39;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> compiled <span class="op">=</span> _<span class="op">.</span><span class="fu">template</span>(<span class="st">&#39;Hello &lt;%= data.name %&gt;!&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">compiled</span>({ <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;World&#39;</span> })<span class="op">;</span></span></code></pre></div>
+<h3 id="generated-code-comparison">Generated Code Comparison</h3>
+<p>When the <code>variable</code> option is omitted, Lodash constructs a
+function body structured roughly like this:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span>(obj) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">var</span> __t<span class="op">,</span> __p <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">with</span> (obj <span class="op">||</span> {}) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    __p <span class="op">+=</span> <span class="st">&#39;Hello &#39;</span> <span class="op">+</span> ((__t <span class="op">=</span> (name)) <span class="op">==</span> <span class="kw">null</span> <span class="op">?</span> <span class="st">&#39;&#39;</span> <span class="op">:</span> __t) <span class="op">+</span> <span class="st">&#39;!&#39;</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> __p<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When the <code>variable</code> option is defined (e.g., as
+<code>'data'</code>), the <code>with</code> statement is omitted
+entirely:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span>(data) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">var</span> __t<span class="op">,</span> __p <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  __p <span class="op">+=</span> <span class="st">&#39;Hello &#39;</span> <span class="op">+</span> ((__t <span class="op">=</span> (data<span class="op">.</span><span class="at">name</span>)) <span class="op">==</span> <span class="kw">null</span> <span class="op">?</span> <span class="st">&#39;&#39;</span> <span class="op">:</span> __t) <span class="op">+</span> <span class="st">&#39;!&#39;</span><span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> __p<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="performance-and-reliability-benefits">Performance and
+Reliability Benefits</h3>
+<p>Aside from strict mode compliance, specifying an explicit data
+variable yields two key technical advantages:</p>
+<ol type="1">
+<li><strong>Performance</strong>: Engines like V8 deoptimize code inside
+<code>with</code> blocks because variable scopes cannot be statically
+analyzed. Removing <code>with</code> allows the JIT compiler to optimize
+property access.</li>
+<li><strong>Deterministic Scoping</strong>: Without <code>with</code>,
+there is no risk of template data inadvertently shadowing global
+variables or built-in JavaScript keywords, reducing runtime bugs.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

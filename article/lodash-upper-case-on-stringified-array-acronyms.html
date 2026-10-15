@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.upperCase on Stringified Array Acronyms - lodash</title>
+    <meta name="description" content="This article provides an in-depth technical breakdown of how Lodash&#39;s .upperCase method parses, tokenizes, and formats spaced acronyms embedded within explicitly stringified arrays. It explores the internal sequence of operations—from string coercion and">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-upper-case-on-stringified-array-acronyms">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.upperCase on Stringified Array Acronyms - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-upper-case-on-stringified-array-acronyms" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an in-depth technical breakdown of how Lodash&#39;s .upperCase method parses, tokenizes, and formats spaced acronyms embedded within explicitly stringified arrays. It explores the internal sequence of operations—from string coercion and" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_uppercase-on-stringified-array-acronyms">Lodash
+_.upperCase on Stringified Array Acronyms</h1>
+<p>This article provides an in-depth technical breakdown of how Lodash's
+<code>_.upperCase</code> method parses, tokenizes, and formats spaced
+acronyms embedded within explicitly stringified arrays. It explores the
+internal sequence of operations—from string coercion and regular
+expression-based word boundary detection to final case
+normalization—contrasting direct array-to-string passing with
+dynamically mapped array elements.</p>
+<hr />
+<h3 id="understanding-the-lodash-_uppercase-pipeline">Understanding the
+Lodash <code>_.upperCase</code> Pipeline</h3>
+<p>Lodash implements <code>_.upperCase</code> using an internal factory
+function called <code>createCompounder</code>. This compounder
+standardizes input by stripping non-word characters, identifying word
+boundaries, and joining the normalized tokens with a space. The
+underlying execution flow consists of three primary steps:</p>
+<ol type="1">
+<li><strong>String Coercion:</strong> If the input is not a primitive
+string, Lodash calls internal casting utilities (<code>toString</code>)
+to convert the input into a string.</li>
+<li><strong>Tokenization via <code>_.words</code>:</strong> Lodash
+segments the coerced string into an array of discrete words using a
+regular expression designed for Unicode and ASCII boundaries.</li>
+<li><strong>Reduction and Capitalization:</strong> The extracted tokens
+are joined with a single space separator, and each character is
+converted to its uppercase equivalent using standard JavaScript string
+mapping (<code>toUpperCase</code>).</li>
+</ol>
+<h3 id="tokenization-of-explicitly-stringified-arrays">Tokenization of
+Explicitly Stringified Arrays</h3>
+<p>When an array containing spaced acronyms is explicitly
+stringified—either via <code>JSON.stringify()</code> or
+<code>Array.prototype.toString()</code>—it introduces structural syntax
+such as square brackets, quotes, and commas:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> stringified <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>([<span class="st">&quot;N A S A&quot;</span><span class="op">,</span> <span class="st">&quot;E S A&quot;</span>])<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;[\&quot;N A S A\&quot;,\&quot;E S A\&quot;]&quot;</span></span></code></pre></div>
+<p>When passed directly into <code>_.upperCase(stringified)</code>, the
+method treats the entire string representation as a single input stream.
+Lodash's internal <code>words</code> pattern targets word-forming
+characters (<code>[a-zA-Z0-9]+</code> in ASCII contexts, or complex
+Unicode word ranges). Consequently:</p>
+<ul>
+<li>Brackets (<code>[</code> and <code>]</code>), quotation marks
+(<code>"</code>), and commas (<code>,</code>) are categorized as
+delimiters and discarded.</li>
+<li>Spaced acronym letters are treated as independent, single-letter
+tokens because the whitespace separates them just as it would distinct
+words.</li>
+<li>The resulting array of tokens for
+<code>JSON.stringify(["N A S A", "E S A"])</code> becomes
+<code>['N', 'A', 'S', 'A', 'E', 'S', 'A']</code>.</li>
+<li>Rejoining these tokens yields a single space-separated output:
+<code>"N A S A E S A"</code>.</li>
+</ul>
+<h3 id="evaluation-via-dynamic-mapping">Evaluation via Dynamic
+Mapping</h3>
+<p>When processing arrays dynamically, developers typically apply
+<code>_.upperCase</code> across an array via
+<code>Array.prototype.map()</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> data <span class="op">=</span> [<span class="st">&quot;N A S A&quot;</span><span class="op">,</span> <span class="st">&quot;F B I&quot;</span>]<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> processed <span class="op">=</span> data<span class="op">.</span><span class="fu">map</span>(item <span class="kw">=&gt;</span> _<span class="op">.</span><span class="fu">upperCase</span>(<span class="bu">String</span>(item)))<span class="op">;</span></span></code></pre></div>
+<p>In this context, each array entry is coerced to a string individually
+rather than serialized as an array literal.</p>
+<p>Because <code>_.upperCase</code> standardizes multiple spaces into
+single spaces and strips leading or trailing whitespace, spaced acronyms
+such as <code>"N  A  S  A"</code> (with uneven padding) are normalized
+into single-spaced uppercase characters: <code>"N A S A"</code>. The
+dynamic map preserves the array boundary, yielding
+<code>["N A S A", "F B I"]</code> instead of collapsing the entire
+collection into a single concatenated string.</p>
+<h3 id="handling-continuous-vs-spaced-acronyms">Handling Continuous vs.
+Spaced Acronyms</h3>
+<p>Lodash's regex incorporates split heuristics for camelCase and
+PascalCase boundaries (e.g., detecting changes between lowercase and
+uppercase characters). However, for spaced acronyms:</p>
+<ul>
+<li><strong>No Case-Shift Boundaries:</strong> Because spaced acronyms
+already contain explicit whitespace separators (<code>\s+</code>),
+Lodash does not need to invoke its camelCase boundary-splitting
+logic.</li>
+<li><strong>Isolated Character Handling:</strong> Each letter bounded by
+spaces is processed as an individual token. Lodash makes no semantic
+distinction between a single-character word (like <code>"A"</code>) and
+a spaced acronym letter (like <code>"U"</code> in
+<code>"U S A"</code>).</li>
+<li><strong>Idempotent Casing:</strong> Applying
+<code>_.upperCase</code> to an already capitalized, single-spaced
+acronym returns the identical character sequence, effectively acting as
+an idempotent whitespace-sanitizing operation.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

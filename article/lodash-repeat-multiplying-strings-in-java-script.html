@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.repeat: Multiplying Strings in JavaScript - lodash</title>
+    <meta name="description" content="The .repeat method in the Lodash JavaScript utility library is used to repeat—or &quot;multiply&quot;—a given string a specified number of times. This guide explains the exact output produced by .repeat, breaks down its syntax and parameters, and details how the me">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-repeat-multiplying-strings-in-java-script">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.repeat: Multiplying Strings in JavaScript - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-repeat-multiplying-strings-in-java-script" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .repeat method in the Lodash JavaScript utility library is used to repeat—or &quot;multiply&quot;—a given string a specified number of times. This guide explains the exact output produced by .repeat, breaks down its syntax and parameters, and details how the me" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_repeat-multiplying-strings-in-javascript">Lodash
+_.repeat: Multiplying Strings in JavaScript</h1>
+<p>The <code>_.repeat</code> method in the Lodash JavaScript utility
+library is used to repeat—or "multiply"—a given string a specified
+number of times. This guide explains the exact output produced by
+<code>_.repeat</code>, breaks down its syntax and parameters, and
+details how the method handles standard inputs as well as edge cases
+like negative numbers, decimals, and empty values.</p>
+<h2 id="how-_repeat-works">How <code>_.repeat</code> Works</h2>
+<p>In Lodash, the <code>_.repeat</code> method takes a string and
+concatenates it with itself a defined number of times. It returns a
+single, contiguous string.</p>
+<h3 id="syntax">Syntax</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">repeat</span>([string<span class="op">=</span><span class="st">&#39;&#39;</span>]<span class="op">,</span> [n<span class="op">=</span><span class="dv">0</span>])</span></code></pre></div>
+<ul>
+<li><strong><code>string</code></strong> <em>(string)</em>: The string
+to repeat. Defaults to an empty string <code>''</code> if omitted.</li>
+<li><strong><code>n</code></strong> <em>(number)</em>: The number of
+times to repeat the string. Defaults to <code>0</code>.</li>
+</ul>
+<h3 id="standard-output">Standard Output</h3>
+<p>When provided with a valid string and a positive integer
+<code>n</code>, the method outputs a new string containing
+<code>n</code> copies of the input string joined end-to-end.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">repeat</span>(<span class="st">&#39;cat&#39;</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;catcatcat&#39;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">repeat</span>(<span class="st">&#39;*&#39;</span><span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;*****&#39;</span></span></code></pre></div>
+<h2 id="behavior-with-edge-cases">Behavior with Edge Cases</h2>
+<p>Lodash's <code>_.repeat</code> is built to fail safely, avoiding
+runtime exceptions that might occur with standard JavaScript
+operations.</p>
+<h3 id="zero-and-negative-numbers">Zero and Negative Numbers</h3>
+<p>If <code>n</code> is <code>0</code>, or if a negative number is
+supplied, <code>_.repeat</code> returns an empty string. Unlike native
+JavaScript's <code>String.prototype.repeat()</code>, which throws a
+<code>RangeError</code> for negative numbers, Lodash returns an empty
+string without throwing an error:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">repeat</span>(<span class="st">&#39;hello&#39;</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;&#39;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">repeat</span>(<span class="st">&#39;hello&#39;</span><span class="op">,</span> <span class="op">-</span><span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;&#39;</span></span></code></pre></div>
+<h3 id="decimals-and-floating-point-numbers">Decimals and Floating-Point
+Numbers</h3>
+<p>If <code>n</code> is a floating-point number, Lodash truncates the
+value to an integer before repeating:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">repeat</span>(<span class="st">&#39;abc&#39;</span><span class="op">,</span> <span class="fl">2.8</span>)<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;abcabc&#39;</span></span></code></pre></div>
+<h3 id="missing-or-non-string-inputs">Missing or Non-String Inputs</h3>
+<p>If the string parameter is omitted, <code>null</code>, or
+<code>undefined</code>, the method treats it as an empty string:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">repeat</span>()<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;&#39;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">repeat</span>(<span class="kw">null</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;&#39;</span></span></code></pre></div>
+<p>If a non-string data type is passed as the first argument, Lodash
+converts it to a string representation prior to repetition:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">repeat</span>(<span class="dv">7</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;777&#39;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">repeat</span>(<span class="kw">true</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;truetrue&#39;</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

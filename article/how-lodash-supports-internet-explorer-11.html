@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash Supports Internet Explorer 11 - lodash</title>
+    <meta name="description" content="The Lodash JavaScript library maintains compatibility with legacy environments like Internet Explorer 11 by adhering to an ECMAScript 5 (ES5) baseline, using internal shims and fallbacks, detecting platform quirks, and avoiding modern browser APIs. Throug">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-supports-internet-explorer-11">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash Supports Internet Explorer 11 - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-supports-internet-explorer-11" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash JavaScript library maintains compatibility with legacy environments like Internet Explorer 11 by adhering to an ECMAScript 5 (ES5) baseline, using internal shims and fallbacks, detecting platform quirks, and avoiding modern browser APIs. Throug" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-supports-internet-explorer-11">How Lodash Supports
+Internet Explorer 11</h1>
+<p>The Lodash JavaScript library maintains compatibility with legacy
+environments like Internet Explorer 11 by adhering to an ECMAScript 5
+(ES5) baseline, using internal shims and fallbacks, detecting platform
+quirks, and avoiding modern browser APIs. Through strict feature
+detection and defensive coding, Lodash guarantees that its extensive
+utility toolkit functions uniformly across modern runtimes and legacy
+browsers without requiring external polyfills.</p>
+<h2 id="ecmascript-5-baseline-architecture">ECMAScript 5 Baseline
+Architecture</h2>
+<p>Modern JavaScript relies heavily on features introduced in ES6
+(ES2015) and beyond, such as arrow functions, classes, <code>Map</code>,
+<code>Set</code>, and <code>Promise</code>. Internet Explorer 11 only
+provides partial, sometimes non-standard support for ES6.</p>
+<p>Lodash solves this at the architectural level by targeting ES5 as its
+compilation and distribution baseline. The core source code avoids
+native ES6 syntax entirely in production builds. Functions, object
+prototypes, and variable declarations rely on standard <code>var</code>
+and traditional function statements, ensuring the JavaScript engine in
+IE11 (Chakra) can parse and execute the code without syntax errors.</p>
+<h2 id="internal-fallbacks-and-shims">Internal Fallbacks and Shims</h2>
+<p>Rather than relying on global polyfills that alter the global scope,
+Lodash embeds internal fallbacks for methods that IE11 either lacks or
+implements inconsistently.</p>
+<ul>
+<li><strong>Collections and Iteration:</strong> While modern engines
+leverage the iterator protocol (<code>Symbol.iterator</code>), IE11
+lacks complete symbol support. Lodash implements index-based traversal
+and custom iteration logic that bypasses the need for native
+iterators.</li>
+<li><strong>Missing Object Methods:</strong> Where methods like
+<code>Object.assign</code> or <code>Object.is</code> are absent in IE11,
+Lodash provides internal equivalents (such as <code>baseAssign</code> or
+custom equality comparisons) that recreate the specification's logic
+using basic ES5 operations.</li>
+<li><strong>Data Structures:</strong> Lodash maintains internal
+implementations of complex structures, like associative maps or cache
+stores, using parallel arrays or plain hash objects rather than
+depending on native <code>Map</code> or <code>WeakMap</code>.</li>
+</ul>
+<h2 id="feature-detection-over-user-agent-sniffing">Feature Detection
+Over User-Agent Sniffing</h2>
+<p>Lodash does not inspect the browser's <code>User-Agent</code> string
+to determine behavior. Instead, it tests the environment at runtime
+using feature detection.</p>
+<p>During initialization, Lodash runs micro-benchmarks and capability
+tests to see if a native method exists and behaves according to
+specification. If an environment’s native method produces known
+edge-case failures, Lodash defaults to its internal algorithm. For
+instance, native <code>Array.prototype.splice</code> or
+<code>Array.prototype.indexOf</code> implementations across different
+versions of Internet Explorer occasionally exhibited off-spec behavior
+with negative indices or sparse arrays; Lodash detects or accounts for
+these anomalies directly.</p>
+<h2 id="handling-internet-explorer-quirks-and-host-objects">Handling
+Internet Explorer Quirks and Host Objects</h2>
+<p>Internet Explorer 11 treats DOM nodes, window objects, and ActiveX
+objects as "host objects," which do not strictly adhere to standard
+JavaScript prototypal inheritance rules. In IE11, calling methods like
+<code>Object.prototype.toString.call()</code> on certain host objects
+can yield unexpected results or throw runtime errors.</p>
+<p>Lodash employs defensive programming strategies to address these
+quirks:</p>
+<ul>
+<li><strong>Host Object Detection:</strong> It employs safety checks to
+determine if an entity is a plain object, a DOM node, or an exotic host
+object before inspecting its properties.</li>
+<li><strong>The JScript <code>DontEnum</code> Bug:</strong>
+Historically, older IE engines suffered from bugs where shadowed
+properties that matched non-enumerable prototype properties (like
+<code>toString</code> or <code>valueOf</code>) were skipped in
+<code>for...in</code> loops. Lodash retains historical workarounds for
+property enumeration to ensure consistent key extraction across legacy
+edge cases.</li>
+<li><strong>Safe Property Access:</strong> Lodash relies on strict
+<code>try/catch</code> wrappers and null-safe internal helpers when
+accessing properties that might throw security or type errors in IE11's
+document model.</li>
+</ul>
+<h2 id="comprehensive-cross-browser-test-matrix">Comprehensive
+Cross-Browser Test Matrix</h2>
+<p>Lodash has historically sustained this compatibility through an
+automated testing pipeline executed against real browsers via tools like
+Sauce Labs. Every release of Lodash v4 ran thousands of unit tests
+directly inside Internet Explorer instances, catching regressions in
+type checking, coercion, and performance specific to IE11's JavaScript
+engine.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

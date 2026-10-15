@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.mean Prevents Memory Overflows - lodash</title>
+    <meta name="description" content="The Lodash utility function .mean reliably calculates the arithmetic average of massive arrays without triggering call-stack limits or heap-exhaustion crashes. By bypassing argument-spreading techniques, avoiding intermediate array allocations, and relyin">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-mean-prevents-memory-overflows">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.mean Prevents Memory Overflows - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-mean-prevents-memory-overflows" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash utility function .mean reliably calculates the arithmetic average of massive arrays without triggering call-stack limits or heap-exhaustion crashes. By bypassing argument-spreading techniques, avoiding intermediate array allocations, and relyin" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_mean-prevents-memory-overflows">How Lodash _.mean
+Prevents Memory Overflows</h1>
+<p>The Lodash utility function <code>_.mean</code> reliably calculates
+the arithmetic average of massive arrays without triggering call-stack
+limits or heap-exhaustion crashes. By bypassing argument-spreading
+techniques, avoiding intermediate array allocations, and relying on an
+imperative <span class="math inline">\(O(1)\)</span> memory traversal
+loop through internal helper functions, Lodash safeguards JavaScript
+runtimes from memory overflows when processing large data sets.</p>
+<h3 id="avoiding-call-stack-exhaustion">Avoiding Call-Stack
+Exhaustion</h3>
+<p>A common pitfall in native JavaScript arithmetic patterns is passing
+array elements as function arguments, such as using
+<code>Function.prototype.apply</code> or the ES6 spread operator
+(<code>...array</code>). In engines like V8, function arguments are
+pushed onto the execution call stack. When an array exceeds the engine's
+argument limit (often between 65,536 and 120,000 elements depending on
+the environment), the engine throws an unrecoverable
+<code>RangeError: Maximum call stack size exceeded</code>.</p>
+<p>Lodash’s <code>_.mean</code> delegates its calculation to the
+internal <code>baseMean</code> function, which never converts array
+items into function parameters. It passes only the array reference
+itself, keeping the call stack depth constant at <span
+class="math inline">\(O(1)\)</span> regardless of whether the array
+contains ten items or ten million.</p>
+<h3 id="eliminating-intermediate-heap-allocations">Eliminating
+Intermediate Heap Allocations</h3>
+<p>Idiomatic functional JavaScript chains operations like
+<code>array.filter(Boolean).reduce(...)</code> to sanitize and sum
+inputs. While expressive, each chained array method creates a new array
+in memory. For an array containing millions of floats, allocating
+multiple temporary arrays quickly pushes heap usage past Node.js or
+browser limits, triggering an out-of-memory (OOM) crash or excessive
+Garbage Collection (GC) pauses.</p>
+<p>Lodash mitigates heap bloat by using an in-place accumulation loop
+defined in <code>baseSum</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseSum</span>(array<span class="op">,</span> iteratee) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">var</span> result<span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>      index <span class="op">=</span> <span class="op">-</span><span class="dv">1</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      length <span class="op">=</span> array <span class="op">==</span> <span class="kw">null</span> <span class="op">?</span> <span class="dv">0</span> <span class="op">:</span> array<span class="op">.</span><span class="at">length</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="op">++</span>index <span class="op">&lt;</span> length) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> current <span class="op">=</span> <span class="fu">iteratee</span>(array[index])<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (current <span class="op">!==</span> <span class="kw">undefined</span>) {</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>      result <span class="op">=</span> result <span class="op">===</span> <span class="kw">undefined</span> <span class="op">?</span> current <span class="op">:</span> (result <span class="op">+</span> current)<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This single-pass mechanism achieves several defensive memory
+guarantees:</p>
+<ul>
+<li><strong>Zero Intermediate Arrays:</strong> The input array is read
+directly by reference. No secondary collections are generated or
+discarded.</li>
+<li><strong>Minimal GC Pressure:</strong> It reuses primitive variables
+(<code>result</code>, <code>current</code>, <code>index</code>) over the
+lifecycle of the loop, preventing high-frequency object allocations that
+trigger engine garbage collectors.</li>
+<li><strong>O(1) Auxiliary Space:</strong> Memory consumption remains
+constant, scaling strictly with the size of the initial dataset rather
+than the steps of the calculation.</li>
+</ul>
+<h3 id="in-place-sanitation-over-pre-filtering">In-Place Sanitation Over
+Pre-Filtering</h3>
+<p>Arrays derived from real-world streams or databases often contain
+missing values, <code>null</code>, or <code>undefined</code>.
+Pre-sanitizing such arrays typically duplicates them. Lodash handles
+defensive data filtering inside the accumulation step:</p>
+<ol type="1">
+<li>As the pointer moves across the array indices, each value is
+retrieved directly via index access.</li>
+<li>The loop evaluates <code>if (current !== undefined)</code> before
+attempting arithmetic.</li>
+<li>If valid, the value is accumulated into the running sum; otherwise,
+it is skipped without creating a sparse or filtered copy of the
+array.</li>
+</ol>
+<p>Once the loop terminates, <code>baseMean</code> reads the cached
+<code>.length</code> property and performs a single native
+floating-point division
+(<code>baseSum(array, iteratee) / length</code>).</p>
+<h3 id="monomorphic-execution-and-cache-locality">Monomorphic Execution
+and Cache Locality</h3>
+<p>By employing a contiguous incrementing <code>while</code> loop
+(<code>++index &lt; length</code>) instead of modern iterator protocols
+(<code>for...of</code> or <code>Symbol.iterator</code>), Lodash avoids
+allocating iterator result objects (<code>{ value, done }</code>) on
+each cycle. This simple index traversal allows underlying JavaScript
+engines to optimize memory reads through sequential CPU cache line
+access and predictable loop unrolling, ensuring that computing means
+across tens of millions of entries remains performant and immune to
+memory-induced crashes.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

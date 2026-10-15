@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Defines a WeakMap in Lodash _.isWeakMap - lodash</title>
+    <meta name="description" content="The .isWeakMap method in the Lodash JavaScript library determines whether a given value is classified as a native WeakMap object. This article examines the specific internal checks Lodash uses to validate a WeakMap, the difference between actual WeakMap i">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/what-defines-a-weak-map-in-lodash-is-weak-map">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="What Defines a WeakMap in Lodash _.isWeakMap - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/what-defines-a-weak-map-in-lodash-is-weak-map" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .isWeakMap method in the Lodash JavaScript library determines whether a given value is classified as a native WeakMap object. This article examines the specific internal checks Lodash uses to validate a WeakMap, the difference between actual WeakMap i" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="what-defines-a-weakmap-in-lodash-_isweakmap">What Defines a
+WeakMap in Lodash _.isWeakMap</h1>
+<p>The <code>_.isWeakMap</code> method in the Lodash JavaScript library
+determines whether a given value is classified as a native
+<code>WeakMap</code> object. This article examines the specific internal
+checks Lodash uses to validate a <code>WeakMap</code>, the difference
+between actual <code>WeakMap</code> instances and lookalike objects, and
+how the underlying mechanism ensures accurate type detection across
+different JavaScript runtime environments.</p>
+<p>In JavaScript, a <code>WeakMap</code> is a collection of key/value
+pairs where keys must be objects (or non-registered symbols in modern
+ECMAScript) and are held weakly, meaning they do not prevent garbage
+collection if there are no other references to the key. Because of these
+distinct runtime characteristics, standard type checking like
+<code>typeof</code> simply yields <code>"object"</code>, which is
+insufficient for distinguishing a <code>WeakMap</code> from regular
+objects, standard <code>Map</code> instances, or arrays.</p>
+<p>To determine if an entity is a <code>WeakMap</code>, Lodash's
+<code>_.isWeakMap</code> performs two primary checks:</p>
+<ol type="1">
+<li><strong>Object-Like Validation</strong>: It verifies that the passed
+value is "object-like" using Lodash's internal <code>isObjectLike</code>
+function. The value must not be <code>null</code> and its
+<code>typeof</code> result must be <code>"object"</code>.</li>
+<li><strong>Internal Tag Resolution</strong>: It inspects the internal
+<code>[[Class]]</code> tag of the object using an internal
+<code>getTag</code> function (an abstraction over
+<code>Object.prototype.toString.call(value)</code> and
+<code>Symbol.toStringTag</code>).</li>
+</ol>
+<p>For <code>_.isWeakMap(value)</code> to return <code>true</code>, the
+resolved tag must strictly match <code>'[object WeakMap]'</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> weakMap <span class="op">=</span> <span class="kw">new</span> <span class="bu">WeakMap</span>()<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> standardMap <span class="op">=</span> <span class="kw">new</span> <span class="bu">Map</span>()<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isWeakMap</span>(weakMap)<span class="op">;</span>       <span class="co">// =&gt; true</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isWeakMap</span>(standardMap)<span class="op">;</span>   <span class="co">// =&gt; false</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isWeakMap</span>({})<span class="op">;</span>            <span class="co">// =&gt; false</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isWeakMap</span>(<span class="kw">null</span>)<span class="op">;</span>          <span class="co">// =&gt; false</span></span></code></pre></div>
+<p>Custom objects or polyfills that mimic the <code>WeakMap</code> API
+(such as having <code>.get()</code>, <code>.set()</code>,
+<code>.has()</code>, and <code>.delete()</code> methods) will still
+return <code>false</code> unless they accurately yield
+<code>'[object WeakMap]'</code> through their
+<code>Symbol.toStringTag</code> property. Standard <code>Map</code>,
+<code>Set</code>, <code>WeakSet</code>, and plain objects fail this
+check because their internal tag representations resolve differently
+(e.g., <code>'[object Map]'</code> or <code>'[object Object]'</code>).
+Consequently, <code>_.isWeakMap</code> guarantees that the target value
+natively adheres to the memory-management and key-constraint behaviors
+defined by the ECMAScript <code>WeakMap</code> specification.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

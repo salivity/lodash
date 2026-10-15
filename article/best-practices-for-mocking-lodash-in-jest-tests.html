@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Best Practices for Mocking Lodash in Jest Tests - lodash</title>
+    <meta name="description" content="Mocking the Lodash JavaScript library in Jest is often necessary when testing code that relies on time-sensitive functions like debounce and throttle, or non-deterministic helpers like random and uniqueId. This guide covers the best practices for isolatin">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/best-practices-for-mocking-lodash-in-jest-tests">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Best Practices for Mocking Lodash in Jest Tests - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/best-practices-for-mocking-lodash-in-jest-tests" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Mocking the Lodash JavaScript library in Jest is often necessary when testing code that relies on time-sensitive functions like debounce and throttle, or non-deterministic helpers like random and uniqueId. This guide covers the best practices for isolatin" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="best-practices-for-mocking-lodash-in-jest-tests">Best Practices
+for Mocking Lodash in Jest Tests</h1>
+<p>Mocking the Lodash JavaScript library in Jest is often necessary when
+testing code that relies on time-sensitive functions like
+<code>debounce</code> and <code>throttle</code>, or non-deterministic
+helpers like <code>random</code> and <code>uniqueId</code>. This guide
+covers the best practices for isolating Lodash methods in your test
+suites, demonstrating how to selectively override functions, preserve
+un-mocked utilities using <code>jest.requireActual</code>, handle
+individual path imports, and manage timer-dependent behavior
+effectively.</p>
+<h2 id="1-avoid-mocking-pure-utility-functions">1. Avoid Mocking Pure
+Utility Functions</h2>
+<p>Do not mock pure Lodash functions such as <code>get</code>,
+<code>map</code>, <code>cloneDeep</code>, or <code>isEqual</code>. These
+functions are fast, deterministic, and self-contained. Mocking them adds
+unnecessary test maintenance, slows down test suites, and can obscure
+bugs in your implementation. Only mock Lodash utilities when they:</p>
+<ul>
+<li>Involve timing (e.g., <code>debounce</code>, <code>throttle</code>,
+<code>delay</code>).</li>
+<li>Involve non-deterministic outputs (e.g., <code>random</code>,
+<code>uniqueId</code>, <code>now</code>).</li>
+<li>Cause side effects or performance bottlenecks in massive datasets
+during testing.</li>
+</ul>
+<h2 id="2-preserve-unmocked-functions-with-jestrequireactual">2.
+Preserve Unmocked Functions with <code>jest.requireActual</code></h2>
+<p>When you must mock the root <code>lodash</code> package, never
+replace the entire module with an empty mock object. Doing so breaks any
+other code in your project relying on standard Lodash utilities.
+Instead, use <code>jest.requireActual</code> to preserve the real
+implementations and selectively override only the methods you need.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>jest<span class="op">.</span><span class="fu">mock</span>(<span class="st">&#39;lodash&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> actualLodash <span class="op">=</span> jest<span class="op">.</span><span class="fu">requireActual</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">...</span>actualLodash<span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">debounce</span><span class="op">:</span> jest<span class="op">.</span><span class="fu">fn</span>((fn) <span class="kw">=&gt;</span> fn)<span class="op">,</span> <span class="co">// Execute immediately instead of debouncing</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uniqueId</span><span class="op">:</span> jest<span class="op">.</span><span class="fu">fn</span>(() <span class="kw">=&gt;</span> <span class="st">&#39;mock-id-123&#39;</span>)<span class="op">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h2 id="3-prefer-jestspyon-for-targeted-scoped-mocks">3. Prefer
+<code>jest.spyOn</code> for Targeted, Scoped Mocks</h2>
+<p>If only a single test or test suite requires a mocked Lodash
+behavior, use <code>jest.spyOn()</code> instead of a global
+<code>jest.mock()</code>. This scopes the mock to specific assertions
+and allows easy restoration.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> _ <span class="im">from</span> <span class="st">&#39;lodash&#39;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(<span class="st">&#39;Payment Service&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">afterEach</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    jest<span class="op">.</span><span class="fu">restoreAllMocks</span>()<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">it</span>(<span class="st">&#39;generates a predictable unique ID&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    jest<span class="op">.</span><span class="fu">spyOn</span>(_<span class="op">,</span> <span class="st">&#39;uniqueId&#39;</span>)<span class="op">.</span><span class="fu">mockReturnValue</span>(<span class="st">&#39;static-id-456&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Run code under test</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">expect</span>(_<span class="op">.</span><span class="fu">uniqueId</span>())<span class="op">.</span><span class="fu">toBe</span>(<span class="st">&#39;static-id-456&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h2 id="4-handle-per-method-imports-correctly">4. Handle Per-Method
+Imports Correctly</h2>
+<p>In modern projects, developers often import specific Lodash methods
+directly to reduce bundle size (e.g.,
+<code>import debounce from 'lodash/debounce'</code>). Mocking the root
+<code>lodash</code> module will not affect these submodule imports. You
+must mock the direct path matching the import statement:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// When the source code uses: import debounce from &#39;lodash/debounce&#39;;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>jest<span class="op">.</span><span class="fu">mock</span>(<span class="st">&#39;lodash/debounce&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Return the mock implementation directly for default exports</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> jest<span class="op">.</span><span class="fu">fn</span>((fn) <span class="kw">=&gt;</span> {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    fn<span class="op">.</span><span class="at">cancel</span> <span class="op">=</span> jest<span class="op">.</span><span class="fu">fn</span>()<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    fn<span class="op">.</span><span class="at">flush</span> <span class="op">=</span> jest<span class="op">.</span><span class="fu">fn</span>()<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fn<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>If your codebase uses named imports from <code>lodash-es</code>,
+adjust the mock target accordingly:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>jest<span class="op">.</span><span class="fu">mock</span>(<span class="st">&#39;lodash-es&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> ({</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span>jest<span class="op">.</span><span class="fu">requireActual</span>(<span class="st">&#39;lodash-es&#39;</span>)<span class="op">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">throttle</span><span class="op">:</span> jest<span class="op">.</span><span class="fu">fn</span>((fn) <span class="kw">=&gt;</span> fn)<span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>}))<span class="op">;</span></span></code></pre></div>
+<h2 id="5-implement-passthrough-functions-for-debounce-and-throttle">5.
+Implement Passthrough Functions for <code>debounce</code> and
+<code>throttle</code></h2>
+<p>Functions wrapped in <code>debounce</code> or <code>throttle</code>
+delay execution, which complicates assertions. Rather than advancing
+fake timers, the most reliable practice for unit tests is replacing them
+with an immediate passthrough:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> makePassthrough <span class="op">=</span> (fn) <span class="kw">=&gt;</span> {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> wrapper <span class="op">=</span> (<span class="op">...</span>args) <span class="kw">=&gt;</span> <span class="fu">fn</span>(<span class="op">...</span>args)<span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  wrapper<span class="op">.</span><span class="at">cancel</span> <span class="op">=</span> jest<span class="op">.</span><span class="fu">fn</span>()<span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  wrapper<span class="op">.</span><span class="at">flush</span> <span class="op">=</span> jest<span class="op">.</span><span class="fu">fn</span>()<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> wrapper<span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>jest<span class="op">.</span><span class="fu">mock</span>(<span class="st">&#39;lodash/debounce&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> jest<span class="op">.</span><span class="fu">fn</span>(makePassthrough))<span class="op">;</span></span></code></pre></div>
+<p>This pattern ensures the underlying callback runs synchronously
+during the test while maintaining compatibility with helper methods like
+<code>.cancel()</code> and <code>.flush()</code>.</p>
+<h2 id="6-clear-and-restore-mocks-between-tests">6. Clear and Restore
+Mocks Between Tests</h2>
+<p>When using spies or overriding implementations dynamically, always
+reset or restore mocks to avoid cross-test pollution. Configure Jest's
+<code>clearMocks</code> and <code>restoreMocks</code> options in
+<code>jest.config.js</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>module<span class="op">.</span><span class="at">exports</span> <span class="op">=</span> {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">clearMocks</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">restoreMocks</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<p>If configuring manually inside test files, call
+<code>jest.restoreAllMocks()</code> in an <code>afterEach</code> block
+to return Lodash functions to their original states.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

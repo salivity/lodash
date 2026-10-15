@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash pad Handles Uneven String Balancing - lodash</title>
+    <meta name="description" content="The .pad method in Lodash centers a target string within a given length by distributing padding characters across both sides. When the difference between the target length and the string length is odd, or when a custom padding string does not fit symmetri">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-pad-handles-uneven-string-balancing">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash pad Handles Uneven String Balancing - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-pad-handles-uneven-string-balancing" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .pad method in Lodash centers a target string within a given length by distributing padding characters across both sides. When the difference between the target length and the string length is odd, or when a custom padding string does not fit symmetri" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-pad-handles-uneven-string-balancing">How Lodash pad
+Handles Uneven String Balancing</h1>
+<p>The <code>_.pad</code> method in Lodash centers a target string
+within a given length by distributing padding characters across both
+sides. When the difference between the target length and the string
+length is odd, or when a custom padding string does not fit
+symmetrically into the allocated slots, Lodash resolves these imbalances
+through a deterministic two-step structural mechanism: an asymmetrical
+integer split via <code>Math.floor</code> and <code>Math.ceil</code>,
+followed by an internal string-slicing routine in its helper function
+<code>createPadding</code>.</p>
+<h3 id="left-and-right-allocation-logic">Left and Right Allocation
+Logic</h3>
+<p>When <code>_.pad(string, length, chars)</code> is invoked, Lodash
+first calculates the total remaining space needed to meet the requested
+target length:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> mid <span class="op">=</span> (length <span class="op">-</span> strLength) <span class="op">/</span> <span class="dv">2</span><span class="op">;</span></span></code></pre></div>
+<p>If <code>mid</code> is a floating-point number resulting from an odd
+deficit, the library cannot divide the space equally. Lodash resolves
+this asymmetry by prioritizing the right side:</p>
+<ul>
+<li><strong>Left padding length:</strong>
+<code>Math.floor(mid)</code></li>
+<li><strong>Right padding length:</strong>
+<code>Math.ceil(mid)</code></li>
+</ul>
+<p>For example, centering the three-character string <code>'cat'</code>
+within a target length of <code>6</code> produces a difference of
+<code>3</code>, making <code>mid = 1.5</code>. Lodash allocates
+<code>Math.floor(1.5)</code> (1 character) to the left flank and
+<code>Math.ceil(1.5)</code> (2 characters) to the right flank, resulting
+in <code>' cat  '</code>. The extra character always falls on the
+right.</p>
+<h3 id="handling-custom-pattern-truncation-with-createpadding">Handling
+Custom Pattern Truncation with <code>createPadding</code></h3>
+<p>When a multi-character sequence is passed as the <code>chars</code>
+argument, the required flank length rarely aligns perfectly with the
+pattern's length. Lodash constructs each flank independently using its
+internal <code>createPadding(length, chars)</code> function.</p>
+<p>The construction follows these structural steps:</p>
+<ol type="1">
+<li><p><strong>Repetition Calculation:</strong> Lodash calculates how
+many times the pattern must repeat to cover the required flank
+length:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> repeatCount <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">ceil</span>(length <span class="op">/</span> <span class="fu">stringSize</span>(chars))<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> result <span class="op">=</span> <span class="fu">baseRepeat</span>(chars<span class="op">,</span> repeatCount)<span class="op">;</span></span></code></pre></div></li>
+<li><p><strong>Left-to-Right Truncation:</strong> Because repeating the
+pattern often exceeds the exact flank length, Lodash truncates the
+overflow strictly from the right using string slicing:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="fu">hasUnicode</span>(chars)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">?</span> <span class="fu">castSlice</span>(<span class="fu">stringToArray</span>(result)<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> length)<span class="op">.</span><span class="fu">join</span>(<span class="st">&#39;&#39;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">:</span> result<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> length)<span class="op">;</span></span></code></pre></div></li>
+</ol>
+<p>Because truncation occurs strictly at index <code>0</code> through
+<code>length</code>, the pattern is preserved from left to right on both
+the left and right flanks. It does not attempt to mirror or invert the
+characters on the left side.</p>
+<h3 id="structural-example-of-asymmetrical-padding">Structural Example
+of Asymmetrical Padding</h3>
+<p>Consider padding the string <code>'abc'</code> (length 3) to a total
+length of <code>8</code> using the sequence <code>'1234'</code>:</p>
+<ul>
+<li>Total required padding: <code>8 - 3 = 5</code></li>
+<li>Midpoint calculation: <code>5 / 2 = 2.5</code></li>
+<li>Left target length: <code>Math.floor(2.5) = 2</code></li>
+<li>Right target length: <code>Math.ceil(2.5) = 3</code></li>
+</ul>
+<p>Next, <code>createPadding</code> runs for each side:</p>
+<ul>
+<li><strong>Left side (<code>length = 2</code>):</strong>
+<code>'1234'</code> repeated once is <code>'1234'</code>. Slicing to 2
+characters yields <code>'12'</code>.</li>
+<li><strong>Right side (<code>length = 3</code>):</strong>
+<code>'1234'</code> repeated once is <code>'1234'</code>. Slicing to 3
+characters yields <code>'123'</code>.</li>
+</ul>
+<p>Concatenating left padding, original string, and right padding
+yields:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">pad</span>(<span class="st">&#39;abc&#39;</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="st">&#39;1234&#39;</span>)<span class="op">;</span> <span class="co">// =&gt; &#39;12abc123&#39;</span></span></code></pre></div>
+<h3 id="unicode-and-multi-byte-truncation-safety">Unicode and Multi-Byte
+Truncation Safety</h3>
+<p>When dealing with emojis, surrogate pairs, or complex Unicode
+grapheme clusters, native JavaScript methods like <code>.slice()</code>
+can split code units and produce corrupted characters. Lodash checks for
+complex symbols using an internal regular expression via
+<code>hasUnicode(chars)</code>.</p>
+<p>If Unicode symbols are detected, the truncation step bypasses
+standard <code>String.prototype.slice</code> and converts the repeated
+string into an array of full symbols via <code>stringToArray</code>. It
+then uses <code>castSlice</code> on the symbol array before joining it
+back into a string, ensuring that inherently uneven truncation cuts
+along true character boundaries rather than raw UTF-16 code units.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

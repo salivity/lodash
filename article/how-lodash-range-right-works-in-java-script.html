@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash rangeRight Works in JavaScript - lodash</title>
+    <meta name="description" content="The Lodash .rangeRight method is a utility function designed to produce an array of numbers in descending order. While it accepts the same arguments as the standard .range method—start, end, and step—it reverses the population order of the resulting array">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-range-right-works-in-java-script">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash rangeRight Works in JavaScript - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-range-right-works-in-java-script" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .rangeRight method is a utility function designed to produce an array of numbers in descending order. While it accepts the same arguments as the standard .range method—start, end, and step—it reverses the population order of the resulting array" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-rangeright-works-in-javascript">How Lodash rangeRight
+Works in JavaScript</h1>
+<p>The Lodash <code>_.rangeRight</code> method is a utility function
+designed to produce an array of numbers in descending order. While it
+accepts the same arguments as the standard <code>_.range</code>
+method—<code>start</code>, <code>end</code>, and <code>step</code>—it
+reverses the population order of the resulting array. This article
+breaks down the syntax, internal mechanics, and practical examples of
+how <code>_.rangeRight</code> generates descending numerical
+sequences.</p>
+<h3 id="syntax-and-parameters">Syntax and Parameters</h3>
+<p>The method signature for <code>_.rangeRight</code> is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">rangeRight</span>([start<span class="op">=</span><span class="dv">0</span>]<span class="op">,</span> end<span class="op">,</span> [step<span class="op">=</span><span class="dv">1</span>])</span></code></pre></div>
+<ul>
+<li><strong><code>start</code></strong> <em>(number, optional)</em>: The
+start of the range. Defaults to <code>0</code> if only one argument is
+supplied.</li>
+<li><strong><code>end</code></strong> <em>(number)</em>: The end of the
+range. This value is exclusive.</li>
+<li><strong><code>step</code></strong> <em>(number, optional)</em>: The
+value to increment or decrement by. Defaults to <code>1</code> (or
+<code>-1</code> if <code>end</code> is less than
+<code>start</code>).</li>
+</ul>
+<h3 id="how-_rangeright-generates-descending-sequences">How
+<code>_.rangeRight</code> Generates Descending Sequences</h3>
+<p>Under the hood, <code>_.rangeRight</code> uses the exact same
+calculation as <code>_.range</code> to determine the values included in
+the sequence, but it alters the order in which they are populated into
+the array.</p>
+<p>Instead of filling the array from <code>start</code> up to
+<code>end</code>, <code>_.rangeRight</code> calculates the sequence
+bounds and fills the elements from the end toward the beginning. Because
+the <code>end</code> boundary in range functions is exclusive, the
+highest generated value will always be one <code>step</code> interval
+away from the <code>end</code> boundary, while the <code>start</code>
+value will appear at the end of the array.</p>
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="1-single-argument-end-only">1. Single Argument (End Only)</h4>
+<p>When provided with a single argument, the <code>start</code> defaults
+to <code>0</code> and <code>step</code> defaults to <code>1</code>. The
+values generated are from <code>0</code> to <code>end - 1</code>, output
+in descending order:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">rangeRight</span>(<span class="dv">4</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; [3, 2, 1, 0]</span></span></code></pre></div>
+<h4 id="2-specifying-start-and-end">2. Specifying Start and End</h4>
+<p>When both <code>start</code> and <code>end</code> are provided, the
+sequence starts from the highest allowable step below <code>end</code>
+and stops at <code>start</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">rangeRight</span>(<span class="dv">1</span><span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; [4, 3, 2, 1]</span></span></code></pre></div>
+<h4 id="3-using-a-step-value">3. Using a Step Value</h4>
+<p>Adding a step value increments the calculation by that value.
+<code>_.rangeRight</code> still produces the final array in reverse:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">rangeRight</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; [15, 10, 5, 0]</span></span></code></pre></div>
+<h4 id="4-handling-negative-values">4. Handling Negative Values</h4>
+<p>If <code>start</code> is greater than <code>end</code> and a negative
+step is used (or inferred), the direction of the range naturally moves
+negative, and <code>_.rangeRight</code> outputs the reverse of that
+negative progression:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">rangeRight</span>(<span class="dv">0</span><span class="op">,</span> <span class="op">-</span><span class="dv">4</span><span class="op">,</span> <span class="op">-</span><span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; [-3, -2, -1, 0]</span></span></code></pre></div>
+<h3 id="key-differences-from-_rangereverse">Key Differences from
+<code>_.range().reverse()</code></h3>
+<p>While <code>_.range(start, end, step).reverse()</code> produces the
+same output as <code>_.rangeRight(start, end, step)</code>,
+<code>_.rangeRight</code> is more performant. It directly allocates the
+memory and populates the indices from right to left rather than creating
+an ascending array in memory and executing a separate reversal
+operation.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

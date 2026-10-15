@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.set Parses Bracket Notation Paths - lodash</title>
+    <meta name="description" content="Lodash’s .set method allows developers to modify or create deeply nested object properties using string paths that support both dot notation and bracket notation. Under the hood, Lodash transforms these string paths into structured arrays of property keys">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-set-parses-bracket-notation-paths">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.set Parses Bracket Notation Paths - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-set-parses-bracket-notation-paths" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .set method allows developers to modify or create deeply nested object properties using string paths that support both dot notation and bracket notation. Under the hood, Lodash transforms these string paths into structured arrays of property keys" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_set-parses-bracket-notation-paths">How Lodash _.set
+Parses Bracket Notation Paths</h1>
+<p>Lodash’s <code>_.set</code> method allows developers to modify or
+create deeply nested object properties using string paths that support
+both dot notation and bracket notation. Under the hood, Lodash
+transforms these string paths into structured arrays of property keys
+using an internal parser known as <code>stringToPath</code>. This
+article breaks down the internal regular expressions, string
+tokenization, escaping rules, and memoization techniques Lodash uses to
+parse bracket notation into property accessors.</p>
+<h3 id="the-path-normalization-pipeline">The Path Normalization
+Pipeline</h3>
+<p>When you call <code>_.set(object, path, value)</code>, Lodash does
+not directly manipulate the string while traversing the object. Instead,
+it normalizes the path into an array of keys using an internal helper
+function named <code>castPath</code>.</p>
+<p>If <code>path</code> is already an array (such as
+<code>['a', '0', 'b']</code>), Lodash uses it directly. If the path is a
+string (such as <code>a[0].b</code> or
+<code>a['complex.key'][1]</code>), Lodash delegates the string parsing
+to the internal <code>stringToPath</code> function.</p>
+<h3 id="the-regular-expression-engine">The Regular Expression
+Engine</h3>
+<p>At the core of <code>stringToPath</code> is a complex regular
+expression designed to match property identifiers, bracketed indices,
+and quoted bracketed strings while handling edge cases like escaped
+characters. In Lodash v4, this expression is defined as
+<code>rePropName</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> rePropName <span class="op">=</span> <span class="ss">/</span><span class="sc">[^.[\]]+|\[(?</span><span class="ss">:</span><span class="sc">(</span><span class="ss">-</span><span class="sc">?\d+(?</span><span class="ss">:</span><span class="sc">\.\d+)?)|([&quot;&#39;])((?</span><span class="ss">:</span><span class="sc">(?</span><span class="ss">!</span><span class="sc">\2)[^\\]|\\</span><span class="ss">.</span><span class="sc">)*?)\2)\]|(?</span><span class="ss">=</span><span class="sc">(?</span><span class="ss">:</span><span class="sc">\.|\[\])(?</span><span class="ss">:</span><span class="sc">\.|\[\]|</span><span class="ss">$</span><span class="sc">))</span><span class="ss">/g</span><span class="op">;</span></span></code></pre></div>
+<p>This regular expression matches three primary token patterns
+sequentially across the string:</p>
+<ol type="1">
+<li><strong>Standard Unbracketed Properties
+(<code>[^.[\]]+</code>)</strong>: Matches standard property names
+separated by dots, stopping whenever it encounters a dot
+(<code>.</code>) or an opening/closing bracket (<code>[</code> or
+<code>]</code>).</li>
+<li><strong>Bracketed Values (<code>\[...\]</code>)</strong>:
+<ul>
+<li><strong>Numeric Indices (<code>-?\d+(?:\.\d+)?</code>)</strong>:
+Matches unquoted integers or floats placed inside brackets, such as
+<code>[0]</code> or <code>[-1]</code>.</li>
+<li><strong>Quoted Property Names
+(<code>(["'])((?:(?!\2)[^\\]|\\.)*?)\2</code>)</strong>: Matches single-
+or double-quoted strings inside brackets, such as <code>['foo']</code>
+or <code>["bar"]</code>. It captures the quote type in a backreference
+and matches any character until the matching closing quote, respecting
+backslash escapes (e.g., <code>['escaped\'quote']</code>).</li>
+</ul></li>
+<li><strong>Empty Brackets or Empty Segments
+(<code>(?=(?:\.|\[\])(?:\.|\[\]|$))</code>)</strong>: A lookahead group
+that captures empty segments like <code>[]</code>, which are normalized
+to empty string keys.</li>
+</ol>
+<h3 id="token-processing-and-unescaping">Token Processing and
+Unescaping</h3>
+<p>As <code>stringToPath</code> executes
+<code>RegExp.prototype.replace</code> or <code>match</code> iterations
+using <code>rePropName</code>, it processes each matched segment into a
+sanitized string key:</p>
+<ul>
+<li><strong>Quoted Bracketed Strings</strong>: If a bracketed token
+contains quotes (e.g., <code>["prop"]</code>), Lodash strips the leading
+and trailing quote characters and replaces backslash-escaped characters
+(such as <code>\"</code> or <code>\\</code>) with their unescaped
+literals using the internal <code>reEscapeChar</code> regex
+(<code>/\\(\\)?/g</code>).</li>
+<li><strong>Unquoted Bracketed Numbers</strong>: If the value is a
+number (e.g., <code>[42]</code>), it is extracted as a string
+representation of that number (<code>"42"</code>).</li>
+<li><strong>Direct Keys</strong>: Dot-separated segments (e.g.,
+<code>users.name</code>) are pushed directly to the array without
+alteration.</li>
+</ul>
+<p>For example, the path string:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;users[0][&#39;first.name&#39;]&quot;</span></span></code></pre></div>
+<p>is parsed into three discrete array elements:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>[<span class="st">&quot;users&quot;</span><span class="op">,</span> <span class="st">&quot;0&quot;</span><span class="op">,</span> <span class="st">&quot;first.name&quot;</span>]</span></code></pre></div>
+<p>Because <code>first.name</code> was wrapped in quotes inside
+brackets, the parser treats the dot as a literal character rather than a
+path delimiter.</p>
+<h3 id="memoization-for-performance">Memoization for Performance</h3>
+<p>Parsing strings with complex regular expressions can introduce
+performance bottlenecks if executed repeatedly. To avoid this overhead,
+Lodash wraps <code>stringToPath</code> in a memoization function
+(<code>memoizeCachable</code>).</p>
+<p>Parsed paths are stored in an internal <code>MapCache</code> (capped
+at 500 entries). When <code>_.set</code> is called multiple times with
+the exact same path string, the regular expression engine is bypassed
+entirely after the first invocation, returning the cached array of
+segment keys instantly.</p>
+<h3 id="path-application-in-_set">Path Application in
+<code>_.set</code></h3>
+<p>Once the path string is fully decomposed into an array of string
+keys, <code>_.set</code> traverses the target object step-by-step. If an
+intermediate property does not exist, Lodash checks the upcoming key: if
+the next key parses as an integer index, Lodash initializes that
+property as an empty array (<code>[]</code>); otherwise, it initializes
+it as a plain object (<code>{}</code>). This ensures that paths like
+<code>items[0]</code> correctly build array structures, while
+<code>items['0']</code> and <code>items[0]</code> are evaluated
+symmetrically.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

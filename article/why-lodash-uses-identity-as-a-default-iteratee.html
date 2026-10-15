@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Lodash Uses _.identity as a Default Iteratee - lodash</title>
+    <meta name="description" content="In the Lodash JavaScript library, .identity is a utility function that simply returns the first argument it receives. This article explores why Lodash uses .identity as the default iteratee across many of its array and collection methods. By acting as a n">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/why-lodash-uses-identity-as-a-default-iteratee">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Lodash Uses _.identity as a Default Iteratee - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/why-lodash-uses-identity-as-a-default-iteratee" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the Lodash JavaScript library, .identity is a utility function that simply returns the first argument it receives. This article explores why Lodash uses .identity as the default iteratee across many of its array and collection methods. By acting as a n" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-lodash-uses-_identity-as-a-default-iteratee">Why Lodash Uses
+_.identity as a Default Iteratee</h1>
+<p>In the Lodash JavaScript library, <code>_.identity</code> is a
+utility function that simply returns the first argument it receives.
+This article explores why Lodash uses <code>_.identity</code> as the
+default iteratee across many of its array and collection methods. By
+acting as a neutral pass-through function, <code>_.identity</code>
+provides a dependable fallback that standardizes functional logic,
+eliminates repetitive callback code, and simplifies operations like
+filtering, mapping, and deduplication.</p>
+<h2 id="the-role-of-_identity">The Role of <code>_.identity</code></h2>
+<p>In JavaScript, <code>_.identity</code> is defined essentially as:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">identity</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Its primary purpose is to serve as a mathematical identity function:
+<span class="math inline">\(f(x) = x\)</span>. While it performs no
+actual mutation or computation on the input, its power lies in its
+ability to be passed as a first-class function where an action is
+syntactically required but logically unnecessary.</p>
+<h2 id="avoiding-branching-logic-in-the-source-code">Avoiding Branching
+Logic in the Source Code</h2>
+<p>Higher-order functions in Lodash—such as <code>map</code>,
+<code>filter</code>, <code>uniqBy</code>, <code>groupBy</code>, and
+<code>sortBy</code>—rely on an iteratee to process each element in a
+collection.</p>
+<p>Without a default function, the library's internal implementation
+would require conditional checks inside loops to determine whether an
+iteratee was provided by the user:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Inefficient approach with conditional checks</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> array<span class="op">.</span><span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> value <span class="op">=</span> iteratee <span class="op">?</span> <span class="fu">iteratee</span>(array[i]) <span class="op">:</span> array[i]<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Process value...</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By assigning <code>_.identity</code> as the default iteratee
+fallback, Lodash avoids branching conditionals inside
+performance-critical iteration loops. The internal code can execute
+<code>iteratee(array[i])</code> unconditionally, keeping the engine's
+execution path optimized and the codebase uniform.</p>
+<h2 id="natural-truthy-filtering">Natural Truthy Filtering</h2>
+<p>One of the most practical applications of <code>_.identity</code> as
+a default iteratee is in <code>_.filter</code>. If no predicate function
+is supplied, <code>_.filter</code> defaults to
+<code>_.identity</code>.</p>
+<p>Because JavaScript evaluates return values in logical contexts,
+passing an element to <code>_.identity</code> returns the element
+itself. The filter then coerces that element to a boolean:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> mixedData <span class="op">=</span> [<span class="dv">0</span><span class="op">,</span> <span class="st">&#39;hello&#39;</span><span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="dv">42</span><span class="op">,</span> <span class="st">&#39;&#39;</span><span class="op">,</span> <span class="kw">null</span><span class="op">,</span> <span class="kw">undefined</span>]<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> truthyValues <span class="op">=</span> _<span class="op">.</span><span class="fu">filter</span>(mixedData)<span class="op">;</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Result: [&#39;hello&#39;, 42]</span></span></code></pre></div>
+<p>This default eliminates the need to pass explicit functions like
+<code>Boolean</code> or <code>(x) =&gt; !!x</code> to clear falsy
+elements from a list.</p>
+<h2 id="seamless-pass-through-for-sorting-and-deduplication">Seamless
+Pass-Through for Sorting and Deduplication</h2>
+<p>Methods like <code>_.uniqBy</code> and <code>_.sortBy</code> evaluate
+elements based on the criteria produced by their iteratee. When using
+these methods on primitive types (like numbers or strings), developers
+usually want to compare the items directly rather than inspect a
+property.</p>
+<p>Setting <code>_.identity</code> as the default means that functions
+requiring an iteratee can automatically degrade gracefully to handle
+primitive values:</p>
+<ul>
+<li>In <code>_.uniqBy(array)</code>, defaulting to
+<code>_.identity</code> makes it behave identically to
+<code>_.uniq(array)</code>.</li>
+<li>In <code>_.sortBy(array)</code>, defaulting to
+<code>_.identity</code> naturally sorts primitives in ascending order
+without requiring <code>(item) =&gt; item</code>.</li>
+</ul>
+<h2 id="functional-composition-and-predictability">Functional
+Composition and Predictability</h2>
+<p>Lodash heavily adheres to functional programming principles.
+Higher-order functions are expected to maintain consistent signatures.
+By using <code>_.identity</code> as a baseline, Lodash ensures that
+functions always accept and invoke a transformer, making function
+composition, currying, and point-free programming paradigms consistent
+across the entire API.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

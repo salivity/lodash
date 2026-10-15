@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash overArgs Transforms Function Arguments - lodash</title>
+    <meta name="description" content="The .overArgs method in the Lodash JavaScript library is a higher-order utility that creates a new wrapper function capable of transforming arguments before delivering them to an underlying function. By mapping an array of predicate or transform functions">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-over-args-transforms-function-arguments">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash overArgs Transforms Function Arguments - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-over-args-transforms-function-arguments" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .overArgs method in the Lodash JavaScript library is a higher-order utility that creates a new wrapper function capable of transforming arguments before delivering them to an underlying function. By mapping an array of predicate or transform functions" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-overargs-transforms-function-arguments">How Lodash
+overArgs Transforms Function Arguments</h1>
+<p>The <code>_.overArgs</code> method in the Lodash JavaScript library
+is a higher-order utility that creates a new wrapper function capable of
+transforming arguments before delivering them to an underlying function.
+By mapping an array of predicate or transform functions directly to the
+positional arguments of the target function, developers can sanitize,
+reformat, or compute values dynamically upon invocation. This article
+explains the syntax, positional mapping rules, and practical
+applications of <code>_.overArgs</code> in modern JavaScript
+development.</p>
+<h2 id="syntax-and-core-mechanics">Syntax and Core Mechanics</h2>
+<p>The method signature for <code>_.overArgs</code> is defined as
+follows:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">overArgs</span>(func<span class="op">,</span> [transforms<span class="op">=</span>[_<span class="op">.</span><span class="at">identity</span>]])</span></code></pre></div>
+<ul>
+<li><strong><code>func</code></strong>: The target function to wrap and
+eventually invoke.</li>
+<li><strong><code>[transforms]</code></strong>: An array (or spread
+list) of functions applied respectively to each incoming argument. If a
+transform is omitted or not provided for a specific index, Lodash
+defaults to <code>_.identity</code>, passing the argument through
+unaltered.</li>
+</ul>
+<p>When the wrapped function is called, <code>_.overArgs</code>
+intercepts the incoming parameters. It iterates through the provided
+arguments, aligns each one with the transformer function sharing the
+same positional index, executes the transformation, and forwards the
+resulting values to the original function.</p>
+<h2 id="how-positional-mapping-works">How Positional Mapping Works</h2>
+<p>Argument transformation in <code>_.overArgs</code> relies entirely on
+array index positioning:</p>
+<ol type="1">
+<li><strong>One-to-One Association</strong>: The first transform
+function processes the first argument, the second transform processes
+the second argument, and so forth.</li>
+<li><strong>Excess Arguments</strong>: If the wrapped function receives
+more arguments than there are transform functions defined, the surplus
+arguments are passed directly to <code>func</code> without any
+modification.</li>
+<li><strong>Fewer Arguments</strong>: If the wrapped function receives
+fewer arguments than there are transform functions, the remaining
+transformers are simply not executed.</li>
+</ol>
+<h3 id="code-example">Code Example</h3>
+<p>Consider a scenario where mathematical operations require uniform
+inputs, but the data arrives in varied formats:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">multiply</span>(x<span class="op">,</span> y) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> x <span class="op">*</span> y<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Define transformers: square the first argument, double the second</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> square <span class="op">=</span> (n) <span class="kw">=&gt;</span> n <span class="op">*</span> n<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> double <span class="op">=</span> (n) <span class="kw">=&gt;</span> n <span class="op">*</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Create the transformed function</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> transformedMultiply <span class="op">=</span> _<span class="op">.</span><span class="fu">overArgs</span>(multiply<span class="op">,</span> [square<span class="op">,</span> double])<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Invocation</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">transformedMultiply</span>(<span class="dv">3</span><span class="op">,</span> <span class="dv">4</span>))<span class="op">;</span> </span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 1: square(3) -&gt; 9</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 2: double(4) -&gt; 8</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 3: multiply(9, 8) -&gt; 72</span></span></code></pre></div>
+<h2 id="practical-use-cases">Practical Use Cases</h2>
+<h3 id="type-coercion-and-sanitization">Type Coercion and
+Sanitization</h3>
+<p><code>_.overArgs</code> is frequently used to normalize inputs,
+ensuring values match expected data types before reaching domain
+logic:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">greetUser</span>(name<span class="op">,</span> id) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="vs">`User </span><span class="sc">${</span>name<span class="op">.</span><span class="fu">trim</span>()<span class="sc">}</span><span class="vs"> has ID: </span><span class="sc">${</span>id<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> secureGreet <span class="op">=</span> _<span class="op">.</span><span class="fu">overArgs</span>(greetUser<span class="op">,</span> [</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  (name) <span class="kw">=&gt;</span> <span class="bu">String</span>(name <span class="op">||</span> <span class="st">&#39;&#39;</span>)<span class="op">.</span><span class="fu">toUpperCase</span>()<span class="op">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  (id) <span class="kw">=&gt;</span> <span class="pp">parseInt</span>(id<span class="op">,</span> <span class="dv">10</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>])<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">secureGreet</span>(<span class="st">&#39;  alice &#39;</span><span class="op">,</span> <span class="st">&#39;1042&#39;</span>))<span class="op">;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;User ALICE has ID: 1042&quot;</span></span></code></pre></div>
+<h3 id="decoupling-data-preparation-from-logic">Decoupling Data
+Preparation from Logic</h3>
+<p>Using <code>_.overArgs</code> promotes clean, functional
+architecture. Instead of cluttering core business functions with input
+validation, parsing, or scaling logic, those responsibilities are
+decoupled into standalone, reusable transform functions that execute
+prior to the main operation.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

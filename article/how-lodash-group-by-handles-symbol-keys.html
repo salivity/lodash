@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash groupBy Handles Symbol Keys - lodash</title>
+    <meta name="description" content="This article provides a technical overview of how the Lodash .groupBy function handles JavaScript Symbol primitives returned by an iteratee. It covers internal property assignment, the distinction between unique and global symbols, key visibility during o">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-group-by-handles-symbol-keys">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash groupBy Handles Symbol Keys - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-group-by-handles-symbol-keys" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a technical overview of how the Lodash .groupBy function handles JavaScript Symbol primitives returned by an iteratee. It covers internal property assignment, the distinction between unique and global symbols, key visibility during o" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-groupby-handles-symbol-keys">How Lodash groupBy
+Handles Symbol Keys</h1>
+<p>This article provides a technical overview of how the Lodash
+<code>_.groupBy</code> function handles JavaScript <code>Symbol</code>
+primitives returned by an iteratee. It covers internal property
+assignment, the distinction between unique and global symbols, key
+visibility during object traversal, and serialization constraints.</p>
+<h2 id="direct-property-assignment-without-coercion">Direct Property
+Assignment Without Coercion</h2>
+<p>Modern Lodash (v4+) handles <code>Symbol</code> return values
+natively. Internally, <code>_.groupBy</code> uses an aggregator function
+that evaluates the iteratee for each collection item and assigns values
+using standard property accessor syntax
+(<code>accumulator[key]</code>).</p>
+<p>Because ECMAScript 2015 (ES6) allows both strings and symbols as
+valid object property keys, Lodash assigns the grouped array directly to
+the symbol property without performing string coercion (such as
+<code>key + ''</code> or <code>String(key)</code>). This implementation
+prevents the
+<code>TypeError: Cannot convert a Symbol value to a string</code>
+exception that typically occurs when symbols are implicitly converted
+into strings.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> symAdmin <span class="op">=</span> <span class="bu">Symbol</span>(<span class="st">&#39;admin&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> symUser <span class="op">=</span> <span class="bu">Symbol</span>(<span class="st">&#39;user&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> accounts <span class="op">=</span> [</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> symAdmin }<span class="op">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> symUser }<span class="op">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> symAdmin }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> grouped <span class="op">=</span> _<span class="op">.</span><span class="fu">groupBy</span>(accounts<span class="op">,</span> account <span class="kw">=&gt;</span> account<span class="op">.</span><span class="at">role</span>)<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">// grouped contains:</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">// { [Symbol(admin)]: [{ id: 1, ... }, { id: 3, ... }], [Symbol(user)]: [{ id: 2, ... }] }</span></span></code></pre></div>
+<h2 id="symbol-identity-and-grouping-behavior">Symbol Identity and
+Grouping Behavior</h2>
+<p>Grouping relies strictly on ECMAScript equality for object property
+access:</p>
+<ol type="1">
+<li><strong>Unique Symbols:</strong> If the iteratee calls
+<code>Symbol('name')</code> inline rather than returning an existing
+reference, each returned symbol is unique. Consequently, every item is
+assigned to a separate property key, preventing items from grouping
+together.</li>
+<li><strong>Shared References:</strong> Returning a pre-defined symbol
+reference ensures all matching values group under that specific
+identifier.</li>
+<li><strong>Global Symbol Registry:</strong> If the iteratee uses
+<code>Symbol.for('key')</code>, values group under the shared registry
+symbol corresponding to that key string.</li>
+</ol>
+<h2 id="inspecting-and-accessing-symbol-keyed-groups">Inspecting and
+Accessing Symbol-Keyed Groups</h2>
+<p>Objects with symbol keys behave differently from standard
+string-keyed objects during inspection and iteration:</p>
+<ul>
+<li><strong>Direct Access:</strong> Properties can be accessed using
+bracket notation if the symbol reference is available:
+<code>grouped[symAdmin]</code>.</li>
+<li><strong>Standard Iteration:</strong> Functions such as
+<code>Object.keys()</code>, <code>Object.values()</code>,
+<code>Object.entries()</code>, and standard <code>for...in</code> loops
+ignore symbol keys. Lodash’s own <code>_.keys()</code> also skips symbol
+properties.</li>
+<li><strong>Symbol Retrieval:</strong> To inspect or iterate over
+symbol-based groups, use
+<code>Object.getOwnPropertySymbols(grouped)</code> to retrieve an array
+of symbols, or <code>Reflect.ownKeys(grouped)</code> to retrieve both
+string and symbol keys.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> symbols <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">getOwnPropertySymbols</span>(grouped)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>symbols<span class="op">.</span><span class="fu">forEach</span>(sym <span class="kw">=&gt;</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(sym<span class="op">,</span> grouped[sym])<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h2 id="json-serialization-limitations">JSON Serialization
+Limitations</h2>
+<p>Standard JSON serialization does not support symbols. If a
+<code>_.groupBy</code> result containing only symbol keys is passed to
+<code>JSON.stringify()</code>, the output will be an empty object
+(<code>{}</code>). If the data must be serialized for APIs or storage,
+symbol keys must be converted to strings (e.g., using
+<code>sym.description</code> or <code>sym.toString()</code>) before or
+during serialization.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

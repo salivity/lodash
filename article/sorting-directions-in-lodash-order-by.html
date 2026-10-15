@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorting Directions in Lodash orderBy - lodash</title>
+    <meta name="description" content="This article explains the sorting directions available in Lodash&#39;s .orderBy function, detailing how to sort collections in JavaScript. You will learn the specific direction values supported by the function, the default behavior when directions are omitted">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/sorting-directions-in-lodash-order-by">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sorting Directions in Lodash orderBy - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/sorting-directions-in-lodash-order-by" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains the sorting directions available in Lodash&#39;s .orderBy function, detailing how to sort collections in JavaScript. You will learn the specific direction values supported by the function, the default behavior when directions are omitted" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="sorting-directions-in-lodash-orderby">Sorting Directions in
+Lodash orderBy</h1>
+<p>This article explains the sorting directions available in Lodash's
+<code>_.orderBy</code> function, detailing how to sort collections in
+JavaScript. You will learn the specific direction values supported by
+the function, the default behavior when directions are omitted, and how
+to apply multi-criteria sorting using contrasting directions.</p>
+<h2 id="supported-sorting-directions">Supported Sorting Directions</h2>
+<p>In the Lodash library, the <code>_.orderBy</code> method accepts two
+specific string values to determine the sort order:</p>
+<ul>
+<li><strong><code>'asc'</code></strong>: Sorts values in ascending order
+(smallest to largest, A-Z, earliest to latest).</li>
+<li><strong><code>'desc'</code></strong>: Sorts values in descending
+order (largest to smallest, Z-A, latest to earliest).</li>
+</ul>
+<p>These values are passed as the third argument (<code>orders</code>)
+to the <code>_.orderBy</code> method, either as a single string or as an
+array of strings corresponding to each sort iteratee.</p>
+<h2 id="default-sorting-direction">Default Sorting Direction</h2>
+<p>If you do not supply the <code>orders</code> argument,
+<code>_.orderBy</code> defaults to ascending (<code>'asc'</code>) order
+for all specified iteratees.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> users <span class="op">=</span> [</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;fred&#39;</span><span class="op">,</span> <span class="dt">age</span><span class="op">:</span> <span class="dv">48</span> }<span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;barney&#39;</span><span class="op">,</span> <span class="dt">age</span><span class="op">:</span> <span class="dv">34</span> }<span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;fred&#39;</span><span class="op">,</span> <span class="dt">age</span><span class="op">:</span> <span class="dv">40</span> }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Defaults to &#39;asc&#39; for both iteratees</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sorted <span class="op">=</span> _<span class="op">.</span><span class="fu">orderBy</span>(users<span class="op">,</span> [<span class="st">&#39;user&#39;</span><span class="op">,</span> <span class="st">&#39;age&#39;</span>])<span class="op">;</span></span></code></pre></div>
+<h2 id="applying-a-single-sorting-direction">Applying a Single Sorting
+Direction</h2>
+<p>To sort a collection by a single property in descending order, supply
+<code>'desc'</code> in the orders parameter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sortedByAgeDesc <span class="op">=</span> _<span class="op">.</span><span class="fu">orderBy</span>(users<span class="op">,</span> [<span class="st">&#39;age&#39;</span>]<span class="op">,</span> [<span class="st">&#39;desc&#39;</span>])<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Result: fred (48), fred (40), barney (34)</span></span></code></pre></div>
+<h2 id="applying-multiple-sorting-directions">Applying Multiple Sorting
+Directions</h2>
+<p>When sorting by multiple properties, you can supply an array of
+directions matching the array of iteratees. This allows you to mix
+ascending and descending sorts within the same operation:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Sort by &#39;user&#39; ascending, then by &#39;age&#39; descending</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sortedMixed <span class="op">=</span> _<span class="op">.</span><span class="fu">orderBy</span>(users<span class="op">,</span> [<span class="st">&#39;user&#39;</span><span class="op">,</span> <span class="st">&#39;age&#39;</span>]<span class="op">,</span> [<span class="st">&#39;asc&#39;</span><span class="op">,</span> <span class="st">&#39;desc&#39;</span>])<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Result: barney (34), fred (48), fred (40)</span></span></code></pre></div>
+<p>If the <code>orders</code> array contains fewer elements than the
+iteratees array, any iteratee without a specified direction defaults to
+<code>'asc'</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

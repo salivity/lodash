@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Type Coercion in Math Operations Like _.add - lodash</title>
+    <meta name="description" content="This article provides an overview of how the Lodash library manages explicit and implicit type coercion when complex objects are passed to mathematical utilities such as .add. It details the internal pipeline Lodash employs to process arguments, explains">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-type-coercion-in-math-operations-like-add">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Type Coercion in Math Operations Like _.add - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-type-coercion-in-math-operations-like-add" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how the Lodash library manages explicit and implicit type coercion when complex objects are passed to mathematical utilities such as .add. It details the internal pipeline Lodash employs to process arguments, explains" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-type-coercion-in-math-operations-like-_add">Lodash Type
+Coercion in Math Operations Like _.add</h1>
+<p>This article provides an overview of how the Lodash library manages
+explicit and implicit type coercion when complex objects are passed to
+mathematical utilities such as <code>_.add</code>. It details the
+internal pipeline Lodash employs to process arguments, explains how it
+delegates object conversion to native ECMAScript coercion protocols, and
+highlights how custom object methods like <code>valueOf</code>,
+<code>toString</code>, and <code>Symbol.toPrimitive</code> determine the
+final result of these operations.</p>
+<h2 id="the-architecture-of-lodash-math-functions">The Architecture of
+Lodash Math Functions</h2>
+<p>Lodash creates most of its binary mathematical functions—such as
+<code>_.add</code>, <code>_.subtract</code>, <code>_.multiply</code>,
+and <code>_.divide</code>—using an internal higher-order factory
+function named <code>createMathOperation</code>. This factory
+standardizes argument validation, default handling, and type
+normalization before executing the actual arithmetic operator.</p>
+<p>When a function like <code>_.add(augend, addend)</code> is called,
+<code>createMathOperation</code> evaluates both inputs using the
+following rules:</p>
+<ol type="1">
+<li><strong>Undefined Handling:</strong> If both arguments are
+<code>undefined</code>, it returns a designated default (such as
+<code>0</code> for <code>_.add</code>). If only one operand is
+<code>undefined</code>, the defined operand is returned as-is without
+further coercion.</li>
+<li><strong>String Precedence:</strong> If either argument is strictly
+of type <code>'string'</code>, both arguments are converted to strings
+via Lodash's internal <code>baseToString</code> helper, and native
+concatenation occurs.</li>
+<li><strong>Numeric Coercion:</strong> If neither argument is a string,
+both arguments are passed to <code>baseToNumber</code> before the
+arithmetic operator executes.</li>
+</ol>
+<h2 id="internal-coercion-via-basetonumber">Internal Coercion via
+<code>baseToNumber</code></h2>
+<p>When complex objects (such as plain objects, arrays, or class
+instances) are provided, they pass into Lodash's internal
+<code>baseToNumber</code> utility. The implementation relies directly on
+the native JavaScript unary plus operator (<code>+value</code>):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseToNumber</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="kw">typeof</span> value <span class="op">==</span> <span class="st">&#39;number&#39;</span>) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">isSymbol</span>(value)) {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> NAN<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">+</span>value<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because Lodash applies <code>+value</code> to objects, it delegates
+the conversion process entirely to the ECMAScript <code>ToNumber</code>
+abstract operation, which in turn invokes <code>ToPrimitive</code> with
+a hint of <code>"number"</code>.</p>
+<h2 id="the-toprimitive-resolution-order-for-objects">The
+<code>ToPrimitive</code> Resolution Order for Objects</h2>
+<p>When an object is coerced to a number during
+<code>baseToNumber</code>, the JavaScript runtime evaluates the object's
+methods in a strict order:</p>
+<ol type="1">
+<li><strong><code>Symbol.toPrimitive</code>:</strong> If defined on the
+object, the engine calls <code>[Symbol.toPrimitive]('number')</code>.
+The returned primitive is then converted directly to a number.</li>
+<li><strong><code>valueOf()</code>:</strong> If
+<code>Symbol.toPrimitive</code> is absent, the engine executes
+<code>object.valueOf()</code>. If <code>valueOf()</code> returns a
+primitive value (such as a number, boolean, or string), that value is
+converted to a number.</li>
+<li><strong><code>toString()</code>:</strong> If <code>valueOf()</code>
+does not return a primitive (by default,
+<code>Object.prototype.valueOf</code> returns the object itself), the
+engine falls back to calling <code>object.toString()</code>. The
+resulting string is then parsed as a numeric literal.</li>
+<li><strong><code>TypeError</code>:</strong> If neither
+<code>valueOf()</code> nor <code>toString()</code> produces a primitive,
+the runtime throws a <code>TypeError</code>.</li>
+</ol>
+<h2 id="coercion-behavior-across-different-object-types">Coercion
+Behavior Across Different Object Types</h2>
+<h3 id="plain-objects">Plain Objects</h3>
+<p>By default, plain objects inherit
+<code>Object.prototype.toString</code>, which returns
+<code>"[object Object]"</code>. Because <code>"[object Object]"</code>
+cannot be parsed as a valid numeric literal, native coercion produces
+<code>NaN</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> objA <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> objB <span class="op">=</span> { <span class="dt">value</span><span class="op">:</span> <span class="dv">10</span> }<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">add</span>(objA<span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span> <span class="co">// Returns NaN</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">add</span>(objB<span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span> <span class="co">// Returns NaN</span></span></code></pre></div>
+<h3 id="objects-with-custom-value-handlers">Objects with Custom Value
+Handlers</h3>
+<p>When an object defines a custom <code>valueOf</code> or
+<code>[Symbol.toPrimitive]</code> method, Lodash respects the returned
+value:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> item <span class="op">=</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">amount</span><span class="op">:</span> <span class="dv">42</span><span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">valueOf</span>() {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">this</span><span class="op">.</span><span class="at">amount</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">add</span>(item<span class="op">,</span> <span class="dv">8</span>)<span class="op">;</span> <span class="co">// Returns 50</span></span></code></pre></div>
+<p>If <code>[Symbol.toPrimitive]</code> is implemented, it takes
+precedence over <code>valueOf</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> advancedItem <span class="op">=</span> {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">amount</span><span class="op">:</span> <span class="dv">42</span><span class="op">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">valueOf</span>() {</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">100</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  [<span class="bu">Symbol</span><span class="op">.</span><span class="at">toPrimitive</span>](hint) {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> hint <span class="op">===</span> <span class="st">&#39;number&#39;</span> <span class="op">?</span> <span class="kw">this</span><span class="op">.</span><span class="at">amount</span> <span class="op">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">add</span>(advancedItem<span class="op">,</span> <span class="dv">8</span>)<span class="op">;</span> <span class="co">// Returns 50</span></span></code></pre></div>
+<h3 id="arrays">Arrays</h3>
+<p>Arrays inherit <code>Array.prototype.toString</code>, which joins
+elements with commas:</p>
+<ul>
+<li>An empty array <code>[]</code> coerces to the empty string
+<code>""</code>, which converts to <code>0</code>. Therefore,
+<code>_.add([], 5)</code> returns <code>5</code>.</li>
+<li>A single-element numeric array <code>[42]</code> coerces to
+<code>"42"</code>, which converts to <code>42</code>. Thus,
+<code>_.add([42], 8)</code> returns <code>50</code>.</li>
+<li>Multi-element arrays such as <code>[1, 2]</code> coerce to
+<code>"1,2"</code>, which evaluates to <code>NaN</code>.</li>
+</ul>
+<h2 id="edge-cases-objects-coercing-to-strings-first">Edge Cases:
+Objects Coercing to Strings First</h2>
+<p>If one of the operands is an explicit primitive string, Lodash
+bypasses <code>baseToNumber</code> and forces string conversion on the
+other operand via <code>baseToString</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> item <span class="op">=</span> {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">valueOf</span>() {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">10</span><span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">toString</span>() {</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&#39;custom&#39;</span><span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">// String branch triggered by &#39;5&#39;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">add</span>(item<span class="op">,</span> <span class="st">&#39;5&#39;</span>)<span class="op">;</span> <span class="co">// Returns &quot;custom5&quot;</span></span></code></pre></div>
+<p>In this scenario, <code>baseToString</code> calls
+<code>object.toString()</code> directly rather than evaluating
+<code>valueOf()</code>, resulting in string concatenation instead of
+numeric addition.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

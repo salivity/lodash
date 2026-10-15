@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash takeWhile Halts Extraction on Condition - lodash</title>
+    <meta name="description" content="The .takeWhile method in the Lodash JavaScript library creates a slice of an array starting from the beginning and continues taking elements until the provided predicate function returns a falsy value. Unlike methods that evaluate the entire collection, .">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-take-while-halts-extraction-on-condition">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash takeWhile Halts Extraction on Condition - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-take-while-halts-extraction-on-condition" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .takeWhile method in the Lodash JavaScript library creates a slice of an array starting from the beginning and continues taking elements until the provided predicate function returns a falsy value. Unlike methods that evaluate the entire collection, ." />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-takewhile-halts-extraction-on-condition">How Lodash
+takeWhile Halts Extraction on Condition</h1>
+<p>The <code>_.takeWhile</code> method in the Lodash JavaScript library
+creates a slice of an array starting from the beginning and continues
+taking elements until the provided predicate function returns a falsy
+value. Unlike methods that evaluate the entire collection,
+<code>_.takeWhile</code> short-circuits the iteration process, instantly
+halting any further checks and returning all consecutively matched
+elements up to the breaking point.</p>
+<h2 id="the-short-circuiting-mechanism">The Short-Circuiting
+Mechanism</h2>
+<p>The defining characteristic of <code>_.takeWhile</code> is that it
+processes elements sequentially, beginning at index <code>0</code>. For
+each element, Lodash executes a predicate function that receives three
+arguments: the current element value, the current index, and the source
+array.</p>
+<p>If the predicate returns a truthy value, the element is pushed to an
+internal output array, and the loop proceeds to the next item. The
+moment the predicate returns a falsy value (<code>false</code>,
+<code>null</code>, <code>0</code>, <code>""</code>,
+<code>undefined</code>, or <code>NaN</code>), <code>_.takeWhile</code>
+breaks the iteration loop entirely. It does not inspect the remaining
+items in the array, making it significantly more performant than methods
+that iterate over full datasets when only a leading subset is
+required.</p>
+<h2 id="difference-between-takewhile-and-filter">Difference Between
+<em>.takeWhile and </em>.filter</h2>
+<p>A common misconception is treating <code>_.takeWhile</code> as
+interchangeable with <code>_.filter</code>.</p>
+<ul>
+<li><strong><code>_.filter</code></strong> scans every single element of
+the array and collects all items where the predicate evaluates to
+true.</li>
+<li><strong><code>_.takeWhile</code></strong> only collects elements
+from the start of the array and stops permanently at the first
+failure.</li>
+</ul>
+<p>For example, consider an array of numbers where matching items appear
+both before and after a non-matching item:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="dv">2</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">7</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="dv">10</span>]<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Predicate: check if number is even</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">takeWhile</span>(numbers<span class="op">,</span> (n) <span class="kw">=&gt;</span> n <span class="op">%</span> <span class="dv">2</span> <span class="op">===</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [2, 4, 6]</span></span></code></pre></div>
+<p>In this example, <code>8</code> and <code>10</code> are even numbers,
+but they are completely omitted from the final array. The extraction
+halted permanently at index <code>3</code> because the number
+<code>7</code> caused the predicate to return <code>false</code>.</p>
+<h2 id="using-shorthand-predicates">Using Shorthand Predicates</h2>
+<p>Lodash supports various shorthand iteratee patterns with
+<code>_.takeWhile</code>, which internally convert into
+condition-checking functions that halt upon a match failure:</p>
+<ul>
+<li><strong>Matches Property Shorthand
+(<code>['key', value]</code>):</strong> Halts when an object's specified
+property does not match the target value.</li>
+<li><strong>Matches Shorthand (Plain Object):</strong> Halts when an
+object does not include all matching key-value pairs.</li>
+<li><strong>Property Shorthand (<code>'key'</code>):</strong> Halts when
+the property's value on the object evaluates to a falsy value.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> users <span class="op">=</span> [</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;barney&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;fred&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;pebbles&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">false</span> }<span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;wilma&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Halts extraction at &#39;pebbles&#39;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> activeUsers <span class="op">=</span> _<span class="op">.</span><span class="fu">takeWhile</span>(users<span class="op">,</span> <span class="st">&#39;active&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(activeUsers)<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [{ user: &#39;barney&#39;, active: true }, { user: &#39;fred&#39;, active: true }]</span></span></code></pre></div>
+<p>When handling ordered collections, such as time-series data or sorted
+numerical sets, this early-exit behavior ensures high runtime efficiency
+by terminating execution the moment data falls outside the acceptable
+criteria.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.xorBy Explained: Compare Array Values - lodash</title>
+    <meta name="description" content="The .xorBy method in the Lodash JavaScript library computes the symmetric difference between multiple arrays based on a criterion determined by an iteratee function. Unlike standard difference operations, it identifies elements that are present in one arr">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-xor-by-explained-compare-array-values">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.xorBy Explained: Compare Array Values - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-xor-by-explained-compare-array-values" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .xorBy method in the Lodash JavaScript library computes the symmetric difference between multiple arrays based on a criterion determined by an iteratee function. Unlike standard difference operations, it identifies elements that are present in one arr" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_xorby-explained-compare-array-values">Lodash _.xorBy
+Explained: Compare Array Values</h1>
+<p>The <code>_.xorBy</code> method in the Lodash JavaScript library
+computes the symmetric difference between multiple arrays based on a
+criterion determined by an iteratee function. Unlike standard difference
+operations, it identifies elements that are present in one array or
+another, but not in both, using a transformation or property extraction
+to evaluate equality. This article explains how <code>_.xorBy</code>
+works, its syntax, and how to use it with practical code examples.</p>
+<h3 id="what-is-_xorby">What is <code>_.xorBy</code>?</h3>
+<p>In mathematics and programming, a symmetric difference (exclusive OR
+/ XOR) between sets yields elements that belong to either set, but not
+to their intersection. Lodash provides the base <code>_.xor</code>
+function for simple, direct comparisons.</p>
+<p>The <code>_.xorBy</code> method extends this capability by accepting
+an "iteratee." Before performing the comparison, Lodash invokes this
+iteratee on each element of the input arrays. This generates a computed
+value used exclusively for comparison, though the final returned array
+contains the original elements that produced the unique values.</p>
+<h3 id="syntax">Syntax</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">xorBy</span>([arrays]<span class="op">,</span> [iteratee<span class="op">=</span>_<span class="op">.</span><span class="at">identity</span>])</span></code></pre></div>
+<ul>
+<li><strong><code>[arrays]</code></strong> (<em>Array</em>): The arrays
+to inspect.</li>
+<li><strong><code>[iteratee=_.identity]</code></strong>
+(<em>Function|string</em>): The iteratee invoked per element to generate
+the criterion by which uniqueness is decided.</li>
+</ul>
+<h3 id="example-1-comparing-transformed-primitives">Example 1: Comparing
+Transformed Primitives</h3>
+<p>When working with numbers, you may want to compare values after
+applying a mathematical function like <code>Math.floor</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> array1 <span class="op">=</span> [<span class="fl">2.1</span><span class="op">,</span> <span class="fl">1.2</span>]<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> array2 <span class="op">=</span> [<span class="fl">2.3</span><span class="op">,</span> <span class="fl">3.4</span>]<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">xorBy</span>(array1<span class="op">,</span> array2<span class="op">,</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>)<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [1.2, 3.4]</span></span></code></pre></div>
+<p>In this case:</p>
+<ol type="1">
+<li><code>array1</code> floored values are <code>[2, 1]</code>.</li>
+<li><code>array2</code> floored values are <code>[2, 3]</code>.</li>
+<li>The value <code>2</code> appears in both arrays, so <code>2.1</code>
+and <code>2.3</code> are excluded.</li>
+<li>The remaining unique values are returned: <code>1.2</code> and
+<code>3.4</code>.</li>
+</ol>
+<h3 id="example-2-comparing-objects-by-property">Example 2: Comparing
+Objects by Property</h3>
+<p>A common use case for <code>_.xorBy</code> is comparing collections
+of objects based on a specific property, such as an <code>id</code>.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> currentUsers <span class="op">=</span> [</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> }<span class="op">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Bob&#39;</span> }</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> newUsers <span class="op">=</span> [</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Bob&#39;</span> }<span class="op">,</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Charlie&#39;</span> }</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">xorBy</span>(currentUsers<span class="op">,</span> newUsers<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">/*</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">Output:</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">[</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">  { id: 1, name: &#39;Alice&#39; },</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">  { id: 3, name: &#39;Charlie&#39; }</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co">]</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">*/</span></span></code></pre></div>
+<p>Lodash compares the objects solely by their <code>id</code> property.
+Because the object with <code>id: 2</code> appears in both arrays, it is
+filtered out, leaving only the unique records from each set.</p>
+<h3 id="key-behaviors-to-remember">Key Behaviors to Remember</h3>
+<ul>
+<li><strong>Preserves Original Items:</strong> The returned array
+contains the original values, not the results returned by the
+iteratee.</li>
+<li><strong>Result Order:</strong> The order of the returned elements is
+determined by the order in which they appear in the original
+arrays.</li>
+<li><strong>Multiple Arrays:</strong> You can pass more than two arrays
+into <code>_.xorBy</code>, with the iteratee placed as the final
+argument.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

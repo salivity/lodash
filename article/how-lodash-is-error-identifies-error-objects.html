@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.isError Identifies Error Objects - lodash</title>
+    <meta name="description" content="In JavaScript development, reliably identifying error instances across diverse runtime environments presents subtle but significant challenges. This article examines the mechanics of Lodash’s .isError function, explaining why conventional methods like ins">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-error-identifies-error-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.isError Identifies Error Objects - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-error-identifies-error-objects" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In JavaScript development, reliably identifying error instances across diverse runtime environments presents subtle but significant challenges. This article examines the mechanics of Lodash’s .isError function, explaining why conventional methods like ins" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_iserror-identifies-error-objects">How Lodash
+_.isError Identifies Error Objects</h1>
+<p>In JavaScript development, reliably identifying error instances
+across diverse runtime environments presents subtle but significant
+challenges. This article examines the mechanics of Lodash’s
+<code>_.isError</code> function, explaining why conventional methods
+like <code>instanceof</code> fall short, how Lodash leverages internal
+object tagging to achieve cross-realm reliability, and what makes this
+utility the standard for detecting native, subclassed, and host-specific
+error objects.</p>
+<h3 id="the-limitation-of-instanceof-error">The Limitation of
+<code>instanceof Error</code></h3>
+<p>The native approach to checking errors in JavaScript is typically the
+<code>instanceof</code> operator:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>value <span class="kw">instanceof</span> <span class="bu">Error</span></span></code></pre></div>
+<p>While functional in simple applications, <code>instanceof</code>
+relies entirely on the prototype chain within the current execution
+context. It fails in multi-realm environments, such as applications
+utilizing <code>&lt;iframe&gt;</code> elements, Node.js <code>vm</code>
+contexts, or Web Workers.</p>
+<p>If an error is thrown inside an <code>&lt;iframe&gt;</code> and
+passed to the parent window, the error inherits from the iframe's
+<code>Error.prototype</code>, not the parent window's
+<code>Error.prototype</code>. Consequently,
+<code>instanceof Error</code> evaluates to <code>false</code>, even
+though the object is functionally and structurally an error.</p>
+<h3 id="deep-internal-tag-inspection-via-tostringtag">Deep Internal Tag
+Inspection via <code>toStringTag</code></h3>
+<p>To circumvent prototype isolation, Lodash relies on the internal
+<code>[[Class]]</code> property exposed through
+<code>Object.prototype.toString.call(value)</code>.</p>
+<p>Regardless of which realm or window an error originated from, native
+error objects return a specific internal tag:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">toString</span><span class="op">.</span><span class="fu">call</span>(<span class="kw">new</span> <span class="bu">Error</span>()) <span class="co">// &quot;[object Error]&quot;</span></span></code></pre></div>
+<p>Lodash’s <code>_.isError</code> verifies that the incoming value is
+an object-like structure (non-null and <code>typeof</code> equals
+<code>'object'</code>) and evaluates its internal tag. This guarantees
+that <code>TypeError</code>, <code>SyntaxError</code>,
+<code>RangeError</code>, <code>ReferenceError</code>, and all other
+native variants are recognized universally, irrespective of memory
+boundaries or execution contexts.</p>
+<h3 id="handling-host-objects-and-domexception">Handling Host Objects
+and <code>DOMException</code></h3>
+<p>Modern web platforms include error types that do not always inherit
+cleanly from the ECMAScript <code>Error</code> base class, such as
+browser-level <code>DOMException</code> instances.</p>
+<p>Lodash accounts for these edge cases by checking for standard error
+tags as well as specific platform implementations. Under the hood,
+modern versions of Lodash check whether the tag matches
+<code>[object Error]</code> or <code>[object DOMException]</code>,
+ensuring platform-level asynchronous errors (like aborted
+<code>fetch</code> requests) are not misclassified as plain objects.</p>
+<h3 id="structural-fallback-for-custom-and-subclassed-errors">Structural
+Fallback for Custom and Subclassed Errors</h3>
+<p>In environments where <code>Symbol.toStringTag</code> might be
+overridden or transpilation tools alter class inheritance, simple string
+matching can occasionally be manipulated. Lodash addresses this by
+pairing tag verification with structural checks:</p>
+<ol type="1">
+<li><strong>Object Validation:</strong> Ensures the value is not
+<code>null</code> and of type <code>object</code>.</li>
+<li><strong>Tag Matching:</strong> Confirms the tag resolves to an error
+signature.</li>
+<li><strong>Property Verification:</strong> Where required, checks for
+the presence of intrinsic error properties—such as <code>message</code>
+and <code>name</code>—and confirms that the prototype descends from an
+error-like structure.</li>
+</ol>
+<p>By decoupling error identification from the execution context's
+prototype chain and relying on standard internal tags,
+<code>_.isError</code> provides an environment-agnostic, cross-realm
+solution that vanilla JavaScript checks cannot natively guarantee.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

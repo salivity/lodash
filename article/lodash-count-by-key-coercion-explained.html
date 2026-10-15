@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash countBy Key Coercion Explained - lodash</title>
+    <meta name="description" content="Lodash’s .countBy method processes a collection, runs each element through an iteratee function, and returns an object counting the frequency of each computed result. Because object keys in JavaScript are fundamentally strings or symbols, any value return">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-count-by-key-coercion-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash countBy Key Coercion Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-count-by-key-coercion-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .countBy method processes a collection, runs each element through an iteratee function, and returns an object counting the frequency of each computed result. Because object keys in JavaScript are fundamentally strings or symbols, any value return" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-countby-key-coercion-explained">Lodash countBy Key
+Coercion Explained</h1>
+<p>Lodash’s <code>_.countBy</code> method processes a collection, runs
+each element through an iteratee function, and returns an object
+counting the frequency of each computed result. Because object keys in
+JavaScript are fundamentally strings or symbols, any value returned by
+the iteratee must be converted into a valid property key. This article
+examines the internal mechanics of how Lodash and JavaScript coerce
+these returned values into object keys.</p>
+<h3 id="the-aggregator-pipeline">The Aggregator Pipeline</h3>
+<p>Under the hood, <code>_.countBy</code> is implemented using Lodash’s
+internal <code>createAggregator</code> utility. This higher-order
+function manages collection traversal and accumulates results into a
+newly created plain object.</p>
+<p>For each item in the collection, the aggregator invokes the provided
+iteratee:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> key <span class="op">=</span> <span class="fu">iteratee</span>(value)<span class="op">;</span></span></code></pre></div>
+<p>Once the iteratee returns a value, Lodash registers the occurrence on
+the accumulator object using an internal assignment function
+(<code>baseAssignValue</code>), effectively executing:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (hasOwnProperty<span class="op">.</span><span class="fu">call</span>(result<span class="op">,</span> key)) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  result[key]<span class="op">++;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">baseAssignValue</span>(result<span class="op">,</span> key<span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="javascripts-topropertykey-operation">JavaScript's
+<code>ToPropertyKey</code> Operation</h3>
+<p>Lodash does not manually convert iteratee outputs into strings using
+explicit methods like <code>.toString()</code> or
+<code>String(key)</code> within <code>_.countBy</code>. Instead, it
+delegates key coercion directly to the JavaScript runtime engine.</p>
+<p>Whenever an expression is evaluated inside bracket notation (such as
+<code>result[key]</code>), the JavaScript engine executes the abstract
+ECMAScript operation <code>ToPropertyKey(key)</code>. This operation
+determines how different data types are transformed:</p>
+<ul>
+<li><strong>Primitives (Numbers, Booleans, Strings):</strong> Primitives
+undergo standard string conversion. A return value of <code>42</code>
+becomes <code>'42'</code>, and <code>true</code> becomes
+<code>'true'</code>.</li>
+<li><strong>Null and Undefined:</strong> Both values are converted to
+their literal string equivalents, resulting in <code>'null'</code> and
+<code>'undefined'</code> as property keys.</li>
+<li><strong>Objects and Arrays:</strong> Non-primitive values undergo
+the <code>ToPrimitive</code> operation with a string hint. For standard
+objects, this invokes <code>Object.prototype.toString()</code>,
+resulting in the key <code>'[object Object]'</code>. For arrays,
+<code>.join(',')</code> is invoked implicitly, turning
+<code>[1, 2]</code> into <code>'1,2'</code>.</li>
+<li><strong>Symbols:</strong> JavaScript symbols bypass string
+conversion entirely. If an iteratee returns a <code>Symbol</code>, it is
+retained as a symbol property key on the resulting object.</li>
+</ul>
+<h3 id="coercion-in-practice">Coercion in Practice</h3>
+<p>Consider the following example demonstrating various returned
+iteratee values:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="fl">1.5</span><span class="op">,</span> <span class="kw">null</span><span class="op">,</span> <span class="kw">undefined</span><span class="op">,</span> [<span class="dv">2</span><span class="op">,</span> <span class="dv">3</span>]<span class="op">,</span> {}]<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">countBy</span>(items<span class="op">,</span> (item) <span class="kw">=&gt;</span> item)<span class="op">;</span></span></code></pre></div>
+<p>The resulting object reflects automatic runtime coercion:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>{</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;1&quot;</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;1.5&quot;</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;null&quot;</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;undefined&quot;</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;2,3&quot;</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;[object Object]&quot;</span><span class="op">:</span> <span class="dv">1</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because coercion relies on <code>ToPropertyKey</code>, all complex
+objects that do not override their default <code>toString</code> method
+collapse into the single key <code>'[object Object]'</code>. To avoid
+unintended key collisions when working with complex return types,
+iteratees should explicitly return unique, primitive identifiers like
+strings or numbers.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

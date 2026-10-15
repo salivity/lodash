@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash pickBy Works Internally - lodash</title>
+    <meta name="description" content="Lodash’s .pickBy method creates an object composed of filtered properties by converting target keys into an array, executing an iteratee predicate against each property, and assembling a new object from the truthy results. This article explores the intern">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-pick-by-works-internally">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash pickBy Works Internally - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-pick-by-works-internally" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .pickBy method creates an object composed of filtered properties by converting target keys into an array, executing an iteratee predicate against each property, and assembling a new object from the truthy results. This article explores the intern" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-pickby-works-internally">How Lodash pickBy Works
+Internally</h1>
+<p>Lodash’s <code>_.pickBy</code> method creates an object composed of
+filtered properties by converting target keys into an array, executing
+an iteratee predicate against each property, and assembling a new object
+from the truthy results. This article explores the internal mechanics of
+<code>_.pickBy</code>, covering how it leverages native array traversal,
+evaluates mapped boolean expressions, and safely constructs the
+output.</p>
+<h3 id="the-entry-point-and-delegation">The Entry Point and
+Delegation</h3>
+<p>When <code>_.pickBy(object, predicate)</code> is invoked, Lodash
+first normalizes the parameters. If the target <code>object</code> is
+<code>null</code> or <code>undefined</code>, the method immediately
+returns an empty object <code>{}</code>. If a predicate function is
+omitted, it defaults to <code>_.identity</code>, which evaluates the
+truthiness of the values themselves.</p>
+<p>Lodash delegates the actual selection logic to an internal function
+named <code>basePickBy</code>. Before iterating, <code>basePickBy</code>
+must determine which properties to inspect.</p>
+<h3 id="extracting-property-keys-into-arrays">Extracting Property Keys
+into Arrays</h3>
+<p>JavaScript objects do not feature native array iteration methods such
+as <code>.filter()</code> or <code>.forEach()</code>. To achieve
+high-performance traversal, Lodash converts the object’s properties into
+a linear array of keys using <code>getAllKeysIn</code> (or
+<code>keysIn</code>).</p>
+<p>This extraction gathers:</p>
+<ul>
+<li>Enumerable own string properties.</li>
+<li>Inherited enumerable properties from the prototype chain.</li>
+<li>Enumerable symbol properties (if supported in the runtime
+environment).</li>
+</ul>
+<p>By flattening the object's keys into a contiguous array, Lodash can
+bypass the overhead of standard <code>for...in</code> loops and rely on
+predictable array indexing.</p>
+<h3 id="iteration-via-basepickby">Iteration via
+<code>basePickBy</code></h3>
+<p>Once the keys array is generated, <code>basePickBy</code> executes
+using three primary arguments: the source <code>object</code>, the
+<code>props</code> array, and the <code>predicate</code>.</p>
+<p>The function initializes an empty result object and enters a
+high-speed <code>while</code> loop:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">basePickBy</span>(object<span class="op">,</span> props<span class="op">,</span> predicate) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">var</span> index <span class="op">=</span> <span class="op">-</span><span class="dv">1</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>      length <span class="op">=</span> props<span class="op">.</span><span class="at">length</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      result <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="op">++</span>index <span class="op">&lt;</span> length) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> key <span class="op">=</span> props[index]<span class="op">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        value <span class="op">=</span> object[key]<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">predicate</span>(value<span class="op">,</span> key)) {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">baseAssignValue</span>(result<span class="op">,</span> key<span class="op">,</span> value)<span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="boolean-evaluation-and-property-assignment">Boolean Evaluation
+and Property Assignment</h3>
+<p>During each step of the array loop:</p>
+<ol type="1">
+<li><strong>Accessing Members:</strong> The current key is retrieved
+using native array indexing (<code>props[index]</code>), and its
+associated value is accessed from the source object
+(<code>object[key]</code>).</li>
+<li><strong>Predicate Execution:</strong> Lodash invokes
+<code>predicate(value, key)</code>. The predicate acts as a boolean
+mapper.</li>
+<li><strong>Truthy Verification:</strong> The return value is evaluated
+in a native JavaScript conditional <code>if</code> statement. If the
+iteratee returns a truthy value, the condition passes.</li>
+<li><strong>Assignment:</strong> Instead of standard property assignment
+(<code>result[key] = value</code>), Lodash calls an internal utility
+named <code>baseAssignValue</code>. This helper safely defines the
+property on the <code>result</code> object, protecting against prototype
+pollution vulnerabilities (such as overwriting <code>__proto__</code>)
+and preventing custom setters on the prototype from executing.</li>
+</ol>
+<p>Once the index reaches the array length, the iteration terminates,
+and Lodash returns the newly populated object containing only the
+properties that passed the boolean check.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

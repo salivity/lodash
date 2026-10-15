@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.lte Type Coercion: Boolean vs Number - lodash</title>
+    <meta name="description" content="When the Lodash library executes .lte to compare a boolean against a number, it coerces the boolean operand into a numeric value before evaluating the relational condition. Internally, Lodash converts any non-string operands to numbers using JavaScript&#39;s">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-lte-type-coercion-boolean-vs-number">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.lte Type Coercion: Boolean vs Number - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-lte-type-coercion-boolean-vs-number" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When the Lodash library executes .lte to compare a boolean against a number, it coerces the boolean operand into a numeric value before evaluating the relational condition. Internally, Lodash converts any non-string operands to numbers using JavaScript&#39;s" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_lte-type-coercion-boolean-vs-number">Lodash _.lte Type
+Coercion: Boolean vs Number</h1>
+<p>When the Lodash library executes <code>_.lte</code> to compare a
+boolean against a number, it coerces the boolean operand into a numeric
+value before evaluating the relational condition. Internally, Lodash
+converts any non-string operands to numbers using JavaScript's unary
+plus (<code>+</code>) operator, causing <code>true</code> to become
+<code>1</code> and <code>false</code> to become <code>0</code>. Once
+both values are converted to numeric primitives, <code>_.lte</code>
+performs standard numerical less-than-or-equal comparison
+(<code>&lt;=</code>).</p>
+<h2 id="lodashs-relational-operation-mechanism">Lodash's Relational
+Operation Mechanism</h2>
+<p>Lodash implements relational methods like <code>_.lte</code>,
+<code>_.lt</code>, <code>_.gte</code>, and <code>_.gt</code> using an
+internal helper function called <code>createRelationalOperation</code>.
+This helper checks the types of both arguments before performing the
+comparison:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">createRelationalOperation</span>(operator) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">function</span>(value<span class="op">,</span> other) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>(<span class="kw">typeof</span> value <span class="op">==</span> <span class="st">&#39;string&#39;</span> <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> other <span class="op">==</span> <span class="st">&#39;string&#39;</span>)) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      value <span class="op">=</span> <span class="op">+</span>value<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      other <span class="op">=</span> <span class="op">+</span>other<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fu">operator</span>(value<span class="op">,</span> other)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because a boolean and a number do not satisfy the condition of both
+being strings, Lodash executes the <code>else</code> branch, applying
+<code>+value</code> and <code>+other</code>.</p>
+<h2 id="the-coercion-rules-applied">The Coercion Rules Applied</h2>
+<p>The unary <code>+</code> operator invokes ECMAScript's internal
+<code>ToNumber</code> abstract operation on each operand:</p>
+<ol type="1">
+<li><strong>Boolean Conversion:</strong>
+<ul>
+<li><code>true</code> evaluates to <code>1</code></li>
+<li><code>false</code> evaluates to <code>0</code></li>
+</ul></li>
+<li><strong>Number Conversion:</strong>
+<ul>
+<li>Numeric values remain unchanged (e.g., <code>+5</code> evaluates to
+<code>5</code>).</li>
+</ul></li>
+</ol>
+<p>After coercion, Lodash evaluates the comparison using the native
+<code>&lt;=</code> operator on the resulting numbers.</p>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="comparing-true-to-numbers">Comparing <code>true</code> to
+Numbers</h3>
+<p>Since <code>true</code> coerces to <code>1</code>:</p>
+<ul>
+<li><code>_.lte(true, 2)</code> becomes <code>1 &lt;= 2</code>,
+returning <code>true</code>.</li>
+<li><code>_.lte(true, 1)</code> becomes <code>1 &lt;= 1</code>,
+returning <code>true</code>.</li>
+<li><code>_.lte(true, 0)</code> becomes <code>1 &lt;= 0</code>,
+returning <code>false</code>.</li>
+</ul>
+<h3 id="comparing-false-to-numbers">Comparing <code>false</code> to
+Numbers</h3>
+<p>Since <code>false</code> coerces to <code>0</code>:</p>
+<ul>
+<li><code>_.lte(false, 1)</code> becomes <code>0 &lt;= 1</code>,
+returning <code>true</code>.</li>
+<li><code>_.lte(false, 0)</code> becomes <code>0 &lt;= 0</code>,
+returning <code>true</code>.</li>
+<li><code>_.lte(false, -1)</code> becomes <code>0 &lt;= -1</code>,
+returning <code>false</code>.</li>
+</ul>
+<h3 id="reversing-argument-order">Reversing Argument Order</h3>
+<p>The position of the operands determines which value is compared
+against which, but the coercion rules remain identical:</p>
+<ul>
+<li><code>_.lte(0, true)</code> becomes <code>0 &lt;= 1</code>,
+returning <code>true</code>.</li>
+<li><code>_.lte(2, true)</code> becomes <code>2 &lt;= 1</code>,
+returning <code>false</code>.</li>
+<li><code>_.lte(0, false)</code> becomes <code>0 &lt;= 0</code>,
+returning <code>true</code>.</li>
+</ul>
+<h2 id="behavior-with-nan">Behavior with <code>NaN</code></h2>
+<p>If the number argument is <code>NaN</code>, coercion of
+<code>NaN</code> yields <code>NaN</code>. In JavaScript, any relational
+comparison involving <code>NaN</code> (such as <code>1 &lt;= NaN</code>
+or <code>NaN &lt;= 1</code>) returns <code>false</code>. Consequently,
+both <code>_.lte(true, NaN)</code> and <code>_.lte(false, NaN)</code>
+will return <code>false</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash clamp Lower Bound Greater Than Upper Bound - lodash</title>
+    <meta name="description" content="This article explains the behavior of the .clamp function in the Lodash JavaScript library when an inverted range is passed—specifically when the lower bound is greater than the upper bound. You will learn the underlying implementation details, why the fu">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-clamp-lower-bound-greater-than-upper-bound">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash clamp Lower Bound Greater Than Upper Bound - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-clamp-lower-bound-greater-than-upper-bound" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains the behavior of the .clamp function in the Lodash JavaScript library when an inverted range is passed—specifically when the lower bound is greater than the upper bound. You will learn the underlying implementation details, why the fu" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-clamp-lower-bound-greater-than-upper-bound">Lodash clamp
+Lower Bound Greater Than Upper Bound</h1>
+<p>This article explains the behavior of the <code>_.clamp</code>
+function in the Lodash JavaScript library when an inverted range is
+passed—specifically when the lower bound is greater than the upper
+bound. You will learn the underlying implementation details, why the
+function produces an unexpected result rather than throwing an error,
+and how to safely handle inverted boundaries in your applications.</p>
+<h2 id="the-default-syntax-of-lodash-_clamp">The Default Syntax of
+Lodash _.clamp</h2>
+<p>Lodash provides <code>_.clamp</code> to restrict a number within an
+inclusive lower and upper range:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">clamp</span>(number<span class="op">,</span> [lower]<span class="op">,</span> upper)</span></code></pre></div>
+<p>Under normal usage, passing <code>_.clamp(15, 0, 10)</code> returns
+<code>10</code>, and <code>_.clamp(-5, 0, 10)</code> returns
+<code>0</code>. However, Lodash does not validate whether
+<code>lower &lt;= upper</code>.</p>
+<h2 id="what-happens-when-lower--upper">What Happens When Lower &gt;
+Upper</h2>
+<p>When the <code>lower</code> argument is strictly greater than the
+<code>upper</code> argument, <strong><code>_.clamp</code> always returns
+the <code>lower</code> boundary</strong>, regardless of the input
+<code>number</code>.</p>
+<p>Consider the following examples:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// lower = 10, upper = 5 (lower &gt; upper)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">clamp</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">5</span>))<span class="op">;</span>  <span class="co">// Output: 10</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">clamp</span>(<span class="dv">7</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">5</span>))<span class="op">;</span>  <span class="co">// Output: 10</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">clamp</span>(<span class="dv">12</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">5</span>))<span class="op">;</span> <span class="co">// Output: 10</span></span></code></pre></div>
+<p>Even if the value being clamped is smaller than both bounds, between
+both bounds, or larger than both bounds, the result is unconditionally
+<code>10</code>.</p>
+<h2 id="why-this-happens-the-internal-implementation">Why This Happens:
+The Internal Implementation</h2>
+<p>The behavior is directly caused by the order of comparison operations
+in Lodash's source code. The core logic of <code>_.clamp</code> executes
+as follows:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">clamp</span>(number<span class="op">,</span> lower<span class="op">,</span> upper) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (upper <span class="op">===</span> <span class="kw">undefined</span>) {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    upper <span class="op">=</span> lower<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    lower <span class="op">=</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (upper <span class="op">!==</span> <span class="kw">undefined</span>) {</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    number <span class="op">=</span> number <span class="op">&lt;=</span> upper <span class="op">?</span> number <span class="op">:</span> upper<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (lower <span class="op">!==</span> <span class="kw">undefined</span>) {</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    number <span class="op">=</span> number <span class="op">&gt;=</span> lower <span class="op">?</span> number <span class="op">:</span> lower<span class="op">;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> number<span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When evaluated sequentially:</p>
+<ol type="1">
+<li><strong>Upper Bound Check</strong>: The function checks
+<code>number &lt;= upper</code>. If <code>number</code> exceeds
+<code>upper</code>, it is replaced with <code>upper</code>. At this
+stage, <code>number</code> is guaranteed to be less than or equal to
+<code>upper</code>.</li>
+<li><strong>Lower Bound Check</strong>: The function checks
+<code>number &gt;= lower</code>. Because <code>lower</code> is greater
+than <code>upper</code>, and <code>number</code> is already less than or
+equal to <code>upper</code>, <code>number</code> is mathematically
+guaranteed to be strictly less than <code>lower</code>.</li>
+<li><strong>The Final Assignment</strong>: The condition
+<code>number &gt;= lower</code> consistently evaluates to
+<code>false</code>, causing the ternary operator to return
+<code>lower</code>.</li>
+</ol>
+<p>Because no check exists to swap the arguments or throw an exception,
+the function silently fails to clamp correctly and resolves to the lower
+boundary every time.</p>
+<h2 id="how-to-prevent-errors-with-inverted-bounds">How to Prevent
+Errors With Inverted Bounds</h2>
+<p>If your input ranges are dynamic and might arrive out of order,
+normalize them before passing them to <code>_.clamp</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">safeClamp</span>(number<span class="op">,</span> boundA<span class="op">,</span> boundB) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> min <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(boundA<span class="op">,</span> boundB)<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> max <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">max</span>(boundA<span class="op">,</span> boundB)<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> _<span class="op">.</span><span class="fu">clamp</span>(number<span class="op">,</span> min<span class="op">,</span> max)<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">safeClamp</span>(<span class="dv">7</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">5</span>))<span class="op">;</span> <span class="co">// Output: 7</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">safeClamp</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">5</span>))<span class="op">;</span> <span class="co">// Output: 5</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">safeClamp</span>(<span class="dv">12</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">5</span>))<span class="op">;</span> <span class="co">// Output: 10</span></span></code></pre></div>
+<p>Using <code>Math.min</code> and <code>Math.max</code> guarantees that
+boundaries are placed in the correct order, avoiding silent logical bugs
+in your code.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

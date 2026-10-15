@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.set Chooses Between Arrays and Objects - lodash</title>
+    <meta name="description" content="Lodash&#39;s .set utility dynamically builds intermediate structures when traversing a path that does not yet exist. Rather than inspecting the current key, the method definitively infers whether to instantiate a nested Array or a nested plain Object by looki">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-set-chooses-between-arrays-and-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.set Chooses Between Arrays and Objects - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-set-chooses-between-arrays-and-objects" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .set utility dynamically builds intermediate structures when traversing a path that does not yet exist. Rather than inspecting the current key, the method definitively infers whether to instantiate a nested Array or a nested plain Object by looki" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_set-chooses-between-arrays-and-objects">How Lodash
+_.set Chooses Between Arrays and Objects</h1>
+<p>Lodash's <code>_.set</code> utility dynamically builds intermediate
+structures when traversing a path that does not yet exist. Rather than
+inspecting the current key, the method definitively infers whether to
+instantiate a nested Array or a nested plain Object by looking ahead to
+the <em>next</em> key in the path sequence. If that subsequent key
+qualifies as a valid array index, Lodash creates an empty Array;
+otherwise, it defaults to creating a plain Object.</p>
+<h2 id="the-lookahead-mechanism">The Lookahead Mechanism</h2>
+<p>When <code>_.set(object, path, value)</code> executes, it parses the
+path into an array of keys (for example, <code>'users[0].name'</code>
+becomes <code>['users', '0', 'name']</code>) and iterates through them
+via its internal <code>baseSet</code> function.</p>
+<p>As it traverses, if the property corresponding to the current key is
+<code>undefined</code> or <code>null</code>, Lodash must dynamically
+instantiate a container. To determine the container type:</p>
+<ol type="1">
+<li>It checks the <em>next</em> key immediately following the current
+segment in the path array.</li>
+<li>It evaluates that next key using an internal utility function named
+<code>isIndex</code>.</li>
+<li>If <code>isIndex(nextKey)</code> returns <code>true</code>, the
+current missing property is assigned an empty Array
+(<code>[]</code>).</li>
+<li>If <code>isIndex(nextKey)</code> returns <code>false</code>, the
+property is assigned an empty Object (<code>{}</code>).</li>
+</ol>
+<h2 id="how-lodash-defines-an-index">How Lodash Defines an Index</h2>
+<p>The internal <code>isIndex</code> helper strictly validates whether a
+given key represents a non-negative integer index. A key is considered
+an index if:</p>
+<ul>
+<li>It is a number or a string that matches the regular expression
+<code>^(?:0|[1-9]\d*)$</code>.</li>
+<li>It is greater than or equal to <code>0</code>.</li>
+<li>It is less than or equal to <code>Number.MAX_SAFE_INTEGER</code>
+(<code>9007199254740991</code>).</li>
+<li>It is not a floating-point number, a negative number, or a
+non-numeric string.</li>
+</ul>
+<p>Because <code>isIndex</code> accepts numeric strings, string
+representations of non-negative integers (such as <code>'0'</code> or
+<code>'12'</code>) trigger array creation identically to integer
+literals.</p>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="lookahead-to-an-index">Lookahead to an Index</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> obj <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">set</span>(obj<span class="op">,</span> <span class="st">&#39;data.items[0]&#39;</span><span class="op">,</span> <span class="st">&#39;value&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<ul>
+<li><strong>Step 1:</strong> Evaluates <code>'data'</code>. It is
+undefined. The next key is <code>'items'</code>, which is not an index.
+<code>obj.data</code> becomes <code>{}</code>.</li>
+<li><strong>Step 2:</strong> Evaluates <code>'items'</code>. It is
+undefined. The next key is <code>'0'</code>, which satisfies
+<code>isIndex</code>. <code>obj.data.items</code> becomes
+<code>[]</code>.</li>
+<li><strong>Step 3:</strong> Sets index <code>0</code> of
+<code>obj.data.items</code> to <code>'value'</code>.</li>
+</ul>
+<p>Result: <code>{ data: { items: ['value'] } }</code></p>
+<h3 id="lookahead-to-a-non-index">Lookahead to a Non-Index</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> obj <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">set</span>(obj<span class="op">,</span> <span class="st">&#39;items[0].name&#39;</span><span class="op">,</span> <span class="st">&#39;Alice&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<ul>
+<li><strong>Step 1:</strong> Evaluates <code>'items'</code>. Next key is
+<code>'0'</code>. <code>obj.items</code> becomes <code>[]</code>.</li>
+<li><strong>Step 2:</strong> Evaluates index <code>'0'</code>. It is
+undefined. The next key is <code>'name'</code>, which fails
+<code>isIndex</code>. <code>obj.items[0]</code> becomes
+<code>{}</code>.</li>
+<li><strong>Step 3:</strong> Sets <code>obj.items[0].name</code> to
+<code>'Alice'</code>.</li>
+</ul>
+<p>Result: <code>{ items: [{ name: 'Alice' }] }</code></p>
+<h3 id="edge-cases-negative-numbers-and-non-integers">Edge Cases:
+Negative Numbers and Non-Integers</h3>
+<p>If a key contains negative numbers or floating-point representations,
+<code>isIndex</code> returns <code>false</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> obj <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">set</span>(obj<span class="op">,</span> <span class="st">&#39;values[-1].id&#39;</span><span class="op">,</span> <span class="dv">123</span>)<span class="op">;</span></span></code></pre></div>
+<p>Because <code>'-1'</code> is not a non-negative integer, the
+lookahead fails the index test, causing <code>obj.values</code> to be
+initialized as an Object (<code>{ '-1': { id: 123 } }</code>) rather
+than an Array.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

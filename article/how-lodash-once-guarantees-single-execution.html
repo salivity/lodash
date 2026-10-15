@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.once Guarantees Single Execution - lodash</title>
+    <meta name="description" content="The Lodash .once method guarantees that a specified function is invoked only once by wrapping it within a closure that tracks execution state and caches the output. This article explains the internal mechanics behind this behavior, detailing how .once uti">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-once-guarantees-single-execution">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.once Guarantees Single Execution - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-once-guarantees-single-execution" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .once method guarantees that a specified function is invoked only once by wrapping it within a closure that tracks execution state and caches the output. This article explains the internal mechanics behind this behavior, detailing how .once uti" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_once-guarantees-single-execution">How Lodash _.once
+Guarantees Single Execution</h1>
+<p>The Lodash <code>_.once</code> method guarantees that a specified
+function is invoked only once by wrapping it within a closure that
+tracks execution state and caches the output. This article explains the
+internal mechanics behind this behavior, detailing how
+<code>_.once</code> utilizes higher-order functions, manages internal
+invocation counters, and recycles references to prevent redundant
+executions and optimize memory usage.</p>
+<h3 id="the-underlying-delegation-to-_before">The Underlying Delegation
+to <code>_.before</code></h3>
+<p>In the Lodash source code, <code>_.once(func)</code> does not
+implement standalone logic from scratch. Instead, it is a direct alias
+for <code>_.before(2, func)</code>. The <code>_.before</code> method
+creates a wrapper function that allows the target function to be invoked
+up to <span class="math inline">\(n - 1\)</span> times. By passing
+<code>2</code> as the threshold argument, Lodash restricts execution
+strictly to a single time (<span class="math inline">\(2 - 1 =
+1\)</span>).</p>
+<h3 id="state-management-via-closures">State Management via
+Closures</h3>
+<p>When <code>_.once</code> is called, it creates a closure containing
+three critical private variables:</p>
+<ol type="1">
+<li><strong><code>func</code></strong>: A reference to the original
+function passed into <code>_.once</code>.</li>
+<li><strong><code>n</code></strong>: A counter initialized to the
+threshold (in this case, <code>2</code>).</li>
+<li><strong><code>result</code></strong>: A variable reserved to store
+the return value of the initial execution.</li>
+</ol>
+<p>Because these variables live in the lexical environment of the
+wrapper, they persist across multiple calls to the generated function
+without leaking into the global scope.</p>
+<h3 id="the-execution-and-mutation-phase">The Execution and Mutation
+Phase</h3>
+<p>When the wrapped function is called for the first time:</p>
+<ol type="1">
+<li><strong>Threshold Check and Decrement</strong>: Lodash checks if
+<code>n</code> is greater than <code>0</code>. Because <code>n</code>
+begins at <code>2</code>, the check succeeds, and <code>n</code> is
+decremented to <code>1</code>.</li>
+<li><strong>Invocation</strong>: Because <code>n &lt;= 1</code> now
+evaluates to true, the wrapper invokes the original <code>func</code>
+using <code>func.apply(this, arguments)</code>, capturing the provided
+<code>this</code> binding and arguments.</li>
+<li><strong>Result Caching</strong>: The returned value from the
+invocation is assigned to the closure's <code>result</code>
+variable.</li>
+<li><strong>Reference Cleanup</strong>: To allow garbage collection and
+prevent subsequent executions, the internal <code>func</code> variable
+is explicitly set to <code>undefined</code> once
+<code>n &lt;= 1</code>.</li>
+</ol>
+<h3 id="handling-subsequent-invocations">Handling Subsequent
+Invocations</h3>
+<p>On the second and any subsequent calls:</p>
+<ol type="1">
+<li>The wrapper again checks the counter condition. Since <code>n</code>
+was decremented to <code>1</code> during the first run, the invocation
+condition fails.</li>
+<li>The original function is never called again. If an attempt were
+somehow made, <code>func</code> is now <code>undefined</code>.</li>
+<li>The wrapper immediately skips execution and returns the stored
+<code>result</code>.</li>
+</ol>
+<h3 id="simplified-implementation-example">Simplified Implementation
+Example</h3>
+<p>The core logic of Lodash's approach can be represented in pure
+JavaScript as follows:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">once</span>(func) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> result<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> called <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">function</span>(<span class="op">...</span>args) {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>called) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      called <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      result <span class="op">=</span> func<span class="op">.</span><span class="fu">apply</span>(<span class="kw">this</span><span class="op">,</span> args)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>      func <span class="op">=</span> <span class="kw">null</span><span class="op">;</span> <span class="co">// Free reference for garbage collection</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Through this combination of closures, explicit invocation bounds, and
+reference clearing, Lodash ensures deterministic single execution while
+consistently returning the initial result on all subsequent calls.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

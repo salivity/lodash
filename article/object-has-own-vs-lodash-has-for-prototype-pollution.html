@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object.hasOwn vs Lodash has for Prototype Pollution - lodash</title>
+    <meta name="description" content="This article examines the core differences between ES2022&#39;s native Object.hasOwn() method and Lodash’s .has() function in the context of prototype pollution defense. It covers how each handles inherited properties, property path traversal, null-prototype">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/object-has-own-vs-lodash-has-for-prototype-pollution">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Object.hasOwn vs Lodash has for Prototype Pollution - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/object-has-own-vs-lodash-has-for-prototype-pollution" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines the core differences between ES2022&#39;s native Object.hasOwn() method and Lodash’s .has() function in the context of prototype pollution defense. It covers how each handles inherited properties, property path traversal, null-prototype" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="objecthasown-vs-lodash-has-for-prototype-pollution">Object.hasOwn vs
+Lodash has for Prototype Pollution</h1>
+<p>This article examines the core differences between ES2022's native
+<code>Object.hasOwn()</code> method and Lodash’s <code>_.has()</code>
+function in the context of prototype pollution defense. It covers how
+each handles inherited properties, property path traversal,
+null-prototype objects, and the security implications of using native
+shallow property checks compared to library-based deep path
+evaluation.</p>
+<h3 id="shallow-key-checking-vs-path-resolution">Shallow Key Checking
+vs. Path Resolution</h3>
+<p>The most fundamental architectural difference between
+<code>Object.hasOwn()</code> and <code>_.has()</code> lies in how keys
+are parsed and traversed:</p>
+<ul>
+<li><strong><code>Object.hasOwn(obj, prop)</code></strong> performs a
+strictly flat, single-level lookup. It takes the property argument
+directly as a string or symbol without parsing delimiters. A property
+named <code>"a.b"</code> or <code>"__proto__"</code> is treated purely
+as a literal key on the target object. It never traverses nested
+structures or navigates the prototype chain.</li>
+<li><strong><code>_.has(object, path)</code></strong> supports path
+navigation via strings (e.g., <code>'user.role'</code>) or arrays (e.g.,
+<code>['user', 'role']</code>). Because Lodash must traverse
+intermediate objects to check deep keys, it introduces internal
+path-resolution logic. While modern versions of Lodash actively defend
+against accessing <code>'__proto__'</code>, <code>'constructor'</code>,
+and <code>'prototype'</code> during path traversal, path-resolving logic
+inherently exposes a larger attack surface than a non-traversing native
+check.</li>
+</ul>
+<h3 id="defense-against-polluted-inherited-properties">Defense Against
+Polluted Inherited Properties</h3>
+<p>Both methods are designed to verify whether an object holds an "own"
+property rather than an inherited one. This distinction is critical when
+defending against prototype pollution:</p>
+<ul>
+<li>If an attacker pollutes <code>Object.prototype</code> with a
+property such as <code>isAdmin = true</code>, reading
+<code>user.isAdmin</code> directly will evaluate to <code>true</code> on
+an unprivileged object.</li>
+<li>Both <code>Object.hasOwn(user, 'isAdmin')</code> and
+<code>_.has(user, 'isAdmin')</code> will return <code>false</code>
+because the property resides on the prototype chain, not directly on the
+<code>user</code> instance.</li>
+</ul>
+<p>Using either method prevents code from mistakenly treating an
+injected prototype property as a valid, intentional property of the
+instance.</p>
+<h3 id="handling-null-prototype-objects-and-overrides">Handling
+Null-Prototype Objects and Overrides</h3>
+<p>Before ES2022, the common idiom
+<code>obj.hasOwnProperty('prop')</code> suffered from two notable
+vulnerabilities:</p>
+<ol type="1">
+<li>Objects created via <code>Object.create(null)</code> do not inherit
+from <code>Object.prototype</code>, causing
+<code>obj.hasOwnProperty</code> to throw a <code>TypeError</code>.</li>
+<li>Malicious inputs or polluted prototypes could override the
+<code>hasOwnProperty</code> method itself with an arbitrary function or
+property.</li>
+</ol>
+<p>Both <code>Object.hasOwn()</code> and <code>_.has()</code> mitigate
+these failure modes:</p>
+<ul>
+<li><code>Object.hasOwn()</code> is a static method on the
+<code>Object</code> constructor. It executes safely on objects created
+without prototypes and cannot be hijacked by modifying the target
+object's own properties.</li>
+<li><code>_.has()</code> abstracts this check by internally calling
+<code>Object.prototype.hasOwnProperty.call(object, key)</code> (or
+equivalent safe lookups), ensuring compatibility across null-prototype
+objects and preventing execution of overridden methods on the
+instance.</li>
+</ul>
+<h3 id="security-guarantees-in-input-sanitization">Security Guarantees
+in Input Sanitization</h3>
+<p>When building defenses to sanitize input keys against prototype
+pollution attacks:</p>
+<ul>
+<li><strong><code>Object.hasOwn()</code></strong> is ideal for
+validating keys during object merging or cloning operations. Because it
+operates natively at the runtime level, it introduces no
+JavaScript-layer parsing overhead or recursion bugs. It guarantees that
+properties like <code>__proto__</code> are evaluated as literal own keys
+on the target rather than triggering prototype resolution.</li>
+<li><strong><code>_.has()</code></strong> is designed for querying
+nested data structures. If you need to confirm that a nested path exists
+without triggering inherited prototype values, <code>_.has()</code>
+provides deep traversal safety. However, rely on modern, fully patched
+versions of Lodash, as legacy versions contained path-traversal flaws
+that allowed prototype pollution bypasses.</li>
+</ul>
+<p>For validating property ownership at a single layer, native
+<code>Object.hasOwn()</code> provides a deterministic, zero-dependency,
+and tamper-resistant security boundary.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

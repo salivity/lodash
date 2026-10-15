@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.range with Negative Step Sequences - lodash</title>
+    <meta name="description" content="This article examines how the Lodash utility library computes mathematical sequences when supplied with negative step parameters in .range. It defines the exact mathematical sequence produced—a finite decreasing arithmetic progression—details the underlyi">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-range-with-negative-step-sequences">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.range with Negative Step Sequences - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-range-with-negative-step-sequences" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the Lodash utility library computes mathematical sequences when supplied with negative step parameters in .range. It defines the exact mathematical sequence produced—a finite decreasing arithmetic progression—details the underlyi" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_range-with-negative-step-sequences">Lodash _.range with
+Negative Step Sequences</h1>
+<p>This article examines how the Lodash utility library computes
+mathematical sequences when supplied with negative step parameters in
+<code>_.range</code>. It defines the exact mathematical sequence
+produced—a finite decreasing arithmetic progression—details the
+underlying formula, illustrates typical implementations, and outlines
+the precise boundary constraints governing these outputs.</p>
+<h2 id="the-mathematical-sequence-decreasing-arithmetic-progression">The
+Mathematical Sequence: Decreasing Arithmetic Progression</h2>
+<p>The exact mathematical sequence uniquely evaluated by
+<code>_.range(start, end, step)</code> with a negative step is a
+<strong>finite, strictly decreasing arithmetic progression</strong> (or
+arithmetic sequence) defined over a half-open interval.</p>
+<p>In classical mathematics, an arithmetic sequence is governed by the
+recurrence relation:</p>
+<p><span class="math display">\[a_n = a_{n-1} + d\]</span></p>
+<p>Or in explicit form:</p>
+<p><span class="math display">\[a_k = a_0 + k \cdot d\]</span></p>
+<p>Where:</p>
+<ul>
+<li><span class="math inline">\(a_0 = \text{start}\)</span> (the initial
+term)</li>
+<li><span class="math inline">\(d = \text{step}\)</span> (the common
+difference, where <span class="math inline">\(d &lt; 0\)</span>)</li>
+<li><span class="math inline">\(k \in \mathbb{N}_0\)</span> (<span
+class="math inline">\(k = 0, 1, 2, \dots\)</span>) represents the step
+index.</li>
+</ul>
+<h2 id="lodash-boundary-evaluation">Lodash Boundary Evaluation</h2>
+<p>Lodash produces values strictly on the half-open interval <span
+class="math inline">\((\text{end}, \text{start}]\)</span> when the step
+is negative. The sequence terminates before reaching or surpassing the
+<code>end</code> value. Formally, the generated set <span
+class="math inline">\(S\)</span> is:</p>
+<p><span class="math display">\[S = \{ \text{start} + k \cdot
+\text{step} \mid k \in \mathbb{N}_0 \text{ and } \text{start} + k \cdot
+\text{step} &gt; \text{end} \}\]</span></p>
+<p>The total number of terms <span class="math inline">\(N\)</span>
+generated in the array is:</p>
+<p><span class="math display">\[N = \max\left(0, \left\lceil
+\frac{\text{end} - \text{start}}{\text{step}}
+\right\rceil\right)\]</span></p>
+<p>Because both <span class="math inline">\((\text{end} -
+\text{start})\)</span> and <span
+class="math inline">\(\text{step}\)</span> are negative when <span
+class="math inline">\(\text{start} &gt; \text{end}\)</span> and <span
+class="math inline">\(\text{step} &lt; 0\)</span>, the quotient is
+positive, resulting in a strictly positive integer term count.</p>
+<h2 id="code-examples-and-execution">Code Examples and Execution</h2>
+<h3 id="standard-decrement-sequence">Standard Decrement Sequence</h3>
+<p>When stepping down toward a negative or lower boundary:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Generates: [0, -1, -2, -3]</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> seq1 <span class="op">=</span> _<span class="op">.</span><span class="fu">range</span>(<span class="dv">0</span><span class="op">,</span> <span class="op">-</span><span class="dv">4</span><span class="op">,</span> <span class="op">-</span><span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Generates: [20, 15, 10, 5]</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> seq2 <span class="op">=</span> _<span class="op">.</span><span class="fu">range</span>(<span class="dv">20</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="op">-</span><span class="dv">5</span>)<span class="op">;</span></span></code></pre></div>
+<p>In <code>seq2</code>, the parameters correspond to:</p>
+<ul>
+<li><span class="math inline">\(\text{start} = 20\)</span></li>
+<li><span class="math inline">\(\text{end} = 0\)</span></li>
+<li><span class="math inline">\(\text{step} = -5\)</span></li>
+<li>Elements: <span class="math inline">\(a_0 = 20\)</span>, <span
+class="math inline">\(a_1 = 15\)</span>, <span class="math inline">\(a_2
+= 10\)</span>, <span class="math inline">\(a_3 = 5\)</span>.</li>
+<li>The next term would be <span class="math inline">\(0\)</span>, which
+is excluded because the boundary condition requires <span
+class="math inline">\(a_k &gt; \text{end}\)</span>.</li>
+</ul>
+<h3 id="empty-progression-scenarios">Empty Progression Scenarios</h3>
+<p>If the direction of the step conflicts with the direction of the
+interval, Lodash returns an empty array <code>[]</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// start &lt; end with a negative step yields an empty array</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> emptySeq <span class="op">=</span> _<span class="op">.</span><span class="fu">range</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="op">-</span><span class="dv">1</span>)<span class="op">;</span> <span class="co">// []</span></span></code></pre></div>
+<p>Here, <span class="math inline">\(\text{start} + (0 \cdot -1) =
+0\)</span>, which is not greater than the specified <code>end</code> of
+<span class="math inline">\(5\)</span> given the decrement vector,
+satisfying <span class="math inline">\(N = 0\)</span>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

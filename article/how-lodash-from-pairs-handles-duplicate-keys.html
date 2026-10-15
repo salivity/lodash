@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash fromPairs Handles Duplicate Keys - lodash</title>
+    <meta name="description" content="The .fromPairs function in the Lodash JavaScript library constructs an object from an array of key-value pairs. When duplicate keys exist in the input array, the function uses a &quot;last write wins&quot; strategy, meaning any subsequent value assigned to a repeat">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-from-pairs-handles-duplicate-keys">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash fromPairs Handles Duplicate Keys - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-from-pairs-handles-duplicate-keys" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .fromPairs function in the Lodash JavaScript library constructs an object from an array of key-value pairs. When duplicate keys exist in the input array, the function uses a &quot;last write wins&quot; strategy, meaning any subsequent value assigned to a repeat" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-frompairs-handles-duplicate-keys">How Lodash
+fromPairs Handles Duplicate Keys</h1>
+<p>The <code>_.fromPairs</code> function in the Lodash JavaScript
+library constructs an object from an array of key-value pairs. When
+duplicate keys exist in the input array, the function uses a "last write
+wins" strategy, meaning any subsequent value assigned to a repeated key
+will overwrite its previous value. This article explains the internal
+mechanics of this behavior, provides clear code examples, and offers
+alternatives for situations where data from duplicate keys must be
+preserved.</p>
+<h2 id="the-last-write-wins-mechanism">The "Last Write Wins"
+Mechanism</h2>
+<p>The <code>_.fromPairs</code> method processes the input array
+sequentially from the first element to the last. Internally, it iterates
+through each pair and assigns the value to the object using standard
+JavaScript property assignment:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>result[pair[<span class="dv">0</span>]] <span class="op">=</span> pair[<span class="dv">1</span>]<span class="op">;</span></span></code></pre></div>
+<p>Because property assignments on plain JavaScript objects overwrite
+existing values for identical keys, any subsequent pair with an existing
+key replaces whatever value was previously stored.</p>
+<h3 id="code-example">Code Example</h3>
+<p>Consider an array containing duplicate entries for the key
+<code>'user'</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> pairs <span class="op">=</span> [</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;id&#39;</span><span class="op">,</span> <span class="dv">1</span>]<span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;user&#39;</span><span class="op">,</span> <span class="st">&#39;Alice&#39;</span>]<span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;role&#39;</span><span class="op">,</span> <span class="st">&#39;Admin&#39;</span>]<span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;user&#39;</span><span class="op">,</span> <span class="st">&#39;Bob&#39;</span>] <span class="co">// Duplicate key</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">fromPairs</span>(pairs)<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result)<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Output:</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">// { id: 1, user: &#39;Bob&#39;, role: &#39;Admin&#39; }</span></span></code></pre></div>
+<p>In this example, the initial assignment sets
+<code>result.user = 'Alice'</code>. When the iterator reaches the final
+pair, it sets <code>result.user = 'Bob'</code>. The final object retains
+<code>'Bob'</code>, completely discarding <code>'Alice'</code>.</p>
+<h2 id="key-conversion-behavior">Key Conversion Behavior</h2>
+<p>JavaScript object keys are always strings or symbols. If duplicate
+keys are supplied in formats that evaluate to the same string
+representation, <code>_.fromPairs</code> treats them as the exact same
+key:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> pairs <span class="op">=</span> [</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  [<span class="dv">1</span><span class="op">,</span> <span class="st">&#39;numeric one&#39;</span>]<span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;1&#39;</span><span class="op">,</span> <span class="st">&#39;string one&#39;</span>]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">fromPairs</span>(pairs))<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: { &#39;1&#39;: &#39;string one&#39; }</span></span></code></pre></div>
+<p>Even though the first key is a number and the second is a string,
+JavaScript normalizes numeric keys to strings during assignment, leading
+to an overwrite.</p>
+<h2 id="preserving-duplicate-values">Preserving Duplicate Values</h2>
+<p>If your dataset contains duplicate keys and you need to keep all
+associated values rather than discarding earlier entries,
+<code>_.fromPairs</code> is not the appropriate tool.</p>
+<h3 id="grouping-values-with-arrayprototypereduce">Grouping Values with
+Array.prototype.reduce</h3>
+<p>You can use a custom reducer to aggregate all duplicate values into
+an array:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> pairs <span class="op">=</span> [</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;tag&#39;</span><span class="op">,</span> <span class="st">&#39;javascript&#39;</span>]<span class="op">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;tag&#39;</span><span class="op">,</span> <span class="st">&#39;lodash&#39;</span>]<span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;tag&#39;</span><span class="op">,</span> <span class="st">&#39;web&#39;</span>]</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> grouped <span class="op">=</span> pairs<span class="op">.</span><span class="fu">reduce</span>((acc<span class="op">,</span> [key<span class="op">,</span> value]) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>acc[key]) {</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    acc[key] <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  acc[key]<span class="op">.</span><span class="fu">push</span>(value)<span class="op">;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> acc<span class="op">;</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> {})<span class="op">;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(grouped)<span class="op">;</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: { tag: [&#39;javascript&#39;, &#39;lodash&#39;, &#39;web&#39;] }</span></span></code></pre></div>
+<h3 id="using-lodash-alternatives">Using Lodash Alternatives</h3>
+<p>You can also combine other Lodash functions, such as
+<code>_.groupBy</code> and <code>_.mapValues</code>, to group and
+extract values cleanly:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> pairs <span class="op">=</span> [</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;category&#39;</span><span class="op">,</span> <span class="st">&#39;books&#39;</span>]<span class="op">,</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;category&#39;</span><span class="op">,</span> <span class="st">&#39;movies&#39;</span>]<span class="op">,</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;author&#39;</span><span class="op">,</span> <span class="st">&#39;John Doe&#39;</span>]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> grouped <span class="op">=</span> _<span class="op">.</span><span class="fu">mapValues</span>(</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  _<span class="op">.</span><span class="fu">groupBy</span>(pairs<span class="op">,</span> pair <span class="kw">=&gt;</span> pair[<span class="dv">0</span>])<span class="op">,</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  values <span class="kw">=&gt;</span> values<span class="op">.</span><span class="fu">map</span>(pair <span class="kw">=&gt;</span> pair[<span class="dv">1</span>])</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(grouped)<span class="op">;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: { category: [&#39;books&#39;, &#39;movies&#39;], author: [&#39;John Doe&#39;] }</span></span></code></pre></div>
+<h2 id="summary">Summary</h2>
+<p><code>_.fromPairs</code> is designed for simple, 1-to-1 key-value
+mapping. When duplicate keys are passed, it sequentially assigns each
+property, ensuring that the last occurrence of any key in the array
+defines its final value in the resulting object.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

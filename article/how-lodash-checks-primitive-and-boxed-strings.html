@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash Checks Primitive and Boxed Strings - lodash</title>
+    <meta name="description" content="In JavaScript, strings can exist either as primitive values or as boxed String wrapper objects created via the new String() constructor. While standard JavaScript treats them differently under strict equality and type checks, the Lodash library provides u">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-checks-primitive-and-boxed-strings">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash Checks Primitive and Boxed Strings - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-checks-primitive-and-boxed-strings" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In JavaScript, strings can exist either as primitive values or as boxed String wrapper objects created via the new String() constructor. While standard JavaScript treats them differently under strict equality and type checks, the Lodash library provides u" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-checks-primitive-and-boxed-strings">How Lodash Checks
+Primitive and Boxed Strings</h1>
+<p>In JavaScript, strings can exist either as primitive values or as
+boxed <code>String</code> wrapper objects created via the
+<code>new String()</code> constructor. While standard JavaScript treats
+them differently under strict equality and type checks, the Lodash
+library provides unified type verification through its
+<code>_.isString</code> utility. To handle both representations
+accurately without mistaking general objects for strings, Lodash splits
+its verification process into a fast <code>typeof</code> evaluation for
+primitives and an internal object-tag evaluation for boxed objects.</p>
+<h3 id="the-problem-with-primitive-vs-boxed-strings">The Problem with
+Primitive vs. Boxed Strings</h3>
+<p>In native JavaScript, primitive strings and boxed string objects
+exhibit distinct behaviors when examined using native operators:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> primitiveStr <span class="op">=</span> <span class="st">&#39;hello&#39;</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> objectStr <span class="op">=</span> <span class="kw">new</span> <span class="bu">String</span>(<span class="st">&#39;hello&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">typeof</span> primitiveStr<span class="op">;</span> <span class="co">// &#39;string&#39;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">typeof</span> objectStr<span class="op">;</span>    <span class="co">// &#39;object&#39;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>primitiveStr <span class="op">===</span> objectStr<span class="op">;</span> <span class="co">// false</span></span></code></pre></div>
+<p>Because <code>typeof objectStr</code> yields <code>'object'</code>, a
+standard <code>typeof</code> check fails to recognize a boxed string as
+string data. Conversely, checking only whether an entity has string
+methods or properties can lead to false positives on custom objects.</p>
+<h3 id="how-lodash-implements-isstring">How Lodash Implements
+<code>isString</code></h3>
+<p>Lodash bridges this divide in its internal <code>isString</code>
+implementation. The source code evaluates the argument using a
+conditional branching strategy:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isString</span>(value) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> type <span class="op">=</span> <span class="kw">typeof</span> value<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> type <span class="op">===</span> <span class="st">&#39;string&#39;</span> <span class="op">||</span> (</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    type <span class="op">===</span> <span class="st">&#39;object&#39;</span> <span class="op">&amp;&amp;</span> </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    value <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">!</span><span class="bu">Array</span><span class="op">.</span><span class="fu">isArray</span>(value) <span class="op">&amp;&amp;</span> </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">getTag</span>(value) <span class="op">===</span> <span class="st">&#39;[object String]&#39;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The differentiation occurs across two distinct steps:</p>
+<ol type="1">
+<li><p><strong>Primitive Detection via
+<code>typeof</code>:</strong><br />
+Lodash first evaluates <code>typeof value === 'string'</code>. If the
+value is a string literal or a primitive produced by
+<code>String(...)</code> without <code>new</code>, the condition
+evaluates to <code>true</code> immediately. This avoids unnecessary
+function calls for the most common use cases.</p></li>
+<li><p><strong>Boxed Detection via Internal Tags:</strong><br />
+If the <code>typeof</code> check returns <code>'object'</code>, Lodash
+proceeds to verify whether the object is a boxed primitive. It confirms
+the value is non-null and not an array, then calls its internal
+<code>getTag()</code> helper.</p></li>
+</ol>
+<h3 id="the-role-of-gettag-and-objectprototypetostring">The Role of
+<code>getTag</code> and <code>Object.prototype.toString</code></h3>
+<p>Lodash's <code>getTag</code> relies on
+<code>Object.prototype.toString.call(value)</code>. When JavaScript
+executes <code>Object.prototype.toString</code> on a boxed string
+object, it reads the internal <code>[[Class]]</code> slot (or
+<code>Symbol.toStringTag</code> in modern ECMAScript environments),
+returning the string:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">toString</span><span class="op">.</span><span class="fu">call</span>(<span class="kw">new</span> <span class="bu">String</span>(<span class="st">&#39;hello&#39;</span>))<span class="op">;</span> <span class="co">// &#39;[object String]&#39;</span></span></code></pre></div>
+<p>Standard objects, functions, and other boxed types return different
+signatures, such as <code>'[object Object]'</code> or
+<code>'[object Number]'</code>. By checking for
+<code>[object String]</code>, Lodash safely verifies that the object is
+genuinely an instance of the <code>String</code> wrapper, even if it
+originated from a different execution context or iframe where
+<code>instanceof String</code> checks might fail.</p>
+<h3 id="separating-boxed-strings-from-primitives">Separating Boxed
+Strings from Primitives</h3>
+<p>Although <code>_.isString</code> returns <code>true</code> for both
+types, you can separate them by combining Lodash functions or pairing
+Lodash with native checks:</p>
+<ul>
+<li><strong>Identify Primitives Only:</strong> Use native
+<code>typeof value === 'string'</code>.</li>
+<li><strong>Identify Boxed Strings Only:</strong> Check that the value
+is recognized as a string by Lodash while also qualifying as an object
+via
+<code>_.isObjectLike(value) &amp;&amp; _.isString(value)</code>.</li>
+</ul>
+<p>Boxed strings will also return <code>false</code> when checked with
+<code>_.isPlainObject(value)</code>, ensuring that Lodash does not
+misidentify string objects as generic key-value dictionaries.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

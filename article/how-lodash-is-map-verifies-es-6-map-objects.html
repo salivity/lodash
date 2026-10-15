@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash isMap Verifies ES6 Map Objects - lodash</title>
+    <meta name="description" content="This article explains how the Lodash JavaScript library implements its .isMap method to accurately detect ES6 Map instances. It covers why conventional validation techniques such as instanceof fall short in modern JavaScript environments, how Lodash emplo">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-map-verifies-es-6-map-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash isMap Verifies ES6 Map Objects - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-map-verifies-es-6-map-objects" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the Lodash JavaScript library implements its .isMap method to accurately detect ES6 Map instances. It covers why conventional validation techniques such as instanceof fall short in modern JavaScript environments, how Lodash emplo" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-ismap-verifies-es6-map-objects">How Lodash isMap
+Verifies ES6 Map Objects</h1>
+<p>This article explains how the Lodash JavaScript library implements
+its <code>_.isMap</code> method to accurately detect ES6
+<code>Map</code> instances. It covers why conventional validation
+techniques such as <code>instanceof</code> fall short in modern
+JavaScript environments, how Lodash employs internal object tags
+(<code>[object Map]</code>), and how it leverages Node.js runtime
+bindings for optimized type checking across diverse execution
+contexts.</p>
+<h2 id="the-limitations-of-instanceof-map">The Limitations of
+<code>instanceof Map</code></h2>
+<p>A common approach to checking if an object is a <code>Map</code> in
+standard JavaScript is using the <code>instanceof</code> operator:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>value <span class="kw">instanceof</span> <span class="bu">Map</span></span></code></pre></div>
+<p>While functional within a single execution realm,
+<code>instanceof</code> fails when objects cross execution contexts,
+such as across different <code>&lt;iframe&gt;</code> elements or Node.js
+<code>vm</code> contexts. In those cases, the prototype chain of the
+object points to the <code>Map.prototype</code> of its originating
+realm, not the current realm, causing <code>instanceof</code> to return
+<code>false</code>.</p>
+<h2 id="the-lodash-verification-strategy">The Lodash Verification
+Strategy</h2>
+<p>Lodash's <code>_.isMap</code> avoids cross-realm prototype mismatches
+by combining runtime-level utility checks with fallback structural and
+internal slot identification.</p>
+<p>Internally, <code>_.isMap</code> generally delegates to a base
+implementation constructed through several layers:</p>
+<h3 id="1-the-isobjectlike-guard">1. The <code>isObjectLike</code>
+Guard</h3>
+<p>Before inspecting complex prototypes or internal slots, Lodash
+applies a lightweight initial check using <code>isObjectLike</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isObjectLike</span>(value) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> value <span class="op">==</span> <span class="st">&#39;object&#39;</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This immediately excludes primitives (<code>string</code>,
+<code>number</code>, <code>boolean</code>, <code>symbol</code>,
+<code>undefined</code>) as well as functions and <code>null</code>.</p>
+<h3 id="2-native-nodejs-utiltypesismap">2. Native Node.js
+<code>util.types.isMap</code></h3>
+<p>In environments where Node.js internal utilities are accessible,
+Lodash optimizes performance and accuracy by delegating to Node's
+internal type-checking module:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> nodeIsMap <span class="op">=</span> nodeUtil <span class="op">&amp;&amp;</span> nodeUtil<span class="op">.</span><span class="at">isMap</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> isMap <span class="op">=</span> nodeIsMap <span class="op">?</span> <span class="fu">baseUnary</span>(nodeIsMap) <span class="op">:</span> baseIsMap<span class="op">;</span></span></code></pre></div>
+<p>Node.js provides C++ bindings through <code>util.types.isMap</code>,
+which inspects the underlying V8 internal representation directly,
+offering virtually zero false positives and high execution speed.</p>
+<h3 id="3-the-gettag-fallback-via-objectprototypetostring">3. The
+<code>getTag</code> Fallback via
+<code>Object.prototype.toString</code></h3>
+<p>When running in browsers or environments lacking Node's native
+helpers, Lodash falls back to <code>baseIsMap</code>, which verifies the
+internal <code>[[Class]]</code> or <code>Symbol.toStringTag</code> of
+the object via an internal <code>getTag</code> function:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> mapTag <span class="op">=</span> <span class="st">&#39;[object Map]&#39;</span><span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseIsMap</span>(value) {</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">isObjectLike</span>(value) <span class="op">&amp;&amp;</span> <span class="fu">getTag</span>(value) <span class="op">==</span> mapTag<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Historically, <code>Object.prototype.toString.call(value)</code>
+returns <code>"[object Map]"</code> for ES6 <code>Map</code>
+instances.</p>
+<p>To account for ES6 features such as
+<code>Symbol.toStringTag</code>—which allows developers to alter the
+string tag of custom objects—Lodash's internal <code>getTag</code>
+function handles instances where native tags might be shadowed or
+polyfilled. It temporarily masks <code>Symbol.toStringTag</code> if
+necessary or checks against known core types to confirm whether the
+object is a genuine built-in <code>Map</code> instance rather than a
+plain object impersonating one.</p>
+<h2 id="summary">Summary</h2>
+<p><code>_.isMap</code> verifies ES6 <code>Map</code> objects by:</p>
+<ol type="1">
+<li>Confirming the target is a non-null object using
+<code>isObjectLike</code>.</li>
+<li>Using Node.js's native <code>util.types.isMap</code> method when
+available.</li>
+<li>Falling back to internal tag resolution
+(<code>getTag(value) === '[object Map]'</code>), ensuring robust
+cross-realm detection where <code>instanceof</code> fails.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

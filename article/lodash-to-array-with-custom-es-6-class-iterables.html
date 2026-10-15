@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash toArray with Custom ES6 Class Iterables - lodash</title>
+    <meta name="description" content="This article examines how the Lodash utility function .toArray detects and consumes the ECMAScript 2015 (ES6) iterable protocol on instances of custom classes. It breaks down the internal sequence Lodash uses to inspect the Symbol.iterator method, consume">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-to-array-with-custom-es-6-class-iterables">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash toArray with Custom ES6 Class Iterables - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-to-array-with-custom-es-6-class-iterables" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the Lodash utility function .toArray detects and consumes the ECMAScript 2015 (ES6) iterable protocol on instances of custom classes. It breaks down the internal sequence Lodash uses to inspect the Symbol.iterator method, consume" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-toarray-with-custom-es6-class-iterables">Lodash toArray
+with Custom ES6 Class Iterables</h1>
+<p>This article examines how the Lodash utility function
+<code>_.toArray</code> detects and consumes the ECMAScript 2015 (ES6)
+iterable protocol on instances of custom classes. It breaks down the
+internal sequence Lodash uses to inspect the
+<code>Symbol.iterator</code> method, consume iterator streams via
+low-level helper functions, and resolve conflicts between custom
+iterables and array-like objects.</p>
+<h3 id="the-entry-point-_toarray">The Entry Point:
+<code>_.toArray</code></h3>
+<p>When you pass an argument to <code>_.toArray(value)</code>, Lodash
+first evaluates the falsiness of the input. If the value is
+<code>null</code>, <code>undefined</code>, or otherwise falsey, it
+immediately returns an empty array <code>[]</code>.</p>
+<p>For non-falsey inputs, Lodash evaluates the type and structural
+properties of the target to decide between three primary conversion
+strategies:</p>
+<ol type="1">
+<li><strong>Array-like objects:</strong> Handled via index copying.</li>
+<li><strong>ES6 Iterables:</strong> Handled via iterator extraction and
+consumption.</li>
+<li><strong>Plain objects:</strong> Handled by extracting enumerable
+values via <code>values(value)</code>.</li>
+</ol>
+<h3 id="detecting-the-iterable-protocol">Detecting the Iterable
+Protocol</h3>
+<p>Custom ES6 classes qualify as iterables by implementing the standard
+iteration protocol via the well-known symbol
+<code>Symbol.iterator</code>. A typical class definition looks like
+this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> NumberSequence {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">constructor</span>(limit) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">limit</span> <span class="op">=</span> limit<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">*</span>[<span class="bu">Symbol</span><span class="op">.</span><span class="at">iterator</span>]() {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;=</span> <span class="kw">this</span><span class="op">.</span><span class="at">limit</span><span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">yield</span> i<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When an instance of this class is passed to <code>_.toArray</code>,
+Lodash checks if the object conforms to the iterable protocol.
+Internally, Lodash checks if <code>Symbol.iterator</code> is defined on
+the instance or its prototype chain:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> iterator <span class="op">=</span> <span class="kw">typeof</span> value[<span class="bu">Symbol</span><span class="op">.</span><span class="at">iterator</span>] <span class="op">===</span> <span class="st">&#39;function&#39;</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">?</span> value[<span class="bu">Symbol</span><span class="op">.</span><span class="at">iterator</span>]() </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">:</span> <span class="kw">undefined</span><span class="op">;</span></span></code></pre></div>
+<p>If the function exists, Lodash invokes it with no arguments to obtain
+the iterator object, which must implement the standard
+<code>.next()</code> method.</p>
+<h3 id="the-consumption-phase-iteratortoarray">The Consumption Phase:
+<code>iteratorToArray</code></h3>
+<p>Once Lodash obtains the iterator, it delegates the conversion to an
+internal helper function called <code>iteratorToArray</code>.</p>
+<p>The <code>iteratorToArray</code> function executes a standard
+<code>while</code> loop over the iterator:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">iteratorToArray</span>(iterator) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> data<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> result <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="op">!</span>(data <span class="op">=</span> iterator<span class="op">.</span><span class="fu">next</span>())<span class="op">.</span><span class="at">done</span>) {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    result<span class="op">.</span><span class="fu">push</span>(data<span class="op">.</span><span class="at">value</span>)<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>During this execution:</p>
+<ol type="1">
+<li><code>iterator.next()</code> is called repeatedly.</li>
+<li>Each emitted iteration result object is checked for the boolean
+<code>done</code> property.</li>
+<li>If <code>done</code> is <code>false</code> (or falsey),
+<code>data.value</code> is appended to the internal array.</li>
+<li>When <code>done: true</code> is encountered, iteration stops, and
+the populated array is returned.</li>
+</ol>
+<h3 id="the-isarraylike-conflict">The <code>isArrayLike</code>
+Conflict</h3>
+<p>A critical nuance in Lodash's resolution order is how it handles the
+<code>isArrayLike</code> check.</p>
+<p>Before inspecting for <code>Symbol.iterator</code>,
+<code>_.toArray</code> checks whether the target satisfies
+<code>isArrayLike(value)</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isArrayLike</span>(value) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> value <span class="op">!==</span> <span class="st">&#39;function&#39;</span> <span class="op">&amp;&amp;</span> <span class="fu">isLength</span>(value<span class="op">.</span><span class="at">length</span>)<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>If an ES6 custom class explicitly defines a valid <code>length</code>
+property (a non-negative safe integer), Lodash treats the instance as an
+array-like object rather than an iterable:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CustomCollection {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">constructor</span>() {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">length</span> <span class="op">=</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span>[<span class="dv">0</span>] <span class="op">=</span> <span class="st">&#39;a&#39;</span><span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span>[<span class="dv">1</span>] <span class="op">=</span> <span class="st">&#39;b&#39;</span><span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">*</span>[<span class="bu">Symbol</span><span class="op">.</span><span class="at">iterator</span>]() {</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">yield</span> <span class="st">&#39;x&#39;</span><span class="op">;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">yield</span> <span class="st">&#39;y&#39;</span><span class="op">;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">toArray</span>(<span class="kw">new</span> <span class="fu">CustomCollection</span>())<span class="op">;</span> <span class="co">// Returns [&#39;a&#39;, &#39;b&#39;], bypassing the iterator</span></span></code></pre></div>
+<p>In this scenario, Lodash uses its internal <code>copyArray</code> or
+slice logic based on indexed properties, completely bypassing
+<code>Symbol.iterator</code>.</p>
+<h3 id="summary-of-the-resolution-flow">Summary of the Resolution
+Flow</h3>
+<p>For an instance of a custom ES6 class:</p>
+<ol type="1">
+<li><strong>Existence Check:</strong> If the class instance is
+<code>null</code> or <code>undefined</code>, return
+<code>[]</code>.</li>
+<li><strong>Array-Like Test:</strong> If the instance has a numeric
+<code>length</code> property within bounds, copy its indexed properties
+(<code>0</code> through <code>length - 1</code>).</li>
+<li><strong>Iterator Protocol Test:</strong> If not array-like, check
+for <code>typeof value[Symbol.iterator] === 'function'</code>.</li>
+<li><strong>Iterator Drain:</strong> Invoke the method to get the
+iterator and drain it into a new array using
+<code>iteratorToArray</code>.</li>
+<li><strong>Fallback:</strong> If no iterator exists, treat the instance
+as a generic object and return an array of its own enumerable property
+values via <code>baseValues</code>.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

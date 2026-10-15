@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Debounce and Defer Execution Timeline - lodash</title>
+    <meta name="description" content="Combining Lodash&#39;s .debounce and .defer coordinates JavaScript&#39;s asynchronous event loop with timer-based threshold delays. This article examines the exact step-by-step execution timeline when merging these two utilities, detailing the behavior of the cal">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-debounce-and-defer-execution-timeline">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Debounce and Defer Execution Timeline - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-debounce-and-defer-execution-timeline" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Combining Lodash&#39;s .debounce and .defer coordinates JavaScript&#39;s asynchronous event loop with timer-based threshold delays. This article examines the exact step-by-step execution timeline when merging these two utilities, detailing the behavior of the cal" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-debounce-and-defer-execution-timeline">Lodash Debounce
+and Defer Execution Timeline</h1>
+<p>Combining Lodash's <code>_.debounce</code> and <code>_.defer</code>
+coordinates JavaScript's asynchronous event loop with timer-based
+threshold delays. This article examines the exact step-by-step execution
+timeline when merging these two utilities, detailing the behavior of the
+call stack, the macro-task queue, and the internal timers according to
+which function wraps the other.</p>
+<hr />
+<h3 id="core-mechanics-of-each-utility">Core Mechanics of Each
+Utility</h3>
+<p>To understand the combined timeline, consider their individual
+mechanics:</p>
+<ul>
+<li><strong><code>_.defer(func, [args])</code></strong>: Defers
+execution of <code>func</code> until the current synchronous call stack
+clears. Internally, Lodash delegates <code>_.defer</code> to
+<code>setTimeout(fn, 1)</code> (or <code>0</code> depending on the
+environment), pushing the execution callback to the macro-task
+queue.</li>
+<li><strong><code>_.debounce(func, [wait=0], [options={}])</code></strong>:
+Delays the invocation of <code>func</code> until after a specified
+duration (<code>wait</code>) has elapsed since the last time the
+debounced function was invoked. It maintains internal timestamps and
+sets a timer to evaluate execution eligibility.</li>
+</ul>
+<hr />
+<h3
+id="scenario-a-deferring-a-debounced-function-_defer_debouncefn-wait">Scenario
+A: Deferring a Debounced Function
+(<code>_.defer(_.debounce(fn, wait))</code>)</h3>
+<p>In this scenario, a debounced instance is scheduled using
+<code>_.defer</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> debouncedFn <span class="op">=</span> _<span class="op">.</span><span class="fu">debounce</span>(targetFn<span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">defer</span>(debouncedFn)<span class="op">;</span></span></code></pre></div>
+<h4 id="step-by-step-execution-timeline">Step-by-Step Execution
+Timeline:</h4>
+<ol type="1">
+<li><strong>Tick 0 (Synchronous Execution - Call Stack):</strong>
+<ul>
+<li><code>_.debounce(targetFn, 100)</code> initializes and returns the
+debounced wrapper.</li>
+<li><code>_.defer(debouncedFn)</code> runs. It registers
+<code>debouncedFn</code> to the browser or Node.js macro-task timer
+queue with a minimum delay (typically 0–1ms).</li>
+<li>Synchronous execution continues until the call stack is completely
+empty.</li>
+</ul></li>
+<li><strong>Tick 1 (Current Stack Cleared - Macro-Task
+Resolution):</strong>
+<ul>
+<li>The event loop picks the deferred task from the macro-task
+queue.</li>
+<li><code>debouncedFn</code> is executed.</li>
+<li>Rather than executing <code>targetFn</code>, the debounced function
+records the timestamp (<code>lastCallTime = now()</code>) and schedules
+an internal timer (<code>setTimeout</code>) configured for the
+<code>wait</code> period (100ms).</li>
+<li>The call stack clears again.</li>
+</ul></li>
+<li><strong>Intermediary Ticks (Idle / Non-blocking):</strong>
+<ul>
+<li>If no further calls are made to <code>debouncedFn</code>, the 100ms
+timer runs in the background. Other micro-tasks and macro-tasks continue
+to process normally.</li>
+</ul></li>
+<li><strong>Tick 2 (Debounce Duration Met - Final Invocation):</strong>
+<ul>
+<li>At <span class="math inline">\(t \ge \text{Tick 1 timestamp} +
+100\text{ms}\)</span>, the debounce timer fires.</li>
+<li>The timer callback pushes the invocation of <code>targetFn</code> to
+the macro-task queue.</li>
+<li>The event loop executes <code>targetFn</code> with the trailing
+arguments.</li>
+</ul></li>
+</ol>
+<p><strong>Total Delay:</strong> Call stack clear time + <span
+class="math inline">\(\approx 1\text{ms}\)</span> (<code>defer</code>) +
+<span class="math inline">\(100\text{ms}\)</span>
+(<code>wait</code>).</p>
+<hr />
+<h3
+id="scenario-b-debouncing-a-deferred-function-_debounce-wait-containing-_defer">Scenario
+B: Debouncing a Deferred Function (<code>_.debounce(..., wait)</code>
+containing <code>_.defer</code>)</h3>
+<p>In this scenario, the debounced function wraps a call to
+<code>_.defer</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> debouncedAndDeferred <span class="op">=</span> _<span class="op">.</span><span class="fu">debounce</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  _<span class="op">.</span><span class="fu">defer</span>(targetFn)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">debouncedAndDeferred</span>()<span class="op">;</span></span></code></pre></div>
+<h4 id="step-by-step-execution-timeline-1">Step-by-Step Execution
+Timeline:</h4>
+<ol type="1">
+<li><strong>Tick 0 (Synchronous Execution - Call Stack):</strong>
+<ul>
+<li><code>debouncedAndDeferred()</code> is invoked synchronously.</li>
+<li>The debounce logic sets an internal timer for 100ms.</li>
+<li>Synchronous code continues running; the call stack clears.</li>
+</ul></li>
+<li><strong>Tick 1 (Debounce Timer Resolves):</strong>
+<ul>
+<li>After 100ms of inactivity, the debounce timer completes.</li>
+<li>The wrapper macro-task runs on the call stack.</li>
+<li>Inside the wrapper, <code>_.defer(targetFn)</code> is called.</li>
+<li><code>targetFn</code> is placed into the macro-task queue (scheduled
+via <code>setTimeout(..., 1)</code>).</li>
+<li>The wrapper finishes execution, and the call stack clears.</li>
+</ul></li>
+<li><strong>Tick 2 (Deferred Macro-Task Resolves):</strong>
+<ul>
+<li>Any pending micro-tasks resolve first.</li>
+<li>The event loop pulls the deferred callback containing
+<code>targetFn</code> from the macro-task queue.</li>
+<li><code>targetFn</code> executes.</li>
+</ul></li>
+</ol>
+<p><strong>Total Delay:</strong> <span
+class="math inline">\(100\text{ms}\)</span> (<code>wait</code>) + Call
+stack clear time + <span class="math inline">\(\approx
+1\text{ms}\)</span> (<code>defer</code>).</p>
+<hr />
+<h3 id="key-behavioral-differences">Key Behavioral Differences</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Characteristic</th>
+<th
+style="text-align: left;"><code>_.defer(_.debounce(fn, wait))</code></th>
+<th
+style="text-align: left;"><code>_.debounce(() =&gt; _.defer(fn), wait)</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Timer Start Point</strong></td>
+<td style="text-align: left;">After current stack clears (Macro-task
+1)</td>
+<td style="text-align: left;">Immediately upon debounced function
+call</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Function Deferred</strong></td>
+<td style="text-align: left;">The scheduling wrapper</td>
+<td style="text-align: left;">The actual target execution
+(<code>fn</code>)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Leading Edge Effects</strong></td>
+<td style="text-align: left;">If <code>leading: true</code>, executes
+right after call stack clears</td>
+<td style="text-align: left;">If <code>leading: true</code>,
+<code>_.defer</code> fires immediately, executing <code>fn</code> on the
+very next tick</td>
+</tr>
+</tbody>
+</table></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

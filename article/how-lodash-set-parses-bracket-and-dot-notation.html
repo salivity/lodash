@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.set Parses Bracket and Dot Notation - lodash</title>
+    <meta name="description" content="This article explains how Lodash&#39;s .set method internally parses string paths containing bracket and dot notations into object keys. When manipulating nested data structures, Lodash must accurately distinguish between property names separated by periods a">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-set-parses-bracket-and-dot-notation">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.set Parses Bracket and Dot Notation - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-set-parses-bracket-and-dot-notation" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how Lodash&#39;s .set method internally parses string paths containing bracket and dot notations into object keys. When manipulating nested data structures, Lodash must accurately distinguish between property names separated by periods a" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_set-parses-bracket-and-dot-notation">How Lodash
+_.set Parses Bracket and Dot Notation</h1>
+<p>This article explains how Lodash's <code>_.set</code> method
+internally parses string paths containing bracket and dot notations into
+object keys. When manipulating nested data structures, Lodash must
+accurately distinguish between property names separated by periods and
+indices or property names enclosed in brackets. Below is an examination
+of the internal path-casting pipeline, the regular expression engine
+Lodash uses, and how both syntax styles are normalized into a unified
+array of keys.</p>
+<h2 id="the-normalization-pipeline-castpath-and-stringtopath">The
+Normalization Pipeline: <code>castPath</code> and
+<code>stringToPath</code></h2>
+<p>When <code>_.set(object, path, value)</code> is called, the library
+first ensures the <code>path</code> argument is converted into an array
+of individual keys. This is handled by an internal utility function
+called <code>castPath</code>.</p>
+<ol type="1">
+<li>If the provided path is already an array, <code>castPath</code>
+returns it directly.</li>
+<li>If the path is a symbol or a key that already exists directly on the
+target object, it is treated as a single literal key.</li>
+<li>Otherwise, the string is passed to <code>stringToPath</code>, a
+memoized utility responsible for converting path strings into arrays of
+property names.</li>
+</ol>
+<p>By converting all representations into an array early,
+<code>_.set</code> avoids having to determine whether an access
+operation used dots or brackets during the actual object traversal and
+assignment steps.</p>
+<h2 id="the-unified-parsing-engine-repropname">The Unified Parsing
+Engine: <code>rePropName</code></h2>
+<p>Rather than using separate parsers or conditional logic branches to
+detect dot notation versus bracket notation, Lodash relies on a single,
+comprehensive regular expression named <code>rePropName</code>.</p>
+<p>In the Lodash source code, <code>rePropName</code> is structured to
+match valid path tokens sequentially. It matches three distinct
+syntactic forms:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> rePropName <span class="op">=</span> <span class="ss">/</span><span class="sc">[^.[\]]+|\[(?</span><span class="ss">:</span><span class="sc">(</span><span class="ss">-</span><span class="sc">?\d+(?</span><span class="ss">:</span><span class="sc">\.\d+)?)|([&quot;&#39;])((?</span><span class="ss">:</span><span class="sc">(?</span><span class="ss">!</span><span class="sc">\2)[^\\]|\\</span><span class="ss">.</span><span class="sc">)*?)\2)\]|(?</span><span class="ss">=</span><span class="sc">(?</span><span class="ss">:</span><span class="sc">\.|\[\])(?</span><span class="ss">:</span><span class="sc">\.|\[\]|</span><span class="ss">$</span><span class="sc">))</span><span class="ss">/g</span><span class="op">;</span></span></code></pre></div>
+<p>This pattern matches tokens using an alternation (<code>|</code>)
+strategy:</p>
+<h3 id="1-dot-notation-segments-">1. Dot Notation Segments
+(<code>[^.[\]]+</code>)</h3>
+<p>This branch matches any sequence of characters that does not contain
+a dot or opening/closing brackets. In a path like <code>a.b.c</code>, it
+sequentially matches <code>a</code>, <code>b</code>, and <code>c</code>.
+The dots act merely as delimiters excluded by the character class.</p>
+<h3 id="2-bracket-notation-segments--">2. Bracket Notation Segments
+(<code>\[(?:... )\]</code>)</h3>
+<p>This branch captures keys enclosed in brackets and differentiates the
+content inside:</p>
+<ul>
+<li><strong>Unquoted numbers or keys:</strong> Matches numeric indices
+like <code>[0]</code> or negative numbers like <code>[-1]</code> using
+<code>(-?\d+(?:\.\d+)?)</code>.</li>
+<li><strong>Quoted strings:</strong> Matches single or double-quoted
+keys, such as <code>['prop']</code> or <code>["complex-key"]</code>,
+using <code>(["'])((?:(?!\2)[^\\]|\\.)*?)\2</code>. It correctly handles
+escaped quote characters inside string properties.</li>
+</ul>
+<p>When this branch matches, the capture groups isolate the inner
+content, stripping away the surrounding brackets and quotation
+marks.</p>
+<h3 id="3-empty-tokens-and-consecutive-delimiters">3. Empty Tokens and
+Consecutive Delimiters</h3>
+<p>The final branch uses a lookahead
+(<code>(?=(?:\.|\[\])(?:\.|\[\]|$))</code>) to capture empty string keys
+resulting from consecutive dots (e.g., <code>a..b</code>) or empty
+brackets (e.g., <code>a[]</code>).</p>
+<h2 id="constructing-the-key-array">Constructing the Key Array</h2>
+<p>The <code>stringToPath</code> function executes
+<code>rePropName</code> across the input string using
+<code>String.prototype.replace</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (string<span class="op">.</span><span class="fu">charCodeAt</span>(<span class="dv">0</span>) <span class="op">===</span> <span class="dv">46</span> <span class="co">/* . */</span>) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  result<span class="op">.</span><span class="fu">push</span>(<span class="st">&#39;&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>string<span class="op">.</span><span class="fu">replace</span>(rePropName<span class="op">,</span> (match<span class="op">,</span> expression<span class="op">,</span> quote<span class="op">,</span> subString) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> key <span class="op">=</span> match<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (quote) {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    key <span class="op">=</span> subString<span class="op">.</span><span class="fu">replace</span>(reEscapeChar<span class="op">,</span> <span class="st">&#39;$1&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (expression) {</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    key <span class="op">=</span> expression<span class="op">.</span><span class="fu">trim</span>()<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  result<span class="op">.</span><span class="fu">push</span>(key)<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> result<span class="op">;</span></span></code></pre></div>
+<p>During this execution:</p>
+<ul>
+<li>If a token was matched via quotes, Lodash extracts the inner string
+and unescapes any backslash-escaped characters.</li>
+<li>If a token was matched as an unquoted bracket expression, whitespace
+is trimmed, leaving the raw index or identifier.</li>
+<li>Standard dot-delimited tokens are pushed as-is.</li>
+</ul>
+<p>For example, whether the input is <code>'user.posts[0].title'</code>
+or <code>'user["posts"]["0"].title'</code>, the resulting array produced
+by <code>stringToPath</code> is identical:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>[<span class="st">&#39;user&#39;</span><span class="op">,</span> <span class="st">&#39;posts&#39;</span><span class="op">,</span> <span class="st">&#39;0&#39;</span><span class="op">,</span> <span class="st">&#39;title&#39;</span>]</span></code></pre></div>
+<h2 id="traversal-and-type-determination">Traversal and Type
+Determination</h2>
+<p>Once <code>stringToPath</code> produces the key array,
+<code>_.set</code> iterates through the segments using
+<code>baseSet</code>. At each step:</p>
+<ul>
+<li>It looks ahead to the next key in the array.</li>
+<li>If the current target object lacks the required intermediate
+property, Lodash checks if the <em>next</em> key is an integer index
+(such as <code>'0'</code>).</li>
+<li>If the next key is an index, it initializes the missing segment as
+an <code>Array</code>; otherwise, it initializes it as an
+<code>Object</code>.</li>
+</ul>
+<p>Lodash does not rely on bracket notation itself to decide whether to
+create an Array or an Object; instead, the bracket syntax is purely a
+string-tokenization mechanism that resolves to the same normalized key
+representation as dot notation.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

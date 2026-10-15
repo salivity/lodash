@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash sortedIndex Uses Binary Search - lodash</title>
+    <meta name="description" content="Lodash’s .sortedIndex method determines the lowest index at which a value should be inserted into a pre-sorted array to maintain its sorted order. Instead of scanning an array sequentially, which incurs a linear time penalty, .sortedIndex implements a bin">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-sorted-index-uses-binary-search">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash sortedIndex Uses Binary Search - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-sorted-index-uses-binary-search" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .sortedIndex method determines the lowest index at which a value should be inserted into a pre-sorted array to maintain its sorted order. Instead of scanning an array sequentially, which incurs a linear time penalty, .sortedIndex implements a bin" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-sortedindex-uses-binary-search">How Lodash
+sortedIndex Uses Binary Search</h1>
+<p>Lodash’s <code>_.sortedIndex</code> method determines the lowest
+index at which a value should be inserted into a pre-sorted array to
+maintain its sorted order. Instead of scanning an array sequentially,
+which incurs a linear time penalty, <code>_.sortedIndex</code>
+implements a binary search algorithm to reduce the search complexity to
+logarithmic time. This article explains the internal mechanics of
+<code>_.sortedIndex</code>, how it performs binary search in JavaScript,
+and why it is the optimal approach for maintaining sorted
+collections.</p>
+<h3 id="the-inefficiency-of-linear-scans">The Inefficiency of Linear
+Scans</h3>
+<p>In a naive approach to finding an insertion point, an algorithm
+iterates through an array from left to right using a loop or methods
+like <code>Array.prototype.findIndex</code>. For an array of size <span
+class="math inline">\(n\)</span>, a linear search checks elements one by
+one until it finds an element greater than or equal to the target value.
+This results in a time complexity of <span
+class="math inline">\(O(n)\)</span>. While acceptable for small arrays,
+this approach degrades performance rapidly when applied to large
+datasets or executed repeatedly in high-frequency operations.</p>
+<h3 id="the-binary-search-mechanism-in-_sortedindex">The Binary Search
+Mechanism in <code>_.sortedIndex</code></h3>
+<p>Because <code>_.sortedIndex</code> assumes the input array is already
+sorted in ascending order, it eliminates the need to evaluate every
+item. It divides the search space in half during each iteration,
+achieving a time complexity of <span class="math inline">\(O(\log
+n)\)</span>.</p>
+<p>The underlying mechanism operates as follows:</p>
+<ol type="1">
+<li><p><strong>Pointer Initialization:</strong> The algorithm
+establishes two pointers representing the search bounds:
+<code>low</code> initialized to <code>0</code> and <code>high</code>
+initialized to <code>array.length</code>.</p></li>
+<li><p><strong>Midpoint Calculation:</strong> In each iteration, it
+calculates the midpoint between the current bounds:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> mid <span class="op">=</span> (low <span class="op">+</span> high) <span class="op">&gt;&gt;&gt;</span> <span class="dv">1</span><span class="op">;</span></span></code></pre></div>
+<p>Lodash uses the zero-fill right shift operator
+(<code>&gt;&gt;&gt; 1</code>) rather than
+<code>Math.floor((low + high) / 2)</code>. This operation divides the
+sum by two, rounds down to the nearest integer, and coerces the result
+to an unsigned 32-bit integer, providing micro-optimizations in
+JavaScript engines.</p></li>
+<li><p><strong>Value Comparison:</strong> The value at the midpoint
+index (<code>array[mid]</code>) is compared to the target value:</p>
+<ul>
+<li>If <code>array[mid] &lt; value</code>, the target belongs in the
+upper half of the current range. The lower bound is adjusted:
+<code>low = mid + 1</code>.</li>
+<li>If <code>array[mid] &gt;= value</code>, the target belongs in the
+lower half (or at the midpoint itself). The upper bound is adjusted:
+<code>high = mid</code>.</li>
+</ul></li>
+<li><p><strong>Convergence:</strong> The loop terminates when
+<code>low</code> equals <code>high</code>. The value of <code>low</code>
+represents the exact index where the target should be inserted.</p></li>
+</ol>
+<h3 id="guaranteeing-the-lowest-insertion-point">Guaranteeing the Lowest
+Insertion Point</h3>
+<p>A standard binary search often terminates immediately upon finding an
+exact match for the target value. In contrast,
+<code>_.sortedIndex</code> is designed to find the <em>lowest</em> valid
+insertion index.</p>
+<p>When duplicate values exist in the array, <code>_.sortedIndex</code>
+does not stop upon encountering an identical element. Because the
+condition moves the upper boundary when
+<code>array[mid] &gt;= value</code>, the search window continues to
+shrink toward the left. This ensures that the returned index precedes
+any identical values already present in the collection, preserving
+stable ordering.</p>
+<h3 id="code-demonstration">Code Demonstration</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="dv">10</span><span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">40</span><span class="op">,</span> <span class="dv">50</span>]<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Value does not exist: returns index 3</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">sortedIndex</span>(numbers<span class="op">,</span> <span class="dv">25</span>))<span class="op">;</span> </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Value exists: returns index 2 (the lowest index for value 30)</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">sortedIndex</span>(numbers<span class="op">,</span> <span class="dv">30</span>))<span class="op">;</span> </span></code></pre></div>
+<h3 id="performance-characteristics">Performance Characteristics</h3>
+<p>The efficiency gained by switching from linear search to binary
+search is substantial as datasets scale:</p>
+<ul>
+<li>For an array of 1,000 elements, a linear search requires up to 1,000
+comparisons, whereas <code>_.sortedIndex</code> requires at most
+10.</li>
+<li>For an array of 1,000,000 elements, a linear search requires up to
+1,000,000 comparisons, whereas <code>_.sortedIndex</code> resolves the
+insertion point in approximately 20 comparisons.</li>
+</ul>
+<p>By relying on binary division and bitwise pointer arithmetic,
+<code>_.sortedIndex</code> provides a high-performance utility for
+maintaining ordered arrays without unnecessary computational
+overhead.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

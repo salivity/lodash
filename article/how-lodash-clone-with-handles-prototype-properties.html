@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash cloneWith Handles Prototype Properties - lodash</title>
+    <meta name="description" content="This article examines how Lodash’s .cloneWith method evaluates its customizer function with respect to object prototypes and inherited properties. It explains how Lodash isolates own properties from the prototype chain during cloning, clarifies why inheri">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-clone-with-handles-prototype-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash cloneWith Handles Prototype Properties - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-clone-with-handles-prototype-properties" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how Lodash’s .cloneWith method evaluates its customizer function with respect to object prototypes and inherited properties. It explains how Lodash isolates own properties from the prototype chain during cloning, clarifies why inheri" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-clonewith-handles-prototype-properties">How Lodash
+cloneWith Handles Prototype Properties</h1>
+<p>This article examines how Lodash’s <code>_.cloneWith</code> method
+evaluates its <code>customizer</code> function with respect to object
+prototypes and inherited properties. It explains how Lodash isolates own
+properties from the prototype chain during cloning, clarifies why
+inherited prototype properties are never passed directly to the
+customizer, and demonstrates how developers can still customize
+prototype behavior during cloning operations.</p>
+<h3 id="own-properties-vs-inherited-prototype-properties">Own Properties
+vs. Inherited Prototype Properties</h3>
+<p>When <code>_.cloneWith</code> processes an object, it restricts
+property copying strictly to the object's <strong>own enumerable
+properties</strong>. Under the hood, Lodash utilizes internal mechanisms
+(equivalent to <code>Object.keys</code> or <code>Reflect.ownKeys</code>)
+rather than a <code>for...in</code> loop that traverses up the prototype
+chain.</p>
+<p>Because inherited properties residing on the prototype chain are not
+considered own properties, the <code>customizer</code> function is never
+invoked for individual prototype properties. The customizer arguments
+<code>(value, key, object, stack)</code> will only receive values that
+exist directly on the target instance itself.</p>
+<h3 id="prototype-preservation-in-the-default-cloning-path">Prototype
+Preservation in the Default Cloning Path</h3>
+<p>If the <code>customizer</code> returns <code>undefined</code>,
+<code>_.cloneWith</code> falls back to Lodash's internal
+<code>baseClone</code> routine. For objects with custom prototypes (such
+as instances of classes or constructor functions):</p>
+<ol type="1">
+<li><strong>Instantiation:</strong> Lodash initializes the cloned target
+by preserving the prototype, typically via
+<code>Object.create(Object.getPrototypeOf(object))</code> or by
+initializing an instance via its original constructor.</li>
+<li><strong>Property Assignment:</strong> It then assigns the object's
+own properties to this newly initialized clone.</li>
+</ol>
+<p>Because prototype properties remain attached to the prototype object
+rather than copied onto the instance, their behavior, getters, setters,
+and inherited methods remain shared through prototype delegation.</p>
+<h3 id="how-the-customizer-evaluates-the-root-object">How the Customizer
+Evaluates the Root Object</h3>
+<p>While the <code>customizer</code> does not fire for individual
+prototype properties, it is evaluated for the <strong>root
+object</strong> itself. This is where prototype handling can be
+explicitly altered.</p>
+<p>When <code>customizer(value)</code> is called on the object:</p>
+<ul>
+<li>The <code>key</code> and <code>object</code> parameters are
+<code>undefined</code> for the root invocation.</li>
+<li>If you return a new object with a custom prototype (for instance,
+via <code>Object.assign(Object.create(newPrototype), value)</code>),
+Lodash uses your returned instance directly and halts further cloning
+for that node.</li>
+<li>If you return <code>undefined</code>, Lodash continues with its
+standard prototype-preserving shallow clone.</li>
+</ul>
+<h3 id="behavior-in-deep-cloning-_clonedeepwith">Behavior in Deep
+Cloning (<code>_.cloneDeepWith</code>)</h3>
+<p>It is also important to contrast this with
+<code>_.cloneDeepWith</code>. Even during a recursive deep clone, the
+customizer descends solely into nested <em>own</em> properties.
+Properties defined on an object’s <code>prototype</code> or
+<code>__proto__</code> remain untouched by the customizer throughout the
+entire depth of the traversal, ensuring prototype chains are not
+accidentally flattened into own properties on clones.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

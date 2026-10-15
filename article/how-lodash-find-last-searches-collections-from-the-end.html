@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash findLast Searches Collections from the End - lodash</title>
+    <meta name="description" content="This article provides an overview of the .findLast method in the Lodash JavaScript library, explaining how it traverses collections in reverse order to locate specific elements. You will learn the underlying mechanics of how the function iterates backward">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-find-last-searches-collections-from-the-end">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash findLast Searches Collections from the End - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-find-last-searches-collections-from-the-end" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of the .findLast method in the Lodash JavaScript library, explaining how it traverses collections in reverse order to locate specific elements. You will learn the underlying mechanics of how the function iterates backward" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-findlast-searches-collections-from-the-end">How
+Lodash findLast Searches Collections from the End</h1>
+<p>This article provides an overview of the <code>_.findLast</code>
+method in the Lodash JavaScript library, explaining how it traverses
+collections in reverse order to locate specific elements. You will learn
+the underlying mechanics of how the function iterates backwards, its
+syntax and parameters, how it handles performance through early
+termination, and practical examples demonstrating its usage with both
+arrays and objects.</p>
+<h3 id="syntax-and-parameters">Syntax and Parameters</h3>
+<p>The <code>_.findLast</code> method allows developers to inspect a
+collection from right to left (or bottom to top for objects). The syntax
+is as follows:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">findLast</span>(collection<span class="op">,</span> [predicate<span class="op">=</span>_<span class="op">.</span><span class="at">identity</span>]<span class="op">,</span> [fromIndex<span class="op">=</span>collection<span class="op">.</span><span class="at">length</span><span class="op">-</span><span class="dv">1</span>])</span></code></pre></div>
+<ul>
+<li><strong><code>collection</code></strong>: The array or object to
+iterate over.</li>
+<li><strong><code>predicate</code></strong>: The condition invoked per
+iteration. It can be a custom function, an object property-value pair,
+or a property name.</li>
+<li><strong><code>fromIndex</code></strong>: An optional parameter
+indicating the index from which to start the reverse search. By default,
+it begins at the final index (<code>collection.length - 1</code>).</li>
+</ul>
+<h3 id="how-the-reverse-search-works">How the Reverse Search Works</h3>
+<p>Unlike standard search functions like JavaScript's native
+<code>Array.prototype.find</code> or Lodash’s <code>_.find</code>, which
+start at index <code>0</code> and increment upwards,
+<code>_.findLast</code> works in reverse:</p>
+<ol type="1">
+<li><strong>Initial Index Calculation</strong>: The method establishes
+the starting point. If no <code>fromIndex</code> is provided, it targets
+the last index of the array (<code>collection.length - 1</code>). If a
+negative <code>fromIndex</code> is provided, it is treated as an offset
+from the end of the collection.</li>
+<li><strong>Reverse Iteration</strong>: A loop decrements the index
+counter sequentially toward index <code>0</code>.</li>
+<li><strong>Predicate Evaluation</strong>: At each index, Lodash invokes
+the predicate with three arguments: the current value
+<code>(value)</code>, the current index or key <code>(index|key)</code>,
+and the entire <code>collection</code>.</li>
+<li><strong>Short-Circuiting</strong>: The moment the predicate returns
+a truthy value, <code>_.findLast</code> immediately stops the iteration
+and returns that specific element. Remaining elements closer to the
+beginning of the collection are never evaluated.</li>
+<li><strong>Fallback to Undefined</strong>: If the loop reaches the
+beginning of the collection without finding a truthy condition, the
+method returns <code>undefined</code>.</li>
+</ol>
+<h3 id="code-example-basic-reverse-search">Code Example: Basic Reverse
+Search</h3>
+<p>In this example, <code>_.findLast</code> locates the last even number
+in an array:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">7</span>]<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> lastEven <span class="op">=</span> _<span class="op">.</span><span class="fu">findLast</span>(numbers<span class="op">,</span> n <span class="kw">=&gt;</span> n <span class="op">%</span> <span class="dv">2</span> <span class="op">===</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(lastEven)<span class="op">;</span> <span class="co">// Output: 6</span></span></code></pre></div>
+<p>Because the iteration begins at <code>7</code> and moves backwards,
+<code>6</code> is the first even number encountered, causing the loop to
+terminate immediately without checking <code>4</code> or
+<code>2</code>.</p>
+<h3 id="code-example-objects-and-shorthand-predicates">Code Example:
+Objects and Shorthand Predicates</h3>
+<p>Lodash supports various shorthand formats for the predicate argument,
+such as matching object key-value pairs:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> users <span class="op">=</span> [</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;barney&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;fred&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">false</span> }<span class="op">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;pebbles&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> }</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Search using property-value shorthand</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> lastActiveUser <span class="op">=</span> _<span class="op">.</span><span class="fu">findLast</span>(users<span class="op">,</span> { <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(lastActiveUser)<span class="op">;</span> </span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: { id: 3, user: &#39;pebbles&#39;, active: true }</span></span></code></pre></div>
+<h3 id="using-the-fromindex-offset">Using the <code>fromIndex</code>
+Offset</h3>
+<p>You can restrict the search range by defining where the backwards
+scan should begin:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [<span class="dv">10</span><span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">40</span><span class="op">,</span> <span class="dv">50</span>]<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Start searching backwards from index 2 (value: 30)</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">findLast</span>(items<span class="op">,</span> n <span class="kw">=&gt;</span> n <span class="op">&lt;</span> <span class="dv">35</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result)<span class="op">;</span> <span class="co">// Output: 30</span></span></code></pre></div>
+<h3 id="why-use-_findlast-instead-of-reversing-first">Why Use
+<code>_.findLast</code> Instead of Reversing First?</h3>
+<p>A common alternative pattern is chaining
+<code>.reverse().find()</code>. However, <code>_.findLast</code>
+provides two major advantages:</p>
+<ul>
+<li><strong>Immutability</strong>: Standard methods like
+<code>Array.prototype.reverse()</code> mutate the original array in
+place, which often leads to unintended side effects.</li>
+<li><strong>Memory and Performance Efficiency</strong>: Making a copy of
+an array just to reverse it allocates extra memory.
+<code>_.findLast</code> reads the original array directly in reverse
+order, consuming <span class="math inline">\(O(1)\)</span> additional
+memory and avoiding unnecessary operations via early termination.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

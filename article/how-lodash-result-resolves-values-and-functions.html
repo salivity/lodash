@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.result Resolves Values and Functions - lodash</title>
+    <meta name="description" content="The Lodash .result method provides a flexible way to retrieve values from deeply nested JavaScript objects by seamlessly handling both static properties and executable functions. This article explores how .result navigates nested object paths, automatical">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-result-resolves-values-and-functions">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.result Resolves Values and Functions - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-result-resolves-values-and-functions" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .result method provides a flexible way to retrieve values from deeply nested JavaScript objects by seamlessly handling both static properties and executable functions. This article explores how .result navigates nested object paths, automatical" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_result-resolves-values-and-functions">How Lodash
+_.result Resolves Values and Functions</h1>
+<p>The Lodash <code>_.result</code> method provides a flexible way to
+retrieve values from deeply nested JavaScript objects by seamlessly
+handling both static properties and executable functions. This article
+explores how <code>_.result</code> navigates nested object paths,
+automatically executes functions with the correct contextual
+<code>this</code> binding, handles missing keys through fallback values,
+and compares with standard property access methods like
+<code>_.get</code>.</p>
+<h2 id="syntax-and-core-mechanics">Syntax and Core Mechanics</h2>
+<p>The syntax for <code>_.result</code> is defined as follows:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">result</span>(object<span class="op">,</span> path<span class="op">,</span> [defaultValue])</span></code></pre></div>
+<ul>
+<li><strong><code>object</code></strong>: The source object to
+query.</li>
+<li><strong><code>path</code></strong>: The path of the property to
+resolve, defined as a string (e.g., <code>'a.b.c'</code> or
+<code>'users[0].name'</code>) or an array of keys (e.g.,
+<code>['a', 'b', 'c']</code>).</li>
+<li><strong><code>defaultValue</code></strong>: An optional fallback
+value returned if the resolved value is <code>undefined</code>.</li>
+</ul>
+<p>Like <code>_.get</code>, the method safely traverses intermediate
+objects without throwing errors if a reference in the chain is
+<code>null</code> or <code>undefined</code>.</p>
+<h2 id="dynamic-invocation-of-functions">Dynamic Invocation of
+Functions</h2>
+<p>The primary characteristic that distinguishes <code>_.result</code>
+from <code>_.get</code> is how it handles functions. When resolving a
+path, <code>_.result</code> checks the type of the resolved target:</p>
+<ol type="1">
+<li><strong>Static Values</strong>: If the target at the resolved path
+is a primitive (number, string, boolean) or a plain data structure
+(object, array), it is returned directly.</li>
+<li><strong>Callable Functions</strong>: If the target is a function,
+<code>_.result</code> invokes it immediately and returns its
+output.</li>
+</ol>
+<p>When calling a resolved function, <code>_.result</code> binds the
+<code>this</code> context to the parent object that contains the
+function. This ensures methods reliant on instance state or surrounding
+sibling properties execute with the expected scope.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">firstName</span><span class="op">:</span> <span class="st">&#39;Jane&#39;</span><span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">lastName</span><span class="op">:</span> <span class="st">&#39;Doe&#39;</span><span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">getFullName</span><span class="op">:</span> <span class="kw">function</span>() {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="vs">`</span><span class="sc">${</span><span class="kw">this</span><span class="op">.</span><span class="at">firstName</span><span class="sc">}</span><span class="vs"> </span><span class="sc">${</span><span class="kw">this</span><span class="op">.</span><span class="at">lastName</span><span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">role</span><span class="op">:</span> <span class="st">&#39;Administrator&#39;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Resolving a function executes it with `this` bound to `user`</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">result</span>(user<span class="op">,</span> <span class="st">&#39;getFullName&#39;</span>)<span class="op">;</span> </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; &quot;Jane Doe&quot;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Resolving a standard property returns the raw value</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">result</span>(user<span class="op">,</span> <span class="st">&#39;role&#39;</span>)<span class="op">;</span> </span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; &quot;Administrator&quot;</span></span></code></pre></div>
+<h2 id="deep-nested-traversal">Deep Nested Traversal</h2>
+<p>When navigating deep paths, <code>_.result</code> resolves
+intermediate keys as standard properties until it reaches the final
+segment in the path. If an intermediate segment is a function, it is not
+executed; only the leaf node of the designated path is evaluated for
+execution.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> company <span class="op">=</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">departments</span><span class="op">:</span> {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">engineering</span><span class="op">:</span> {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">getHeadcount</span><span class="op">:</span> <span class="kw">function</span>() {</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">42</span><span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">result</span>(company<span class="op">,</span> <span class="st">&#39;departments.engineering.getHeadcount&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; 42</span></span></code></pre></div>
+<p>In this case, the <code>this</code> context inside
+<code>getHeadcount</code> is explicitly bound to
+<code>engineering</code>.</p>
+<h2 id="handling-default-values">Handling Default Values</h2>
+<p>If the path does not exist, or if the resolved target evaluates to
+<code>undefined</code>, <code>_.result</code> falls back to
+<code>defaultValue</code>.</p>
+<p>The <code>defaultValue</code> parameter also supports dynamic
+resolution. If <code>defaultValue</code> is a function,
+<code>_.result</code> invokes it and returns its return value:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> settings <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Fallback to static value</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">result</span>(settings<span class="op">,</span> <span class="st">&#39;theme&#39;</span><span class="op">,</span> <span class="st">&#39;dark&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; &quot;dark&quot;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Fallback to a function result</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">result</span>(settings<span class="op">,</span> <span class="st">&#39;timestamp&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="bu">Date</span><span class="op">.</span><span class="fu">now</span>())<span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; current timestamp integer</span></span></code></pre></div>
+<p>If the property exists on the object but evaluates explicitly to
+<code>null</code>, <code>false</code>, or <code>NaN</code>,
+<code>_.result</code> considers the property defined and will return
+that value rather than evaluating the default.</p>
+<h2 id="_result-vs-_get"><code>_.result</code> vs.
+<code>_.get</code></h2>
+<p>While <code>_.get</code> retrieves properties verbatim,
+<code>_.result</code> is designed for polymorphic interfaces where an
+object property might either be a static value or a getter function
+depending on the application state or model architecture (such as in
+Backbone.js models).</p>
+<p>By abstracting away the check for
+<code>typeof target === 'function'</code>, <code>_.result</code> reduces
+boilerplate code and prevents runtime errors associated with manually
+checking and invoking properties across deep nested paths.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.random Floating-Point Boundary Logic - lodash</title>
+    <meta name="description" content="Lodash&#39;s .random function determines whether to return an integer or a floating-point number through a combination of explicit boolean flags, parameter shifting, and modulo checks on boundary values. When floating-point mode is engaged, the library alters">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-random-floating-point-boundary-logic">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.random Floating-Point Boundary Logic - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-random-floating-point-boundary-logic" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .random function determines whether to return an integer or a floating-point number through a combination of explicit boolean flags, parameter shifting, and modulo checks on boundary values. When floating-point mode is engaged, the library alters" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_random-floating-point-boundary-logic">Lodash _.random
+Floating-Point Boundary Logic</h1>
+<p>Lodash's <code>_.random</code> function determines whether to return
+an integer or a floating-point number through a combination of explicit
+boolean flags, parameter shifting, and modulo checks on boundary values.
+When floating-point mode is engaged, the library alters its mathematical
+model from a discrete uniform distribution to an extended continuous
+distribution clamped by a minimum boundary function. This article breaks
+down the internal parameter evaluation, the floating-point detection
+logic, and the mathematical mechanics that dictate how floating
+boundaries and edge-case distributions are handled in Lodash.</p>
+<h3 id="parameter-normalization-and-boolean-coercion">Parameter
+Normalization and Boolean Coercion</h3>
+<p>The <code>_.random</code> function accepts arguments dynamically:
+<code>_.random([lower=0], [upper=1], [floating])</code>. To determine
+the target distribution, Lodash first normalizes its inputs to resolve
+flexible argument signatures.</p>
+<p>If only one argument is provided and it is a boolean, or if the
+second parameter is a boolean, Lodash shifts variables so that
+<code>floating</code> receives that truthy or falsy value. If
+<code>floating</code> is omitted entirely, Lodash infers whether
+floating-point logic is required by running a modulo check on the
+boundaries:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>floating <span class="op">||</span> lower <span class="op">%</span> <span class="dv">1</span> <span class="op">||</span> upper <span class="op">%</span> <span class="dv">1</span></span></code></pre></div>
+<p>If either boundary is not a whole number (i.e.,
+<code>boundary % 1 !== 0</code>), the function automatically coerces the
+calculation into floating-point mode, regardless of whether a boolean
+flag was explicitly passed.</p>
+<h3 id="discrete-vs-continuous-distribution-branches">Discrete vs.
+Continuous Distribution Branches</h3>
+<p>The function diverges into two separate execution branches depending
+on the boolean state of the floating condition:</p>
+<ol type="1">
+<li><p><strong>Integer Path (<code>floating</code> is falsy):</strong>
+Lodash uses
+<code>lower + Math.floor(Math.random() * (upper - lower + 1))</code>.
+This ensures an inclusive, uniform distribution across all discrete
+integers in the range <span class="math inline">\([lower,
+upper]\)</span>.</p></li>
+<li><p><strong>Floating-Point Path (<code>floating</code> is
+truthy):</strong> Standard <code>Math.random()</code> generates a
+pseudorandom number in the half-open interval <span
+class="math inline">\([0, 1)\)</span>. To make the upper bound inclusive
+for floats, Lodash cannot simply add <code>1</code> as it does with
+integers, as doing so would alter the scale of fractional values.
+Instead, it computes an epsilon offset based on string length and
+applies an upper clamp.</p></li>
+</ol>
+<h3 id="the-boundary-extension-and-epsilon-logic">The Boundary Extension
+and Epsilon Logic</h3>
+<p>To make <code>upper</code> achievable in floating-point returns,
+Lodash artificially extends the upper range by calculating an
+infinitesimal offset based on the stringified precision of
+<code>Math.random()</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> rand <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">random</span>()<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> randLength <span class="op">=</span> rand<span class="op">.</span><span class="fu">toString</span>()<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  lower <span class="op">+</span> (rand <span class="op">*</span> (upper <span class="op">-</span> lower <span class="op">+</span> <span class="pp">parseFloat</span>(<span class="st">&#39;1e-&#39;</span> <span class="op">+</span> ((randLength <span class="op">&lt;=</span> <span class="dv">1</span> <span class="op">?</span> <span class="dv">16</span> <span class="op">:</span> randLength) <span class="op">-</span> <span class="dv">1</span>))))<span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  upper</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span></code></pre></div>
+<p>Because <code>Math.random()</code> typically produces between 16 and
+18 decimal places of precision, <code>parseFloat('1e-16')</code> (or
+similar depending on platform precision) is added to the total range
+<code>(upper - lower)</code>.</p>
+<h3 id="boundary-clamping-and-distribution-distortion">Boundary Clamping
+and Distribution Distortion</h3>
+<p>The addition of the epsilon value slightly stretches the generation
+window past the nominal <code>upper</code> limit. Consequently, any
+random float generated that falls into the tiny interval
+<code>(upper, upper + epsilon]</code> exceeds <code>upper</code>.</p>
+<p>To prevent out-of-bounds results, Lodash wraps the calculation in
+<code>Math.min(..., upper)</code>. This clamping logic produces a
+specific statistical artifact:</p>
+<ul>
+<li><strong>Interior Uniformity:</strong> Across the range <span
+class="math inline">\([lower, upper)\)</span>, the distribution remains
+continuous and uniform.</li>
+<li><strong>Upper Boundary Mass:</strong> Any value generated beyond
+<code>upper</code> is mapped directly to <code>upper</code>. While the
+probability mass of this occurrence is infinitesimally small (roughly
+<span class="math inline">\(1 \times 10^{-16}\)</span>), it technically
+introduces a discrete probability point at the exact upper boundary,
+creating a hybrid continuous-discrete distribution curve rather than a
+purely continuous one.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

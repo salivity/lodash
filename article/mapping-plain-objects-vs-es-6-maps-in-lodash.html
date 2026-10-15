@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapping Plain Objects vs ES6 Maps in Lodash - lodash</title>
+    <meta name="description" content="This article analyzes the structural, security, and performance divergence between mapping plain JavaScript objects and native ES6 Map collections using the Lodash utility library. While developers frequently treat plain objects and dynamic Map collection">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/mapping-plain-objects-vs-es-6-maps-in-lodash">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Mapping Plain Objects vs ES6 Maps in Lodash - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/mapping-plain-objects-vs-es-6-maps-in-lodash" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article analyzes the structural, security, and performance divergence between mapping plain JavaScript objects and native ES6 Map collections using the Lodash utility library. While developers frequently treat plain objects and dynamic Map collection" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="mapping-plain-objects-vs-es6-maps-in-lodash">Mapping Plain
+Objects vs ES6 Maps in Lodash</h1>
+<p>This article analyzes the structural, security, and performance
+divergence between mapping plain JavaScript objects and native ES6
+<code>Map</code> collections using the Lodash utility library. While
+developers frequently treat plain objects and dynamic <code>Map</code>
+collections interchangeably in functional pipelines, Lodash evaluates
+and processes them through fundamentally distinct operational paths.
+Understanding these internal distinctions reveals significant
+consequences for memory allocation, prototype pollution defenses, key
+coercion overhead, and V8 optimization routines.</p>
+<h3 id="internal-traversal-mechanisms-in-lodash">Internal Traversal
+Mechanisms in Lodash</h3>
+<p>When Lodash functions such as <code>_.map</code> or
+<code>_.mapValues</code> receive a plain JavaScript object
+(<code>{}</code>), Lodash invokes internal utilities like
+<code>baseKeys</code> and <code>keys</code>. These mechanisms extract
+enumerable own properties, generating an intermediate array of keys via
+<code>Object.keys()</code> or an equivalent custom loop. Iterating over
+plain objects therefore incurs an upfront memory allocation penalty
+simply to track the object's keys before transformations begin.</p>
+<p>In contrast, when Lodash processes a native ES6 <code>Map</code>, it
+branches directly into handling keyed iterable collections. It utilizes
+native iterator protocols, invoking <code>Map.prototype.entries()</code>
+or native iteration pathways internally. This avoids generating an
+intermediate array of keys, streaming the collection directly into the
+mapper function. Consequently, dynamic collections with frequent
+mutations maintain linear traversal characteristics without the garbage
+collection spikes triggered by intermediate key arrays.</p>
+<h3 id="security-and-prototype-pollution-boundaries">Security and
+Prototype Pollution Boundaries</h3>
+<p>Explicitly mapping plain objects demands robust boundary defenses
+against prototype pollution. Plain objects inherit from
+<code>Object.prototype</code> unless created via
+<code>Object.create(null)</code>. When mapping untrusted input using
+standard object transformations, malicious keys such as
+<code>__proto__</code>, <code>constructor</code>, and
+<code>prototype</code> can compromise the runtime environment if mapped
+outputs are merged back into plain targets. Lodash incorporates
+defensive checks to safeguard against prototype injection, but
+validating these boundaries during plain object iteration incurs
+continuous runtime execution overhead.</p>
+<p>Native <code>Map</code> instances neutralize this attack vector
+entirely. An ES6 <code>Map</code> distinguishes arbitrary keys from
+internal properties because its storage does not rely on prototype
+property assignment. A key named <code>"__proto__"</code> inside a
+<code>Map</code> is treated strictly as an isolated, inert value rather
+than an accessor to the object prototype. As a result, native
+<code>Map</code> mapping completely avoids the defensive validation
+cycles necessary when securely parsing plain object properties.</p>
+<h3 id="key-coercion-and-reference-integrity">Key Coercion and Reference
+Integrity</h3>
+<p>Plain object iteration enforces string or symbol coercion on every
+key. When a mapping routine reads or writes to a plain object, any
+complex key is converted to a primitive string representation (e.g.,
+<code>[object Object]</code>). This coercion forces explicit manual
+serialization when tracking entity relationships and creates collision
+hazards if multiple keys resolve to identical string
+representations.</p>
+<p>Native <code>Map</code> iteration natively preserves key reference
+identity. Primitives, functions, DOM nodes, and object instances retain
+their discrete references without type casting. Lodash retains these
+distinct references across transformations, bypassing stringification
+operations and preserving runtime data integrity.</p>
+<h3 id="v8-hidden-classes-and-memory-overhead">V8 Hidden Classes and
+Memory Overhead</h3>
+<p>At the engine level, plain objects rely on hidden classes (shapes) to
+optimize property lookups through inline caches (ICs). When a plain
+object undergoes dynamic, iterative property mapping where properties
+are added, modified, or deleted on the fly, V8 often transitions the
+object into "dictionary mode" (slow mode). Once an object transitions to
+dictionary mode, property access loses inline caching advantages,
+causing execution speeds to degrade substantially.</p>
+<p>Native <code>Map</code> collections are specifically designed from
+the ground up for dynamic additions, removals, and large-scale
+iterations. The JavaScript engine implements them as hash tables with
+deterministic deterministic lookup and insertion guarantees. Because
+<code>Map</code> instances never depend on hidden classes for standard
+entry operations, their performance remains stable under rapid
+structural mutations, eliminating the deoptimization penalties that
+afflict dynamically altered plain objects during intensive Lodash
+mapping operations.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

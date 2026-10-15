@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash toArray Converts Iterables to Arrays - lodash</title>
+    <meta name="description" content="This article explores how Lodash’s .toArray utility converts various data structures—including iterables, array-like objects, strings, and plain objects—into pure JavaScript arrays. You will learn about the internal type-checking mechanisms Lodash applies">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-to-array-converts-iterables-to-arrays">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash toArray Converts Iterables to Arrays - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-to-array-converts-iterables-to-arrays" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how Lodash’s .toArray utility converts various data structures—including iterables, array-like objects, strings, and plain objects—into pure JavaScript arrays. You will learn about the internal type-checking mechanisms Lodash applies" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-toarray-converts-iterables-to-arrays">How Lodash
+toArray Converts Iterables to Arrays</h1>
+<p>This article explores how Lodash’s <code>_.toArray</code> utility
+converts various data structures—including iterables, array-like
+objects, strings, and plain objects—into pure JavaScript arrays. You
+will learn about the internal type-checking mechanisms Lodash applies,
+how it resolves values from different input types, how it handles
+complex Unicode characters, and how its behavior compares to native
+modern JavaScript features like <code>Array.from</code>.</p>
+<h2 id="understanding-the-role-of-_toarray">Understanding the Role of
+<code>_.toArray</code></h2>
+<p>In JavaScript, several structures resemble arrays or can be looped
+over sequentially, but they lack native array prototype methods such as
+<code>.map()</code>, <code>.filter()</code>, or <code>.reduce()</code>.
+These structures include the <code>arguments</code> object, DOM
+<code>NodeList</code> collections, <code>Set</code>, <code>Map</code>,
+strings, and standard key-value objects.</p>
+<p>The <code>_.toArray</code> method provides a reliable,
+cross-environment way to transform any of these collections into an
+independent, flat, native array (<code>Array</code>).</p>
+<h2 id="step-by-step-the-internal-conversion-process">Step-by-Step: The
+Internal Conversion Process</h2>
+<p>Lodash processes the target value through a sequence of condition
+checks to determine the most efficient extraction strategy:</p>
+<h3 id="1-falsy-and-nullish-checking">1. Falsy and Nullish Checking</h3>
+<p>If the input value is <code>null</code>, <code>undefined</code>, or
+falsey (aside from values that can be coerced, like numeric zero),
+<code>_.toArray</code> immediately returns a new, empty array
+<code>[]</code>. This prevents runtime <code>TypeError</code> exceptions
+commonly encountered with native operations.</p>
+<h3 id="2-native-array-fast-path">2. Native Array Fast-Path</h3>
+<p>If the input is already a native array, Lodash does not simply return
+the reference. It performs a shallow copy of the array (equivalent to
+<code>array.slice()</code>) to ensure that mutations to the returned
+array do not modify the original data source.</p>
+<h3 id="3-iterables-and-symboliterator">3. Iterables and
+<code>Symbol.iterator</code></h3>
+<p>For modern ES6 iterables—such as <code>Set</code>, <code>Map</code>,
+or custom iterables implementing the <code>[Symbol.iterator]</code>
+protocol:</p>
+<ul>
+<li><strong>Iterables in General:</strong> Lodash invokes the iterable's
+iterator mechanism, pulling elements sequentially into a new array.</li>
+<li><strong>Maps:</strong> When a <code>Map</code> is passed, it
+extracts the map's values (equivalent to
+<code>Array.from(map.values())</code>), rather than the key-value
+pairs.</li>
+<li><strong>Sets:</strong> It reads each entry and places it into the
+resulting array in insertion order.</li>
+</ul>
+<h3 id="4-array-like-objects">4. Array-Like Objects</h3>
+<p>An object is classified as "array-like" if it is not a function and
+possesses a non-negative integer <code>length</code> property (such as
+<code>{ length: 2, 0: 'a', 1: 'b' }</code> or a DOM
+<code>NodeList</code>). For these structures, Lodash copies the values
+from index <code>0</code> up to <code>length - 1</code> into a new array
+structure.</p>
+<h3 id="5-string-and-unicode-handling">5. String and Unicode
+Handling</h3>
+<p>Strings are iterable, but direct indexing or naive splitting fails on
+surrogate pairs (such as emojis or complex symbols).
+<code>_.toArray</code> checks for symbols with astral code points. If
+present, it breaks the string apart using Unicode-aware iteration logic,
+guaranteeing that characters composed of multiple code units are
+preserved accurately as single elements.</p>
+<h3 id="6-plain-objects">6. Plain Objects</h3>
+<p>Unlike native conversion methods like <code>Array.from</code> (which
+returns an empty array for plain objects without a <code>length</code>
+property), Lodash gracefully handles standard key-value objects. If a
+non-iterable plain object is passed, <code>_.toArray</code> invokes its
+internal equivalent of <code>Object.values()</code>, collecting all
+enumerable own-property values into the new array:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">101</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> <span class="st">&#39;admin&#39;</span> }<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">toArray</span>(user)<span class="op">;</span> <span class="co">// Returns: [101, &#39;admin&#39;]</span></span></code></pre></div>
+<h2 id="_toarray-vs-native-arrayfrom"><code>_.toArray</code> vs. Native
+<code>Array.from</code></h2>
+<p>While modern JavaScript offers <code>Array.from()</code> and the
+spread operator (<code>[...iterable]</code>), Lodash's
+<code>_.toArray</code> differs in several key ways:</p>
+<ul>
+<li><strong>Plain Object Support:</strong>
+<code>Array.from({ a: 1, b: 2 })</code> returns <code>[]</code>, whereas
+<code>_.toArray({ a: 1, b: 2 })</code> extracts the values
+<code>[1, 2]</code>.</li>
+<li><strong>Null Safety:</strong> Passing <code>null</code> or
+<code>undefined</code> to <code>Array.from</code> or
+<code>[...null]</code> throws a <code>TypeError</code>.
+<code>_.toArray(null)</code> safely yields <code>[]</code>.</li>
+<li><strong>Map Normalization:</strong> Spreading a <code>Map</code>
+yields an array of <code>[key, value]</code> pairs, while
+<code>_.toArray(map)</code> automatically flattens it to an array
+containing only the values.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

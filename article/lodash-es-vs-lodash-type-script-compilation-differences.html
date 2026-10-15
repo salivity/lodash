@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash-es vs Lodash: TypeScript Compilation Differences - lodash</title>
+    <meta name="description" content="Choosing between lodash-es and the standard lodash library significantly alters how the TypeScript compiler (tsc) and downstream bundlers process your code. While standard Lodash is distributed using CommonJS (CJS) modules, lodash-es is packaged entirely">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-es-vs-lodash-type-script-compilation-differences">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash-es vs Lodash: TypeScript Compilation Differences - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-es-vs-lodash-type-script-compilation-differences" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Choosing between lodash-es and the standard lodash library significantly alters how the TypeScript compiler (tsc) and downstream bundlers process your code. While standard Lodash is distributed using CommonJS (CJS) modules, lodash-es is packaged entirely" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="lodash-es-vs-lodash-typescript-compilation-differences">Lodash-es vs
+Lodash: TypeScript Compilation Differences</h1>
+<p>Choosing between <code>lodash-es</code> and the standard
+<code>lodash</code> library significantly alters how the TypeScript
+compiler (<code>tsc</code>) and downstream bundlers process your code.
+While standard Lodash is distributed using CommonJS (CJS) modules,
+<code>lodash-es</code> is packaged entirely as ECMAScript Modules (ESM).
+This architectural distinction directly influences module resolution
+rules, emit outputs, tree-shaking efficacy, type declaration handling,
+and the compiler flags required inside <code>tsconfig.json</code>.</p>
+<h3 id="module-resolution-and-target-settings">Module Resolution and
+Target Settings</h3>
+<p>When using standard <code>lodash</code>, TypeScript resolves CommonJS
+modules. If your <code>tsconfig.json</code> specifies
+<code>"module": "CommonJS"</code> and
+<code>"moduleResolution": "node"</code>, imports from
+<code>lodash</code> resolve seamlessly without requiring modern ESM
+loaders.</p>
+<p>Conversely, <code>lodash-es</code> uses ES module syntax
+(<code>import</code>/<code>export</code>). To compile code consuming
+<code>lodash-es</code> properly in modern setups, your
+<code>tsconfig.json</code> must be configured to accommodate ESM:</p>
+<ul>
+<li><code>"module"</code> should typically be set to
+<code>ESNext</code>, <code>NodeNext</code>, or <code>Node16</code>.</li>
+<li><code>"moduleResolution"</code> should match modern standards, such
+as <code>NodeNext</code>, <code>Node16</code>, or
+<code>bundler</code>.</li>
+</ul>
+<p>If you compile a project targeting a CommonJS runtime while using
+<code>lodash-es</code>, TypeScript will either flag an error or emit
+dynamic imports and wrapper code depending on your configuration,
+because an ESM package cannot always be synchronously required by native
+CommonJS environments without a bundler.</p>
+<h3 id="tree-shaking-and-static-analysis">Tree-Shaking and Static
+Analysis</h3>
+<p>The most consequential compilation difference appears in downstream
+tree-shaking:</p>
+<ul>
+<li><strong>With <code>lodash</code> (CommonJS):</strong> Named imports
+like <code>import { debounce } from 'lodash'</code> pull in the entire
+library bundle. Because CommonJS exports are dynamic objects evaluated
+at runtime, the compiler and static analyzers cannot safely determine
+which functions are unused. To work around this in standard Lodash,
+developers are forced to use deep imports (e.g.,
+<code>import debounce from 'lodash/debounce'</code>) or rely on
+specialized transformation plugins like
+<code>babel-plugin-lodash</code>.</li>
+<li><strong>With <code>lodash-es</code> (ESM):</strong> Named imports
+like <code>import { debounce } from 'lodash-es'</code> allow TypeScript
+to emit native static <code>import</code> declarations. Modern bundlers
+(such as Webpack, Rollup, Vite, or esbuild) can analyze these static
+dependency graphs during compilation and strip away all unreferenced
+utilities, drastically reducing the final bundle size without requiring
+path-specific deep imports.</li>
+</ul>
+<h3 id="type-definition-ecosystem">Type Definition Ecosystem</h3>
+<p>TypeScript requires type definitions to validate Lodash functions at
+compile time:</p>
+<ul>
+<li><strong><code>@types/lodash</code>:</strong> Maintained directly for
+the CommonJS package. It fully supports both the monolithic export
+(<code>_</code>) and path-specific imports (<code>lodash/get</code>,
+<code>lodash/map</code>).</li>
+<li><strong><code>@types/lodash-es</code>:</strong> Specifically mirrors
+the ESM layout. Historically, this package re-exports declarations from
+<code>@types/lodash</code> mapped to ESM syntax. While functional,
+importing types from <code>@types/lodash-es</code> sometimes introduces
+minor discrepancies with specific utility types or method chaining
+features that were natively built around CommonJS namespaces.</li>
+</ul>
+<h3 id="import-interoperability-flags">Import Interoperability
+Flags</h3>
+<p>Standard Lodash frequently requires specific interoperability flags
+in <code>tsconfig.json</code>:</p>
+<ul>
+<li><code>"esModuleInterop": true</code></li>
+<li><code>"allowSyntheticDefaultImports": true</code></li>
+</ul>
+<p>Without these flags, attempting to import standard Lodash using
+standard syntax—such as <code>import _ from 'lodash'</code>—causes
+compilation errors because the CommonJS export is not an ES default
+export.</p>
+<p>Because <code>lodash-es</code> natively exposes valid ES default and
+named exports, it compiles cleanly using standard import statements
+without relying on synthetic default import shims, adhering strictly to
+official ECMAScript specifications.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

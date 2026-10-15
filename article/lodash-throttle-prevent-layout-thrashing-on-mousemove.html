@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Throttle: Prevent Layout Thrashing on Mousemove - lodash</title>
+    <meta name="description" content="This article examines how the Lodash utility .throttle stabilizes browser rendering performance by mitigating layout thrashing during high-frequency mousemove interactions. You will learn the mechanics behind rapid mouse events, why interleaving DOM read">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-throttle-prevent-layout-thrashing-on-mousemove">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Throttle: Prevent Layout Thrashing on Mousemove - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-throttle-prevent-layout-thrashing-on-mousemove" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the Lodash utility .throttle stabilizes browser rendering performance by mitigating layout thrashing during high-frequency mousemove interactions. You will learn the mechanics behind rapid mouse events, why interleaving DOM read" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-throttle-prevent-layout-thrashing-on-mousemove">Lodash
+Throttle: Prevent Layout Thrashing on Mousemove</h1>
+<p>This article examines how the Lodash utility <code>_.throttle</code>
+stabilizes browser rendering performance by mitigating layout thrashing
+during high-frequency <code>mousemove</code> interactions. You will
+learn the mechanics behind rapid mouse events, why interleaving DOM read
+and write operations inside standard listeners causes performance
+bottlenecks, and how throttling limits callback frequency to allow the
+browser's rendering engine to batch layout recalculations
+efficiently.</p>
+<h3 id="the-mechanism-of-mouse-move-events">The Mechanism of Mouse-Move
+Events</h3>
+<p>Modern pointing devices fire <code>mousemove</code> events at the
+hardware's polling rate, which frequently reaches 120Hz to 1000Hz. When
+an unthrottled event listener is attached to the window or a specific
+DOM element, the callback function can be invoked dozens to hundreds of
+times within a single 16.6ms frame (the standard window for a 60Hz
+display). If the callback performs DOM operations, executing them at
+this frequency overwhelms the browser's main thread.</p>
+<h3 id="understanding-layout-thrashing">Understanding Layout
+Thrashing</h3>
+<p>Layout thrashing, or forced synchronous layout, occurs when
+JavaScript repeatedly alternates between reading and writing geometric
+properties of the DOM.</p>
+<p>Browsers prefer to run a single layout calculation per frame by
+batching style updates and geometric modifications. However, if a script
+modifies a style property (e.g., <code>element.style.left = ...</code>)
+and immediately queries a computed geometric property (e.g.,
+<code>element.offsetWidth</code> or
+<code>element.getBoundingClientRect()</code>), the browser is forced to
+immediately recalculate the layout synchronously to return the accurate
+value. When an unthrottled <code>mousemove</code> event triggers this
+read-write cycle continuously, the browser executes multiple full layout
+passes per frame, dropping the frame rate and causing noticeable UI
+stuttering.</p>
+<h3 id="how-lodash-_throttle-mitigates-the-issue">How Lodash
+<code>_.throttle</code> Mitigates the Issue</h3>
+<p>Lodash's <code>_.throttle</code> wraps the target event handler in a
+closure that tracks elapsed time between invocations using
+high-resolution timestamps. It manages rapid events through three
+primary behaviors:</p>
+<ol type="1">
+<li><strong>Rate Gating:</strong> <code>_.throttle(fn, wait)</code>
+enforces a mandatory delay (<code>wait</code>) before allowing
+<code>fn</code> to run again. Regardless of how many hundreds of
+<code>mousemove</code> events fire, the wrapped function only executes
+at designated intervals (for example, every 16ms or 50ms).</li>
+<li><strong>Execution Timing Control:</strong> Using its
+<code>leading</code> and <code>trailing</code> configuration options,
+<code>_.throttle</code> can run the handler immediately on the initial
+mouse movement and capture the final state when movement ceases.
+Intermediate events that occur inside the throttle window are
+discarded.</li>
+<li><strong>Minimizing Forced Synchronous Layouts:</strong> By
+dramatically reducing the number of callback executions,
+<code>_.throttle</code> reduces the frequency of intrusive DOM reads and
+writes. This suppression gives the browser sufficient idle periods
+between events to batch style updates and run style recalculation,
+layout, and painting once per render frame.</li>
+</ol>
+<h3 id="optimal-implementation-strategy">Optimal Implementation
+Strategy</h3>
+<p>Throttling significantly lowers the incidence of layout thrashing,
+but maximum performance requires separating DOM reads from writes.
+Combining <code>_.throttle</code> with native rendering loops provides
+the best protection:</p>
+<ul>
+<li><strong>Throttle Interval:</strong> Setting the throttle window to
+approximately 16ms aligns callback execution closer to a standard 60Hz
+refresh rate.</li>
+<li><strong>Separation of Concerns:</strong> Keep DOM measurements
+(reads) outside the continuous update loop when possible, or schedule
+the corresponding visual updates (writes) inside
+<code>window.requestAnimationFrame()</code>.</li>
+</ul>
+<p>By strictly capping execution frequency, <code>_.throttle</code>
+prevents rapid mouse inputs from saturating the call stack and ensures
+the browser retains control over the rendering pipeline.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

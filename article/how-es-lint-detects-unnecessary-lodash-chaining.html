@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How ESLint Detects Unnecessary Lodash Chaining - lodash</title>
+    <meta name="description" content="Lodash chaining provides a fluent API for sequencing data transformations, but wrapping values in a Lodash wrapper for solitary operations introduces runtime overhead and prevents effective tree-shaking. This article examines how eslint-plugin-lodash pars">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-es-lint-detects-unnecessary-lodash-chaining">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How ESLint Detects Unnecessary Lodash Chaining - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-es-lint-detects-unnecessary-lodash-chaining" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash chaining provides a fluent API for sequencing data transformations, but wrapping values in a Lodash wrapper for solitary operations introduces runtime overhead and prevents effective tree-shaking. This article examines how eslint-plugin-lodash pars" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-eslint-detects-unnecessary-lodash-chaining">How ESLint
+Detects Unnecessary Lodash Chaining</h1>
+<p>Lodash chaining provides a fluent API for sequencing data
+transformations, but wrapping values in a Lodash wrapper for solitary
+operations introduces runtime overhead and prevents effective
+tree-shaking. This article examines how
+<code>eslint-plugin-lodash</code> parses the Abstract Syntax Tree (AST)
+to identify redundant chaining, evaluates call depth, and alerts
+developers to simplify their code into direct method invocations.</p>
+<h3 id="abstract-syntax-tree-traversal">Abstract Syntax Tree
+Traversal</h3>
+<p>ESLint operates by parsing JavaScript source code into an Abstract
+Syntax Tree (AST) via parsers like Espree.
+<code>eslint-plugin-lodash</code> hooks into this process using visitor
+functions that inspect specific AST node types, primarily
+<code>CallExpression</code> and <code>MemberExpression</code>.</p>
+<p>When code executes a chained operation such as
+<code>_chain(items).map(fn).value()</code> or
+<code>_(items).filter(fn).value()</code>, the AST represents this
+structure as a nested hierarchy of method calls:</p>
+<ol type="1">
+<li>The root <code>CallExpression</code> represents
+<code>.value()</code>.</li>
+<li>The <code>callee</code> of that call is a
+<code>MemberExpression</code> pointing to the output of the preceding
+operation (e.g., <code>.map(fn)</code>).</li>
+<li>The chain continues recursively down to the initial wrapper call
+(<code>_.chain(...)</code> or <code>_(...)</code>).</li>
+</ol>
+<h3 id="scope-and-identifier-resolution">Scope and Identifier
+Resolution</h3>
+<p>Before checking chain length, <code>eslint-plugin-lodash</code>
+verifies that the invoked object actually originates from the Lodash
+library. The plugin uses ESLint's built-in <code>Scope</code> manager to
+trace identifiers. It inspects:</p>
+<ul>
+<li>Import declarations, such as <code>import _ from 'lodash'</code> or
+<code>import { chain } from 'lodash'</code>.</li>
+<li>CommonJS require statements, such as
+<code>const _ = require('lodash')</code>.</li>
+<li>Global variable declarations if Lodash is configured as a
+global.</li>
+</ul>
+<p>If an identifier does not resolve to the designated Lodash import or
+variable, the plugin ignores the call, preventing false positives on
+native method chains or other libraries with similar chaining
+patterns.</p>
+<h3 id="counting-intermediate-transformations">Counting Intermediate
+Transformations</h3>
+<p>The core detection logic relies on analyzing the depth of the chain
+between the initialization and the terminal <code>.value()</code> or
+unwrapping step. Rules such as <code>lodash/chain-style</code> enforce
+specific architectural patterns (explicit, implicit, or no
+chaining).</p>
+<p>To catch unnecessary chaining:</p>
+<ol type="1">
+<li><strong>Step Identification:</strong> When the linter encounters a
+terminal call (like <code>.value()</code>), it traverses up the AST
+branch, collecting each intermediate <code>MemberExpression</code> and
+<code>CallExpression</code>.</li>
+<li><strong>Operation Counting:</strong> The plugin counts how many
+transformation steps occur between the creation of the wrapper and the
+extraction of the value.</li>
+<li><strong>Threshold Evaluation:</strong> If the chain consists of only
+zero or one transformation (for example,
+<code>_.chain(users).map(getName).value()</code>), the chain wrapper
+provides no functional utility over the direct call
+<code>_.map(users, getName)</code>.</li>
+</ol>
+<h3 id="warning-generation-and-autofixing">Warning Generation and
+Autofixing</h3>
+<p>When the AST walker identifies a chain that violates the configured
+threshold or rule constraints, <code>eslint-plugin-lodash</code> calls
+ESLint's <code>context.report()</code> API.</p>
+<p>The report contains:</p>
+<ul>
+<li>The precise line and column numbers of the redundant wrapper.</li>
+<li>A message explaining that the single chained call should be replaced
+with a direct method invocation.</li>
+<li>An optional fixer function that rewrites the AST node by unwrapping
+the initial argument and passing it as the first parameter to the direct
+method, transforming
+<code>_.chain(data).filter(predicate).value()</code> into
+<code>_.filter(data, predicate)</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

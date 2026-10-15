@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash bindKey Works with Dynamic Methods - lodash</title>
+    <meta name="description" content="Lodash&#39;s .bindKey utility allows developers to create a bound function that references an object&#39;s method by its property name rather than its direct memory address. Unlike traditional function binding methods that lock in a function reference at declarat">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-bind-key-works-with-dynamic-methods">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash bindKey Works with Dynamic Methods - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-bind-key-works-with-dynamic-methods" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .bindKey utility allows developers to create a bound function that references an object&#39;s method by its property name rather than its direct memory address. Unlike traditional function binding methods that lock in a function reference at declarat" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-bindkey-works-with-dynamic-methods">How Lodash
+bindKey Works with Dynamic Methods</h1>
+<p>Lodash's <code>_.bindKey</code> utility allows developers to create a
+bound function that references an object's method by its property name
+rather than its direct memory address. Unlike traditional function
+binding methods that lock in a function reference at declaration,
+<code>_.bindKey</code> defers the method lookup until invocation time.
+This article explores how <code>_.bindKey</code> maintains dynamic
+references, contrasts its behavior with standard binding, and outlines
+the internal mechanics that make runtime overwriting possible.</p>
+<h2 id="the-limitation-of-direct-reference-binding">The Limitation of
+Direct Reference Binding</h2>
+<p>In standard JavaScript, methods like
+<code>Function.prototype.bind()</code> or Lodash's <code>_.bind()</code>
+capture a direct pointer to the target function at the moment of
+execution.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">greet</span>() { <span class="cf">return</span> <span class="vs">`Hello, </span><span class="sc">${</span><span class="kw">this</span><span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs">`</span><span class="op">;</span> }</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> boundGreet <span class="op">=</span> user<span class="op">.</span><span class="at">greet</span><span class="op">.</span><span class="fu">bind</span>(user)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>user<span class="op">.</span><span class="at">greet</span> <span class="op">=</span> <span class="kw">function</span>() { <span class="cf">return</span> <span class="vs">`Hi, </span><span class="sc">${</span><span class="kw">this</span><span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs">!`</span><span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">boundGreet</span>()<span class="op">;</span> <span class="co">// Returns &quot;Hello, Alice&quot;</span></span></code></pre></div>
+<p>In this scenario, <code>boundGreet</code> continues to execute the
+original function implementation because the binding resolved the
+reference to <code>greet</code> immediately. Overwriting
+<code>user.greet</code> changes the property on the object, but the
+bound closure retains its reference to the initial function in
+memory.</p>
+<h2 id="how-_bindkey-solves-the-problem">How <code>_.bindKey</code>
+Solves the Problem</h2>
+<p><code>_.bindKey</code> circumvents reference locking by storing the
+host object and the target method's key name instead of the function
+itself.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> boundGreet <span class="op">=</span> _<span class="op">.</span><span class="fu">bindKey</span>(user<span class="op">,</span> <span class="st">&#39;greet&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>user<span class="op">.</span><span class="at">greet</span> <span class="op">=</span> <span class="kw">function</span>() { <span class="cf">return</span> <span class="vs">`Hi, </span><span class="sc">${</span><span class="kw">this</span><span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs">!`</span><span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">boundGreet</span>()<span class="op">;</span> <span class="co">// Returns &quot;Hi, Alice!&quot;</span></span></code></pre></div>
+<p>When <code>boundGreet</code> is called, it does not immediately
+dispatch to a stored function. Instead, it evaluates
+<code>user['greet']</code> at call time, retrieves whatever function
+currently occupies that property, and executes it with the bound object
+as its <code>this</code> context.</p>
+<h2 id="internal-mechanics-in-lodash">Internal Mechanics in Lodash</h2>
+<p>Under the hood, <code>_.bindKey</code> relies on Lodash's internal
+wrapper creation pipeline (primarily handled by the internal
+<code>createWrap</code> utility).</p>
+<h3 id="1-bitwise-flag-configuration">1. Bitwise Flag Configuration</h3>
+<p>Lodash manages function transformation features (currying, binding,
+re-binding, partial application) using bitwise bitmasks. For
+<code>_.bindKey</code>, Lodash applies the <code>WRAP_BIND_FLAG</code>
+along with the <code>WRAP_BIND_KEY_FLAG</code>.</p>
+<h3 id="2-deferred-resolution-wrapper">2. Deferred Resolution
+Wrapper</h3>
+<p>When the wrapper function returned by <code>_.bindKey</code> is
+invoked, Lodash executes an internal dispatcher. Rather than calling a
+closed-over function pointer, the dispatcher accesses the target
+function dynamically:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Conceptual representation of the internal execution step</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> fn <span class="op">=</span> object[key]<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> fn<span class="op">.</span><span class="fu">apply</span>(object<span class="op">,</span> combinedArgs)<span class="op">;</span></span></code></pre></div>
+<p>Because the property lookup <code>object[key]</code> takes place
+within the body of the wrapper function during the call cycle, any
+changes made to <code>object[key]</code> between wrapper creation and
+invocation are automatically reflected.</p>
+<h3 id="3-argument-handling-and-partial-application">3. Argument
+Handling and Partial Application</h3>
+<p>Like <code>_.bind</code>, <code>_.bindKey</code> supports partial
+application and placeholders (e.g., <code>_</code>). Lodash stores any
+pre-supplied arguments alongside the object and key metadata. When the
+wrapper is triggered, it merges the pre-bound arguments with any
+arguments passed to the current invocation, resolves
+<code>object[key]</code>, and passes the consolidated arguments array to
+the resolved function.</p>
+<p>If <code>object[key]</code> is replaced with a new function having a
+different signature or logic, the new function is executed with the
+combined arguments, ensuring flexibility in dynamic environments,
+mocking frameworks, and event-driven architectures.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

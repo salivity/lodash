@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Throttle Trailing Edge Execution Timing - lodash</title>
+    <meta name="description" content="This article explains how the Lodash JavaScript library determines the exact execution timing of the final trailing callback in .throttle. It breaks down the underlying reliance on .debounce, the tracking of internal timestamps, the mathematical calculati">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-throttle-trailing-edge-execution-timing">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Throttle Trailing Edge Execution Timing - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-throttle-trailing-edge-execution-timing" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the Lodash JavaScript library determines the exact execution timing of the final trailing callback in .throttle. It breaks down the underlying reliance on .debounce, the tracking of internal timestamps, the mathematical calculati" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-throttle-trailing-edge-execution-timing">Lodash Throttle
+Trailing Edge Execution Timing</h1>
+<p>This article explains how the Lodash JavaScript library determines
+the exact execution timing of the final trailing callback in
+<code>_.throttle</code>. It breaks down the underlying reliance on
+<code>_.debounce</code>, the tracking of internal timestamps, the
+mathematical calculation behind <code>remainingWait</code>, and how the
+browser's event loop ultimately resolves the scheduled invocation.</p>
+<h2 id="throttle-is-built-on-debounce">Throttle Is Built on
+Debounce</h2>
+<p>In Lodash, <code>_.throttle</code> is not a standalone
+implementation; it is a wrapper around <code>_.debounce</code>. Calling
+<code>_.throttle(func, wait, options)</code> invokes
+<code>debounce</code> with specific defaults:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">debounce</span>(func<span class="op">,</span> wait<span class="op">,</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">leading</span><span class="op">:</span> options<span class="op">.</span><span class="at">leading</span> <span class="op">!==</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">maxWait</span><span class="op">:</span> wait<span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">trailing</span><span class="op">:</span> options<span class="op">.</span><span class="at">trailing</span> <span class="op">!==</span> <span class="kw">false</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Because <code>maxWait</code> is set to the same value as
+<code>wait</code>, the execution mechanics of
+<code>_.throttle</code>—including its trailing edge—are strictly
+governed by the debouncing engine's timer and delay calculations.</p>
+<h2 id="the-state-variables-that-control-timing">The State Variables
+That Control Timing</h2>
+<p>Lodash maintains several internal variables to evaluate whether and
+when to fire the trailing edge:</p>
+<ul>
+<li><strong><code>lastCallTime</code></strong>: The timestamp
+(<code>Date.now()</code> or <code>performance.now()</code>) when the
+throttled function was most recently invoked by your code.</li>
+<li><strong><code>lastInvokeTime</code></strong>: The timestamp when the
+original target callback (<code>func</code>) was last actually
+executed.</li>
+<li><strong><code>wait</code></strong>: The minimum delay specified by
+the caller.</li>
+<li><strong><code>maxWait</code></strong>: Equal to <code>wait</code> in
+throttled functions, enforcing an upper bound on how long execution can
+be delayed.</li>
+<li><strong><code>timerId</code></strong>: A reference to the active
+<code>setTimeout</code> instance managing the pending execution.</li>
+</ul>
+<h2 id="the-remainingwait-calculation">The <code>remainingWait</code>
+Calculation</h2>
+<p>When the throttled function is called repeatedly, Lodash recalculates
+how long it must wait before it can fire again. It uses an internal
+function named <code>remainingWait(time)</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">remainingWait</span>(time) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> timeSinceLastCall <span class="op">=</span> time <span class="op">-</span> lastCallTime<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> timeSinceLastInvoke <span class="op">=</span> time <span class="op">-</span> lastInvokeTime<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> timeWaiting <span class="op">=</span> wait <span class="op">-</span> timeSinceLastCall<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> maxing</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">?</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(timeWaiting<span class="op">,</span> maxWait <span class="op">-</span> timeSinceLastInvoke)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> timeWaiting<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because <code>maxing</code> is always true for
+<code>_.throttle</code>, the remaining delay until the trailing callback
+is the smaller of two values:</p>
+<ol type="1">
+<li>The time remaining based on the user's last invocation
+(<code>wait - (time - lastCallTime)</code>).</li>
+<li>The time remaining before hitting the maximum threshold
+(<code>maxWait - (time - lastInvokeTime)</code>).</li>
+</ol>
+<h2 id="conditions-for-the-trailing-edge-execution">Conditions for the
+Trailing Edge Execution</h2>
+<p>The trailing callback is scheduled through a standard
+<code>setTimeout</code> using the duration returned by
+<code>remainingWait</code>. When the timer expires, the internal
+<code>timerExpired</code> function executes and checks whether the
+trailing callback should run:</p>
+<ol type="1">
+<li><strong><code>trailing: true</code> Must Be Enabled</strong>: This
+option is enabled by default in <code>_.throttle</code>. If explicitly
+set to <code>false</code>, the trailing call is suppressed
+entirely.</li>
+<li><strong>An Unhandled Call Must Exist</strong>: Lodash checks if
+<code>lastCallTime !== undefined</code>. A trailing callback only
+executes if the throttled function was called at least once after the
+most recent invocation (the leading edge or a prior interval
+execution).</li>
+<li><strong>Elapsed Time Meets or Exceeds <code>wait</code></strong>: If
+the calculated <code>remainingWait</code> is less than or equal to
+<code>0</code>, Lodash calls <code>invokeFunc(time)</code>. This invokes
+the original function, resets <code>lastArgs</code> and
+<code>lastThis</code>, and updates <code>lastInvokeTime</code> to the
+current timestamp.</li>
+</ol>
+<p>If additional invocations occurred while the timer was ticking, but
+the cooldown period has not fully elapsed, Lodash restarts the timer
+with the updated <code>remainingWait</code> duration instead of
+executing immediately.</p>
+<h2 id="event-loop-precision">Event Loop Precision</h2>
+<p>The exact millisecond timing of the final trailing call is ultimately
+subject to JavaScript's concurrency model. Because Lodash relies on
+<code>setTimeout</code> to schedule the trailing edge check, execution
+can be deferred beyond the computed <code>wait</code> window if the main
+thread is blocked by heavy synchronous tasks or long-running microtasks.
+The trailing callback executes on the earliest macrotask turn available
+once the timer elapses.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

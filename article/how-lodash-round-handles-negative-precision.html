@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.round Handles Negative Precision - lodash</title>
+    <meta name="description" content="This article explains how the .round method in the Lodash JavaScript library supports negative precision to round numbers to the nearest tens, hundreds, or thousands. While native JavaScript rounding only handles integers, Lodash allows developers to spec">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-round-handles-negative-precision">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.round Handles Negative Precision - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-round-handles-negative-precision" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the .round method in the Lodash JavaScript library supports negative precision to round numbers to the nearest tens, hundreds, or thousands. While native JavaScript rounding only handles integers, Lodash allows developers to spec" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_round-handles-negative-precision">How Lodash _.round
+Handles Negative Precision</h1>
+<p>This article explains how the <code>_.round</code> method in the
+Lodash JavaScript library supports negative precision to round numbers
+to the nearest tens, hundreds, or thousands. While native JavaScript
+rounding only handles integers, Lodash allows developers to specify a
+negative precision value, using internal exponential notation shifts to
+avoid common floating-point calculation errors.</p>
+<h2 id="understanding-negative-precision">Understanding Negative
+Precision</h2>
+<p>In standard JavaScript, <code>Math.round()</code> only rounds
+floating-point numbers to the nearest whole integer. Lodash's
+<code>_.round(number, [precision=0])</code> expands on this
+functionality by allowing an optional second argument:
+<code>precision</code>.</p>
+<p>When <code>precision</code> is positive, the function rounds to
+digits to the right of the decimal point (tenths, hundredths, etc.).
+When <code>precision</code> is negative, it rounds to the left of the
+decimal point:</p>
+<ul>
+<li><code>_.round(4060, -2)</code> results in <code>4100</code> (rounded
+to the nearest hundred).</li>
+<li><code>_.round(1234, -1)</code> results in <code>1230</code> (rounded
+to the nearest ten).</li>
+<li><code>_.round(67890, -3)</code> results in <code>68000</code>
+(rounded to the nearest thousand).</li>
+</ul>
+<h2 id="the-internal-mechanism">The Internal Mechanism</h2>
+<p>A naive implementation of negative rounding might divide by a power
+of ten, apply <code>Math.round()</code>, and then multiply back:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Naive approach prone to floating-point errors</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Math</span><span class="op">.</span><span class="fu">round</span>(<span class="dv">4060</span> <span class="op">/</span> <span class="dv">100</span>) <span class="op">*</span> <span class="dv">100</span><span class="op">;</span></span></code></pre></div>
+<p>This method is susceptible to binary floating-point precision issues
+inherent to JavaScript's IEEE 754 number implementation.</p>
+<p>To solve this, Lodash implements an internal factory function called
+<code>createRound</code>. Instead of performing arithmetic division and
+multiplication, Lodash uses scientific (exponential) string notation to
+shift the decimal place before and after the rounding operation.</p>
+<h3 id="step-by-step-process">Step-by-Step Process</h3>
+<p>When you call <code>_.round(4060, -2)</code>, the internal logic
+executes the following steps:</p>
+<ol type="1">
+<li><p><strong>Splitting the Number:</strong> Lodash converts the number
+into exponential notation and splits the base and exponent strings:
+<code>'4060e'.split('e')</code> yields
+<code>['4060', '']</code>.</p></li>
+<li><p><strong>Left-Shifting with Exponents:</strong> It shifts the
+decimal point by adding the negative precision to the exponent:
+<code>${pair[0]}e${+pair[1] + precision}</code> becomes
+<code>'4060e-2'</code>, which evaluates to <code>40.6</code>.</p></li>
+<li><p><strong>Applying Native Math:</strong> Native
+<code>Math.round()</code> is called on the shifted value:
+<code>Math.round('40.6')</code> returns <code>41</code>.</p></li>
+<li><p><strong>Right-Shifting Back:</strong> Lodash shifts the decimal
+point back to its original magnitude by subtracting the precision from
+the new exponent: <code>'41e' + (0 - (-2))</code> becomes
+<code>'41e+2'</code>.</p></li>
+<li><p><strong>Converting to Number:</strong> The exponential string
+<code>'41e+2'</code> is converted back into a standard numeric type
+using the unary plus operator (<code>+</code>), resulting in
+<code>4100</code>.</p></li>
+</ol>
+<p>By manipulating numbers via exponential notation rather than direct
+mathematical operators, Lodash ensures that negative precision rounding
+remains accurate and immune to floating-point truncation bugs.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Unicode Normalization Gaps and Limits - lodash</title>
+    <meta name="description" content="Lodash is one of the most widely adopted JavaScript utility libraries, but its string parsing suite relies on custom regular expressions and basic character mappings rather than standard Unicode specifications. Consequently, Lodash natively lacks implemen">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-unicode-normalization-gaps-and-limits">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Unicode Normalization Gaps and Limits - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-unicode-normalization-gaps-and-limits" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash is one of the most widely adopted JavaScript utility libraries, but its string parsing suite relies on custom regular expressions and basic character mappings rather than standard Unicode specifications. Consequently, Lodash natively lacks implemen" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-unicode-normalization-gaps-and-limits">Lodash Unicode
+Normalization Gaps and Limits</h1>
+<p>Lodash is one of the most widely adopted JavaScript utility
+libraries, but its string parsing suite relies on custom regular
+expressions and basic character mappings rather than standard Unicode
+specifications. Consequently, Lodash natively lacks implementation for
+standard Unicode Normalization Forms (NFC, NFD, NFKD, and NFKC),
+compatibility decompositions, comprehensive script deburring, and full
+grapheme cluster segmentation. This article outlines the specific
+Unicode normalization strategies that Lodash lacks natively and details
+the technical limitations of its built-in string functions.</p>
+<h3 id="absence-of-unicode-normalization-forms-uax-15">Absence of
+Unicode Normalization Forms (UAX #15)</h3>
+<p>Lodash does not natively implement or invoke any of the four standard
+Unicode Normalization Forms defined by Unicode Standard Annex #15:</p>
+<ul>
+<li><strong>NFC (Canonical Decomposition, followed by Canonical
+Composition):</strong> Lodash cannot canonically combine base characters
+and adjacent combining diacritics into precomposed characters.</li>
+<li><strong>NFD (Canonical Decomposition):</strong> Lodash does not
+decompose precomposed characters into their base and combining
+components standardly.</li>
+<li><strong>NFKC (Compatibility Decomposition, followed by Canonical
+Composition):</strong> Lodash provides no native way to resolve
+compatibility formatting while recomposing canonical characters.</li>
+<li><strong>NFKD (Compatibility Decomposition):</strong> Lodash fails to
+decompose compatibility characters into canonical equivalents.</li>
+</ul>
+<p>Instead of leveraging JavaScript's native
+<code>String.prototype.normalize()</code>, functions like
+<code>_.kebabCase</code>, <code>_.camelCase</code>,
+<code>_.words</code>, and <code>_.deburr</code> rely on hardcoded
+ASCII/Latin-based regular expressions.</p>
+<h3 id="lack-of-compatibility-equivalence-nfkdnfkc-transformations">Lack
+of Compatibility Equivalence (NFKD/NFKC Transformations)</h3>
+<p>Because Lodash lacks compatibility normalization strategies, it
+cannot parse or standardize characters that convey identical semantic
+meaning but differ typographically. Specifically, Lodash lacks:</p>
+<ul>
+<li><strong>Ligature Decomposition:</strong> Characters such as "ﬁ"
+(U+FB01) or "ﬂ" (U+FB02) are treated as single unknown characters rather
+than decomposing into "fi" and "fl".</li>
+<li><strong>Width Normalization:</strong> Fullwidth and halfwidth forms
+(such as Fullwidth Latin characters like "Ａ" U+FF21) are not mapped to
+their ASCII equivalents ("A").</li>
+<li><strong>Enclosed and Styled Alphanumerics:</strong> Circled digits
+(e.g., "①"), font-styled math letters (e.g., "𝕭"), and
+superscripts/subscripts (e.g., "²", "₅") are not normalized to their
+base forms.</li>
+<li><strong>Fraction Normalization:</strong> Vulgar fractions (e.g., "½"
+U+00BD) are not decomposed into separate digits and slash
+characters.</li>
+</ul>
+<h3 id="latin-restricted-diacritic-removal-in-_deburr">Latin-Restricted
+Diacritic Removal in <code>_.deburr</code></h3>
+<p>Lodash provides <code>_.deburr</code> to strip diacritics, which many
+casing functions use internally. However, its normalization strategy is
+limited to:</p>
+<ol type="1">
+<li>A manual mapping dictionary covering only Latin-1 Supplement and
+Latin Extended-A characters.</li>
+<li>A regular expression that strips a narrow range of combining
+diacritical marks
+(<code>[\u0300-\u036f\ufe20-\ufe2f\u20d0-\u20ff]</code>).</li>
+</ol>
+<p>Because of this design, Lodash lacks normalization for:</p>
+<ul>
+<li><strong>Non-Latin Scripts:</strong> Diacritics and accents in Greek
+(e.g., polytonic accents), Cyrillic, Hebrew, Arabic, and Indic scripts
+are completely ignored.</li>
+<li><strong>Complex Latin Extensions:</strong> Characters from Latin
+Extended-B, Latin Extended Additional (commonly found in Vietnamese,
+such as "ệ" or "ơ"), and phonetic extensions are largely omitted from
+decomposition unless pre-composed into combining marks matching its
+targeted range.</li>
+</ul>
+<h3 id="missing-full-unicode-case-folding-uax-21">Missing Full Unicode
+Case Folding (UAX #21)</h3>
+<p>Functions such as <code>_.toLower</code>, <code>_.lowerCase</code>,
+<code>_.toUpper</code>, and <code>_.upperCase</code> delegate to
+JavaScript's standard <code>toLowerCase()</code> and
+<code>toUpperCase()</code> without implementing full Unicode Case
+Folding. This leaves several gaps:</p>
+<ul>
+<li><strong>Special One-to-Many Casing:</strong> Handling of characters
+like the German lowercase sharp S ("ß") is not normalized to "SS" across
+all contexts or matched symmetrically against uppercase strings.</li>
+<li><strong>Case Folding Equivalence:</strong> Case normalization does
+not account for folding strategies that align characters such as the
+Greek uppercase sigma ("Σ"), lowercase sigma ("σ"), and final sigma
+("ς") into a single canonical comparison point.</li>
+</ul>
+<h3
+id="absence-of-standard-grapheme-cluster-segmentation-uax-29">Absence of
+Standard Grapheme Cluster Segmentation (UAX #29)</h3>
+<p>Lodash functions that divide strings—such as <code>_.words</code>,
+<code>_.truncate</code>, and <code>_.split</code>—rely on internal
+regular expressions designed to capture basic surrogate pairs, but they
+do not implement modern Extended Grapheme Cluster normalization
+strategies. As a result, Lodash fails to parse:</p>
+<ul>
+<li><strong>Zero-Width Joiner (ZWJ) Sequences:</strong> Complex emojis
+(such as family groups or professional roles) are split into individual
+components rather than treated as single visual units.</li>
+<li><strong>Skin-Tone and Hair Modifiers:</strong> Unicode modifier
+sequences are separated from their base characters during operations
+like truncation or word extraction.</li>
+<li><strong>Regional Indicator Pairs:</strong> Flag sequences made from
+pairs of Regional Indicator symbols can be fractured improperly.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash forInRight and Prototype Chain Traversal - lodash</title>
+    <meta name="description" content="In the Lodash JavaScript library, .forInRight iterates over an object&#39;s own and inherited enumerable properties in reverse order. While standard for...in loops and .forIn process an object&#39;s own properties first before walking up the prototype hierarchy t">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-for-in-right-and-prototype-chain-traversal">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash forInRight and Prototype Chain Traversal - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-for-in-right-and-prototype-chain-traversal" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the Lodash JavaScript library, .forInRight iterates over an object&#39;s own and inherited enumerable properties in reverse order. While standard for...in loops and .forIn process an object&#39;s own properties first before walking up the prototype hierarchy t" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-forinright-and-prototype-chain-traversal">Lodash
+forInRight and Prototype Chain Traversal</h1>
+<p>In the Lodash JavaScript library, <code>_.forInRight</code> iterates
+over an object's own and inherited enumerable properties in reverse
+order. While standard <code>for...in</code> loops and
+<code>_.forIn</code> process an object's own properties first before
+walking up the prototype hierarchy to its ancestors,
+<code>_.forInRight</code> reverses this sequence. This reverse traversal
+is particularly useful for configuration merging, resolving property
+shadowing, and reconstructing baseline behaviors, as it allows ancestral
+prototype definitions to be evaluated before child overrides.</p>
+<h3 id="understanding-the-iteration-order">Understanding the Iteration
+Order</h3>
+<p>A standard JavaScript <code>for...in</code> statement—and by
+extension Lodash's <code>_.forIn</code>—begins enumerating properties at
+the instance level (the derived object) and moves progressively upward
+through the prototype chain to base objects:</p>
+<ol type="1">
+<li>Target object's own enumerable properties</li>
+<li>Immediate prototype's enumerable properties</li>
+<li>Ancestor prototypes' enumerable properties (up to
+<code>Object.prototype</code>)</li>
+</ol>
+<p>Because <code>_.forInRight</code> iterates over this property list
+from right to left, it flips the processing sequence. The properties
+higher up in the prototype chain are evaluated first, and the instance's
+own properties are evaluated last.</p>
+<h3 id="natural-cascade-and-default-overwriting">Natural Cascade and
+Default Overwriting</h3>
+<p>The primary utility of backward traversal is implementing cascading
+defaults without extra passes. When building an aggregate state or a
+flattened plain object from a prototypal hierarchy, the desired rule is
+usually that child properties should override parent properties.</p>
+<p>If you process properties from bottom to top (child first), an
+accumulator object needs conditional checks to prevent a prototype's
+default value from overwriting a child's specialized value:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Using standard iteration requires guarding against overwriting</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">forIn</span>(childObject<span class="op">,</span> (value<span class="op">,</span> key) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>accumulator<span class="op">.</span><span class="fu">hasOwnProperty</span>(key)) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    accumulator[key] <span class="op">=</span> value<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Using <code>_.forInRight</code>, the oldest ancestor values are
+written first, and the descendant values simply overwrite them:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Using reverse iteration naturally resolves overrides</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">forInRight</span>(childObject<span class="op">,</span> (value<span class="op">,</span> key) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  accumulator[key] <span class="op">=</span> value<span class="op">;</span> <span class="co">// Derived values naturally overwrite base defaults</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>This pattern simplifies merging mechanisms in systems that rely on
+prototypal inheritance trees for theme inheritance, tiered permission
+structures, or complex configuration layers.</p>
+<h3 id="tracking-property-shadowing-and-precedence">Tracking Property
+Shadowing and Precedence</h3>
+<p>When debugging or profiling complex inheritance structures,
+developers often need to analyze how a property evolves from its generic
+declaration on a prototype to its concrete override on an instance.</p>
+<p><code>_.forInRight</code> provides a chronological view of
+inheritance. By processing the baseline prototype properties before the
+shadowing instance properties, lifecycle hooks or transform pipelines
+can inspect, validate, or migrate base implementations prior to the
+application of the derived state.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

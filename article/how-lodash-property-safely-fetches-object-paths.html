@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.property Safely Fetches Object Paths - lodash</title>
+    <meta name="description" content="The .property method in Lodash is a higher-order function that generates an accessor function for retrieving the value located at a specified path of an object. This article explores how .property securely traverses object properties, transforms path nota">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-property-safely-fetches-object-paths">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.property Safely Fetches Object Paths - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-property-safely-fetches-object-paths" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .property method in Lodash is a higher-order function that generates an accessor function for retrieving the value located at a specified path of an object. This article explores how .property securely traverses object properties, transforms path nota" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_property-safely-fetches-object-paths">How Lodash
+_.property Safely Fetches Object Paths</h1>
+<p>The <code>_.property</code> method in Lodash is a higher-order
+function that generates an accessor function for retrieving the value
+located at a specified path of an object. This article explores how
+<code>_.property</code> securely traverses object properties, transforms
+path notations into standard tokens, and guards against runtime
+exceptions such as accessing properties on <code>null</code> or
+<code>undefined</code>.</p>
+<p>At its core, <code>_.property(path)</code> returns a new function
+that accepts an object and safely returns the value at the defined
+<code>path</code>. Rather than immediately accessing nested attributes,
+it decouples the path definition from the target object, making it ideal
+for mapping, filtering, or sorting collections without throwing
+unexpected runtime errors.</p>
+<p>The security and reliability of <code>_.property</code> stem from
+Lodash's internal resolution mechanics, primarily driven by two core
+functions: <code>toPath</code> and <code>baseGet</code>.</p>
+<h3 id="1-path-normalization-with-topath">1. Path Normalization with
+<code>toPath</code></h3>
+<p>Before an object can be traversed, the input <code>path</code> must
+be parsed. Lodash accepts property paths as single keys, arrays of keys,
+or strings with dot and bracket notations (such as
+<code>'user.addresses[0].city'</code>).</p>
+<p>The internal <code>toPath</code> utility evaluates the path:</p>
+<ul>
+<li>If the input is already an array, it retains the segments.</li>
+<li>If the input is a symbol or non-string primitive, it handles it
+directly.</li>
+<li>If the input is a string, a specialized regular expression breaks
+the string into an array of individual property keys (e.g.,
+<code>['user', 'addresses', '0', 'city']</code>).</li>
+</ul>
+<p>Lodash caches these parsed paths internally to optimize repeated
+executions while ensuring malicious string formatting does not break
+runtime parsing.</p>
+<h3 id="2-iterative-traversal-via-baseget">2. Iterative Traversal via
+<code>baseGet</code></h3>
+<p>Native JavaScript encounters a
+<code>TypeError: Cannot read properties of undefined</code> when
+attempting to access a nested child of a nonexistent parent (e.g.,
+<code>obj.user.address</code> when <code>user</code> is
+<code>undefined</code>).</p>
+<p>Lodash avoids this using an iterative traversal algorithm found in
+<code>baseGet</code>. Instead of resolving the entire chain at once, the
+returned function loops through the normalized array of keys:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseGet</span>(object<span class="op">,</span> path) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  path <span class="op">=</span> <span class="fu">castPath</span>(path<span class="op">,</span> object)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> index <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> length <span class="op">=</span> path<span class="op">.</span><span class="at">length</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (object <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> index <span class="op">&lt;</span> length) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    object <span class="op">=</span> object[<span class="fu">toKey</span>(path[index<span class="op">++</span>])]<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (index <span class="op">&amp;&amp;</span> index <span class="op">==</span> length) <span class="op">?</span> object <span class="op">:</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="3-null-and-undefined-short-circuiting">3. Null and Undefined
+Short-Circuiting</h3>
+<p>The <code>while</code> loop checks <code>object != null</code> on
+each iteration, which evaluates to <code>false</code> for both
+<code>null</code> and <code>undefined</code> using loose equality. If
+any intermediary property in the path is missing or non-object:</p>
+<ul>
+<li>The traversal immediately terminates.</li>
+<li>The loop does not advance to subsequent keys.</li>
+<li>The function exits cleanly and returns <code>undefined</code>.</li>
+</ul>
+<p>This short-circuit behavior provides complete type safety when
+reading unvalidated or heterogeneous API payloads.</p>
+<h3 id="4-avoiding-prototype-poisoning">4. Avoiding Prototype
+Poisoning</h3>
+<p>Because <code>_.property</code> is strictly a read operation that
+traverses existing references using property accessors rather than
+modifying object descriptors or assigning keys, it poses no risk of
+prototype pollution during data extraction. It safely skips inaccessible
+keys without modifying standard object prototypes, producing a
+predictable, side-effect-free accessor.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

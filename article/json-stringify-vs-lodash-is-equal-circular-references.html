@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON.stringify vs Lodash isEqual Circular References - lodash</title>
+    <meta name="description" content="This article examines how native JSON.stringify and Lodash’s .isEqual handle deep, circular object graphs in JavaScript. While both utilities perform deep recursive traversals through object trees, JSON.stringify strictly prohibits circular references by">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/json-stringify-vs-lodash-is-equal-circular-references">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="JSON.stringify vs Lodash isEqual Circular References - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/json-stringify-vs-lodash-is-equal-circular-references" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how native JSON.stringify and Lodash’s .isEqual handle deep, circular object graphs in JavaScript. While both utilities perform deep recursive traversals through object trees, JSON.stringify strictly prohibits circular references by" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="jsonstringify-vs-lodash-isequal-circular-references">JSON.stringify
+vs Lodash isEqual Circular References</h1>
+<p>This article examines how native <code>JSON.stringify</code> and
+Lodash’s <code>_.isEqual</code> handle deep, circular object graphs in
+JavaScript. While both utilities perform deep recursive traversals
+through object trees, <code>JSON.stringify</code> strictly prohibits
+circular references by throwing a runtime <code>TypeError</code>,
+whereas <code>_.isEqual</code> tracks object ancestry internally to
+allow safe and accurate structural equality comparisons without
+crashing.</p>
+<h2 id="the-mechanics-of-circular-references">The Mechanics of Circular
+References</h2>
+<p>A circular reference occurs when an object contains a reference to
+itself, either directly or indirectly through intermediate child
+properties:</p>
+<ul>
+<li><strong>Direct self-reference:</strong>
+<code>const a = {}; a.self = a;</code></li>
+<li><strong>Mutual cross-reference:</strong>
+<code>const a = {}; const b = { ref: a }; a.ref = b;</code></li>
+<li><strong>Deep tree cycle:</strong> An arbitrarily nested descendant
+node references an ancestor node higher in the tree hierarchy.</li>
+</ul>
+<h2 id="why-jsonstringify-crashes">Why JSON.stringify Crashes</h2>
+<p>The ECMAScript specification dictates that serialization must
+terminate cleanly into valid JSON text. Because the JSON standard (RFC
+8259) does not define an addressable pointer mechanism (such as JSON
+Pointer or reference IDs), serializing an infinite recursive cycle is
+impossible.</p>
+<p>When <code>JSON.stringify</code> runs, the native engine maintains a
+stack of active ancestor objects. If an object is encountered that
+already exists in the current traversal path, the engine halts execution
+immediately and throws an unrecoverable exception:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> nodeA <span class="op">=</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Root&quot;</span> }<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> nodeB <span class="op">=</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Child&quot;</span> }<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>nodeA<span class="op">.</span><span class="at">child</span> <span class="op">=</span> nodeB<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>nodeB<span class="op">.</span><span class="at">parent</span> <span class="op">=</span> nodeA<span class="op">;</span> <span class="co">// Deep circular reference</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>(nodeA)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Uncaught TypeError: Converting circular structure to JSON</span></span></code></pre></div>
+<p>This error applies to:</p>
+<ul>
+<li>Direct cyclical loops (<code>a -&gt; a</code>)</li>
+<li>Multi-level nested cycles
+(<code>a -&gt; b -&gt; c -&gt; d -&gt; a</code>)</li>
+<li>Objects containing arrays referencing parent structures</li>
+</ul>
+<p>Unless a custom replacer function is supplied to strip or alter the
+cyclic references, any presence of an ancestor in its own branch will
+trigger a fatal crash.</p>
+<h2 id="how-lodash-_isequal-handles-cycles">How Lodash _.isEqual Handles
+Cycles</h2>
+<p>Lodash’s <code>_.isEqual</code> handles deep structural comparison
+across objects without throwing errors, even when deep circular paths
+are present.</p>
+<p>Internally, Lodash employs a cycle-detection mechanism (historically
+built using an internal <code>Stack</code> class leveraging
+<code>Map</code> or parallel array storage). During recursion:</p>
+<ol type="1">
+<li><code>_.isEqual</code> maintains state stacks (<code>stackA</code>
+and <code>stackB</code>) tracking every parent node visited along the
+current traversal path.</li>
+<li>Before inspecting an object's nested properties, Lodash checks
+whether the current pair of objects has already been compared higher in
+the traversal tree.</li>
+<li>If an existing recursive cycle is detected between the two matching
+object nodes, <code>_.isEqual</code> resolves that specific recursive
+step as equal (<code>true</code>) rather than descending further.</li>
+<li>If one tree has a cycle and the other does not, or if the cyclic
+target references a different node, the function resolves to
+<code>false</code>.</li>
+</ol>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> obj1 <span class="op">=</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Node&quot;</span> }<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>obj1<span class="op">.</span><span class="at">self</span> <span class="op">=</span> obj1<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> obj2 <span class="op">=</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Node&quot;</span> }<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>obj2<span class="op">.</span><span class="at">self</span> <span class="op">=</span> obj2<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isEqual</span>(obj1<span class="op">,</span> obj2)<span class="op">;</span> <span class="co">// Returns true without crashing</span></span></code></pre></div>
+<h2 id="direct-comparison">Direct Comparison</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;"><code>JSON.stringify</code></th>
+<th style="text-align: left;"><code>Lodash _.isEqual</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Direct Circular
+Reference</strong></td>
+<td style="text-align: left;">Throws <code>TypeError</code></td>
+<td style="text-align: left;">Returns <code>true</code> or
+<code>false</code> safely</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Deep Tree Cycle</strong></td>
+<td style="text-align: left;">Throws <code>TypeError</code></td>
+<td style="text-align: left;">Compares topology safely</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Cycle Tracking
+Method</strong></td>
+<td style="text-align: left;">Native ancestor stack check</td>
+<td style="text-align: left;">Dynamic internal <code>Stack</code> /
+lookup cache</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Purpose</strong></td>
+<td style="text-align: left;">Serialization to a tree format</td>
+<td style="text-align: left;">Structural equality evaluation</td>
+</tr>
+</tbody>
+</table>
+<p>Native <code>JSON.stringify</code> fails on cyclic graphs by design
+because valid JSON requires an acyclic tree structure. In contrast,
+<code>_.isEqual</code> evaluates identity topologies, allowing it to
+navigate arbitrary directed graphs without stack overflow or
+exceptions.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

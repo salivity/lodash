@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash runInContext in Node.js VM Environments - lodash</title>
+    <meta name="description" content="This article explores how Lodash’s .runInContext function operates, pinpointing the Node.js vm (Virtual Machine) module as the uniquely distinct script environment that maps directly to isolated script evaluations. It breaks down how V8 execution contexts">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-run-in-context-in-node-js-vm-environments">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash runInContext in Node.js VM Environments - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-run-in-context-in-node-js-vm-environments" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how Lodash’s .runInContext function operates, pinpointing the Node.js vm (Virtual Machine) module as the uniquely distinct script environment that maps directly to isolated script evaluations. It breaks down how V8 execution contexts" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-runincontext-in-nodejs-vm-environments">Lodash
+runInContext in Node.js VM Environments</h1>
+<p>This article explores how Lodash’s <code>_.runInContext</code>
+function operates, pinpointing the Node.js <code>vm</code> (Virtual
+Machine) module as the uniquely distinct script environment that maps
+directly to isolated script evaluations. It breaks down how V8 execution
+contexts isolate globals, how Lodash consumes these custom contexts to
+prevent scope pollution, and how this architecture functions across
+runtime environments.</p>
+<h2 id="the-distinct-script-environment-nodejs-vm-module">The Distinct
+Script Environment: Node.js <code>vm</code> Module</h2>
+<p>The uniquely distinct script execution environment that solidly maps
+to isolated evaluations within Lodash is the Node.js
+<strong><code>vm</code> module</strong>, specifically powered by
+<strong>V8 Contexts</strong> (instantiated via
+<code>vm.createContext</code> and <code>vm.Script</code>).</p>
+<p>While standard JavaScript runs inside a single global scope
+(<code>globalThis</code>, <code>window</code>, or <code>global</code>),
+the V8 engine allows the creation of completely segregated execution
+contexts. In Node.js, the <code>vm</code> module exposes this
+engine-level capability, giving each context its own set of built-in
+global objects (<code>Object</code>, <code>Array</code>,
+<code>Function</code>, <code>Date</code>, etc.) that do not share
+prototype chains with the host environment.</p>
+<h2 id="how-_runincontext-interacts-with-isolated-contexts">How
+<code>_.runInContext</code> Interacts with Isolated Contexts</h2>
+<p>Lodash relies on constructor references and prototype chains to
+perform type checks, array cloning, and utility operations. By default,
+Lodash binds itself to the runtime's default global scope.</p>
+<p>When <code>_.runInContext(context)</code> is invoked, it creates a
+fresh, fully realized instance of the Lodash library bound exclusively
+to the provided <code>context</code> object.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> vm <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;vm&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">// 1. Create an isolated V8 context</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sandbox <span class="op">=</span> { <span class="dt">x</span><span class="op">:</span> <span class="dv">10</span> }<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> isolatedContext <span class="op">=</span> vm<span class="op">.</span><span class="fu">createContext</span>(sandbox)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">// 2. Instantiate Lodash inside that isolated environment</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> lodashIsolated <span class="op">=</span> _<span class="op">.</span><span class="fu">runInContext</span>(isolatedContext)<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">// lodashIsolated now references constructors bound to isolatedContext</span></span></code></pre></div>
+<h3 id="key-mechanics-of-context-isolation">Key Mechanics of Context
+Isolation</h3>
+<ol type="1">
+<li><p><strong>Independent Built-ins:</strong> Lodash extracts its
+internal dependencies directly from the passed context:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> <span class="bu">Array</span> <span class="op">=</span> context<span class="op">.</span><span class="at">Array</span><span class="op">,</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Date</span> <span class="op">=</span> context<span class="op">.</span><span class="at">Date</span><span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Error</span> <span class="op">=</span> context<span class="op">.</span><span class="at">Error</span><span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Function</span> <span class="op">=</span> context<span class="op">.</span><span class="at">Function</span><span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Math</span> <span class="op">=</span> context<span class="op">.</span><span class="at">Math</span><span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Object</span> <span class="op">=</span> context<span class="op">.</span><span class="at">Object</span><span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">RegExp</span> <span class="op">=</span> context<span class="op">.</span><span class="at">RegExp</span><span class="op">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> <span class="op">=</span> context<span class="op">.</span><span class="at">String</span><span class="op">,</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">TypeError</span> <span class="op">=</span> context<span class="op">.</span><span class="at">TypeError</span><span class="op">;</span></span></code></pre></div></li>
+<li><p><strong>Cross-Realm Identity Preservation:</strong> In
+JavaScript, <code>[] instanceof Array</code> fails when comparing an
+array created in one V8 context against the <code>Array</code>
+constructor of another. By scoping Lodash to a dedicated <code>vm</code>
+context, methods like <code>_.isPlainObject</code>,
+<code>_.isArray</code>, and cloning mechanisms evaluate identities
+correctly according to that context’s prototypes.</p></li>
+<li><p><strong>Prototype Pollution Mitigation:</strong> Executing
+untrusted code or transforming untrusted payloads inside a
+<code>vm</code> context combined with a scoped
+<code>_.runInContext</code> prevents mutations from leaking into the
+primary application's global prototypes.</p></li>
+</ol>
+<h2 id="the-browser-counterpart-htmliframeelement">The Browser
+Counterpart: <code>HTMLIFrameElement</code></h2>
+<p>In browser environments, the equivalent distinct execution
+environment is the <code>contentWindow</code> of a sandboxed
+<code>&lt;iframe&gt;</code>.</p>
+<p>Like the Node.js <code>vm</code> module, an <code>iframe</code>
+initializes a distinct global object with its own window realm. Passing
+<code>iframe.contentWindow</code> to <code>_.runInContext</code>
+produces the exact same isolation as <code>vm.createContext</code>,
+mapping Lodash utilities strictly to that frame's discrete DOM and
+JavaScript realm.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash capitalize Downcasing Rules Explained - lodash</title>
+    <meta name="description" content="The .capitalize function in Lodash converts the first character of a string to uppercase while downcasing every subsequent character. Rather than applying complex grammatical heuristics or segmenting strings into individual word tokens, Lodash enforces un">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-capitalize-downcasing-rules-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash capitalize Downcasing Rules Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-capitalize-downcasing-rules-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .capitalize function in Lodash converts the first character of a string to uppercase while downcasing every subsequent character. Rather than applying complex grammatical heuristics or segmenting strings into individual word tokens, Lodash enforces un" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-capitalize-downcasing-rules-explained">Lodash capitalize
+Downcasing Rules Explained</h1>
+<p>The <code>_.capitalize</code> function in Lodash converts the first
+character of a string to uppercase while downcasing every subsequent
+character. Rather than applying complex grammatical heuristics or
+segmenting strings into individual word tokens, Lodash enforces uniform
+downcasing across all non-initial elements by applying native ECMAScript
+Unicode case-mapping specifications to the tail of the string.</p>
+<h3 id="monolithic-string-processing-over-tokenization">Monolithic
+String Processing Over Tokenization</h3>
+<p>Unlike multi-word utilities such as <code>_.camelCase</code> or
+<code>_.startCase</code>, <code>_.capitalize</code> does not tokenize
+the input into discrete words using regular expression word boundaries.
+Instead, it treats the entire input string as a single continuous
+character sequence.</p>
+<p>Internally, Lodash converts the input to a string and splits it into
+two distinct structural components:</p>
+<ol type="1">
+<li>The head character (index 0).</li>
+<li>The remaining substring slice (index 1 through end).</li>
+</ol>
+<p>Because the function does not split words on spaces, hyphens, or
+underscores, all subsequent words in a phrase fall into the second
+category and are subject to a single, sweeping transformation.</p>
+<h3 id="ecmascript-case-mapping-integration">ECMAScript Case-Mapping
+Integration</h3>
+<p>The uniform downcasing of all subsequent elements is executed through
+JavaScript’s native <code>String.prototype.toLowerCase()</code> method.
+Lodash delegates the alphabetic rules directly to the host JavaScript
+engine, which implements the Unicode Standard for Default Case
+Conversion.</p>
+<p>The specific rules governing this uniform conversion include:</p>
+<ul>
+<li><strong>Unicode Character Database (UCD) Mapping:</strong> Every
+character in the tail sequence is matched against the casing properties
+defined in the Unicode Standard (<code>UnicodeData.txt</code> and
+<code>SpecialCasing.txt</code>). Characters with the
+<code>Uppercase</code> or <code>Titlecase</code> property are mapped
+directly to their corresponding <code>Lowercase_Mapping</code> code
+points.</li>
+<li><strong>Context-Independent Transformations:</strong> Standard
+downcasing executes unconditionally across the remainder of the string.
+The algorithm does not check for sentence beginnings, word boundaries,
+or acronym markers, ensuring that internal capitalized letters (such as
+camelCase boundaries or subsequent capitalized words) are flattened
+uniformly.</li>
+<li><strong>Handling One-to-Many and One-to-One Mappings:</strong>
+Standard Unicode rules handle expansions and special mappings (such as
+the uppercase Greek letter sigma <code>Σ</code> mapping to
+<code>σ</code> in non-final positions, or uppercase characters resolving
+to multi-character lowercase representations where required).</li>
+<li><strong>Neutral Character Preservation:</strong> Code points
+categorized as whitespace, punctuation, numbers, or symbols (such as
+hyphens, spaces, and digits) lack a lowercase variant in the Unicode
+property tables. They remain unaltered during the downcasing pass,
+allowing word separators to remain intact while forcing all enclosed
+alphabetic characters into lowercase.</li>
+</ul>
+<h3 id="invariant-locale-behavior">Invariant Locale Behavior</h3>
+<p>Lodash relies on standard default Unicode mapping rather than
+locale-sensitive casing (such as <code>toLocaleLowerCase()</code>). This
+design choice ensures that downcasing rules remain deterministic across
+all host runtime environments, regardless of the system's active
+regional language settings. Subsequent words are thus transformed
+identically across different platforms without regional casing
+variations, such as the Turkish dotless <em>i</em>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

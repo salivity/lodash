@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.constant Locks State in JavaScript - lodash</title>
+    <meta name="description" content="This article provides an overview of how the Lodash utility .constant locks fundamentally unchanged state parameters using JavaScript closures. By encapsulating an initial input within a lexical scope, .constant generates a higher-order function that cons">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-constant-locks-state-in-java-script">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.constant Locks State in JavaScript - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-constant-locks-state-in-java-script" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how the Lodash utility .constant locks fundamentally unchanged state parameters using JavaScript closures. By encapsulating an initial input within a lexical scope, .constant generates a higher-order function that cons" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_constant-locks-state-in-javascript">How Lodash
+_.constant Locks State in JavaScript</h1>
+<p>This article provides an overview of how the Lodash utility
+<code>_.constant</code> locks fundamentally unchanged state parameters
+using JavaScript closures. By encapsulating an initial input within a
+lexical scope, <code>_.constant</code> generates a higher-order function
+that consistently returns the original reference regardless of
+invocation arguments. Readers will learn the underlying implementation
+of this function, how it safeguards static state in functional
+pipelines, and the boundary between reference immutability and object
+mutation.</p>
+<h3 id="the-mechanism-of-_constant">The Mechanism of
+<code>_.constant</code></h3>
+<p>At its core, <code>_.constant</code> is a higher-order function
+designed to enforce referential predictability. It accepts a single
+parameter—the value to preserve—and returns a new function. When
+executed, this returned function ignores any supplied arguments and
+directly yields the original value.</p>
+<p>Under the hood, the implementation functions as follows:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">constant</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">function</span>() {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By leveraging JavaScript closures, the inner function retains direct
+access to the outer lexical environment where <code>value</code> was
+defined. Because <code>value</code> is never reassigned within the
+closure and no setter methods are exposed, the returned function locks
+that parameter into place permanently.</p>
+<h3 id="how-state-parameters-are-locked">How State Parameters Are
+Locked</h3>
+<ol type="1">
+<li><strong>Argument Decoupling:</strong> When developers pass arguments
+to the function generated by <code>_.constant</code>, the function
+signature simply disregards them. Even if a caller attempts to pass
+updated context, configuration objects, or state deltas, the closure
+completely bypasses <code>arguments</code>, guaranteeing that the output
+remains isolated from invocation-time changes.</li>
+<li><strong>Lexical Isolation:</strong> The original state is stored
+within an enclosed scope rather than a globally mutable property or a
+dynamic <code>this</code> context. This protects the bound parameter
+from outside scope poisoning and execution context shifts (such as
+<code>.call()</code> or <code>.apply()</code> re-bindings).</li>
+<li><strong>Idempotent Output:</strong> Every execution produces
+identical results, satisfying pure functional programming requirements
+where a deterministic provider is required.</li>
+</ol>
+<h3 id="reference-locking-vs-deep-immutability">Reference Locking vs.
+Deep Immutability</h3>
+<p>It is critical to distinguish between reference locking and deep
+value immutability:</p>
+<ul>
+<li><strong>Primitives:</strong> When primitives (such as numbers,
+strings, or booleans) are passed to <code>_.constant</code>, the state
+is fully locked and genuinely immutable. Primitives cannot be modified,
+and the closure ensures the reference cannot be reassigned.</li>
+<li><strong>Objects and Arrays:</strong> When complex types are
+supplied, <code>_.constant</code> locks the <em>reference identity</em>,
+not the internal properties. While external callers cannot force the
+function to return a different object reference, the internal properties
+of that object can still be mutated elsewhere in memory unless
+explicitly protected using mechanisms like
+<code>Object.freeze()</code>.</li>
+</ul>
+<h3 id="practical-usage-in-application-architecture">Practical Usage in
+Application Architecture</h3>
+<p>Developers use <code>_.constant</code> to enforce invariant
+configurations within functional compositions. For instance, in
+conditional evaluation or event-handling chains, replacing dynamic
+callback logic with a constant ensures that fallback branches return
+fixed states without side effects:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> getDefaultConfig <span class="op">=</span> _<span class="op">.</span><span class="fu">constant</span>({ <span class="dt">mode</span><span class="op">:</span> <span class="st">&#39;production&#39;</span><span class="op">,</span> <span class="dt">timeout</span><span class="op">:</span> <span class="dv">5000</span> })<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Any invocation returns the exact same bound reference</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> configA <span class="op">=</span> <span class="fu">getDefaultConfig</span>()<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> configB <span class="op">=</span> <span class="fu">getDefaultConfig</span>(<span class="st">&#39;staging&#39;</span>)<span class="op">;</span> <span class="co">// Argument is ignored; returns default config</span></span></code></pre></div>
+<p>By using closures to eliminate parameter substitution,
+<code>_.constant</code> provides a reliable, declarative method for
+embedding unalterable state parameters directly into functional
+pipelines.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

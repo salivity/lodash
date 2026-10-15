@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>When Does Lodash get Return the Default Value? - lodash</title>
+    <meta name="description" content="This article examines how the .get method in the Lodash JavaScript library handles default fallback parameters when encountering falsy values. While JavaScript recognizes several distinct falsy evaluations—including false, 0, &quot;&quot;, null, NaN, and undefined—">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/when-does-lodash-get-return-the-default-value">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="When Does Lodash get Return the Default Value? - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/when-does-lodash-get-return-the-default-value" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the .get method in the Lodash JavaScript library handles default fallback parameters when encountering falsy values. While JavaScript recognizes several distinct falsy evaluations—including false, 0, &quot;&quot;, null, NaN, and undefined—" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="when-does-lodash-get-return-the-default-value">When Does Lodash
+get Return the Default Value?</h1>
+<p>This article examines how the <code>_.get</code> method in the Lodash
+JavaScript library handles default fallback parameters when encountering
+falsy values. While JavaScript recognizes several distinct falsy
+evaluations—including <code>false</code>, <code>0</code>,
+<code>""</code>, <code>null</code>, <code>NaN</code>, and
+<code>undefined</code>—Lodash enforces strict criteria for deploying the
+fallback value. Understanding these specific boundaries is crucial for
+avoiding unexpected bugs in data retrieval and state management.</p>
+<h2 id="the-only-trigger-undefined">The Only Trigger:
+<code>undefined</code></h2>
+<p>In Lodash, the default fallback parameter of
+<code>_.get(object, path, [defaultValue])</code> is triggered
+<strong>exclusively</strong> when the resolved value at the specified
+path evaluates to <code>undefined</code>.</p>
+<p>If a property does not exist on the object, JavaScript resolves that
+lookup to <code>undefined</code>, which subsequently deploys the default
+value. Similarly, if the property explicitly exists and its value is set
+to <code>undefined</code>, the fallback will still be returned.</p>
+<h2 id="how-lodash-_get-treats-other-falsy-values">How Lodash
+<code>_.get</code> Treats Other Falsy Values</h2>
+<p>Lodash does not treat generic falsy values as missing data. If the
+resolved path evaluates to any falsy value other than
+<code>undefined</code>, <code>_.get</code> will return that falsy value
+directly and ignore the default parameter.</p>
+<p>The behavior for each JavaScript falsy value is as follows:</p>
+<ul>
+<li><strong><code>undefined</code></strong>: <strong>Triggers
+fallback.</strong> Lodash returns the default value because the value is
+considered absent or unassigned.</li>
+<li><strong><code>null</code></strong>: <strong>Does NOT trigger
+fallback.</strong> <code>null</code> represents the intentional absence
+of an object value and is treated as a valid, resolved assignment.</li>
+<li><strong><code>false</code></strong>: <strong>Does NOT trigger
+fallback.</strong> A boolean <code>false</code> is considered a valid
+state and is returned as-is.</li>
+<li><strong><code>0</code> (and <code>-0</code>,
+<code>0n</code>)</strong>: <strong>Does NOT trigger fallback.</strong>
+Numeric zero is considered valid data.</li>
+<li><strong><code>""</code> (empty string)</strong>: <strong>Does NOT
+trigger fallback.</strong> An empty string is treated as an existing
+string value.</li>
+<li><strong><code>NaN</code></strong>: <strong>Does NOT trigger
+fallback.</strong> Despite representing an invalid number,
+<code>NaN</code> has the type <code>number</code> in JavaScript and is
+preserved.</li>
+</ul>
+<h2 id="code-demonstration">Code Demonstration</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> data <span class="op">=</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">a</span><span class="op">:</span> <span class="kw">undefined</span><span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">b</span><span class="op">:</span> <span class="kw">null</span><span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">c</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">d</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">e</span><span class="op">:</span> <span class="st">&#39;&#39;</span><span class="op">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">f</span><span class="op">:</span> <span class="kw">NaN</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> fallback <span class="op">=</span> <span class="st">&#39;DEFAULT&#39;</span><span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">get</span>(data<span class="op">,</span> <span class="st">&#39;a&#39;</span><span class="op">,</span> fallback)<span class="op">;</span> <span class="co">// Returns: &#39;DEFAULT&#39; (triggered)</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">get</span>(data<span class="op">,</span> <span class="st">&#39;missingKey&#39;</span><span class="op">,</span> fallback)<span class="op">;</span> <span class="co">// Returns: &#39;DEFAULT&#39; (triggered)</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">get</span>(data<span class="op">,</span> <span class="st">&#39;b&#39;</span><span class="op">,</span> fallback)<span class="op">;</span> <span class="co">// Returns: null</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">get</span>(data<span class="op">,</span> <span class="st">&#39;c&#39;</span><span class="op">,</span> fallback)<span class="op">;</span> <span class="co">// Returns: false</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">get</span>(data<span class="op">,</span> <span class="st">&#39;d&#39;</span><span class="op">,</span> fallback)<span class="op">;</span> <span class="co">// Returns: 0</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">get</span>(data<span class="op">,</span> <span class="st">&#39;e&#39;</span><span class="op">,</span> fallback)<span class="op">;</span> <span class="co">// Returns: &#39;&#39;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">get</span>(data<span class="op">,</span> <span class="st">&#39;f&#39;</span><span class="op">,</span> fallback)<span class="op">;</span> <span class="co">// Returns: NaN</span></span></code></pre></div>
+<h2 id="summary">Summary</h2>
+<p>The only falsy evaluation that deploys the default fallback in
+<code>_.get</code> is <code>undefined</code>. All other falsy values
+(<code>null</code>, <code>false</code>, <code>0</code>, <code>""</code>,
+and <code>NaN</code>) are treated as resolved, intentional data points
+and will bypass the default argument.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.remove Filters and Mutates Arrays - lodash</title>
+    <meta name="description" content="The .remove method in the Lodash JavaScript library provides a streamlined way to extract elements from an array based on a predicate condition, mutating the target array in place while returning the removed elements as a new array. Unlike standard JavaSc">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-remove-filters-and-mutates-arrays">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.remove Filters and Mutates Arrays - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-remove-filters-and-mutates-arrays" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .remove method in the Lodash JavaScript library provides a streamlined way to extract elements from an array based on a predicate condition, mutating the target array in place while returning the removed elements as a new array. Unlike standard JavaSc" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_remove-filters-and-mutates-arrays">How Lodash
+_.remove Filters and Mutates Arrays</h1>
+<p>The <code>_.remove</code> method in the Lodash JavaScript library
+provides a streamlined way to extract elements from an array based on a
+predicate condition, mutating the target array in place while returning
+the removed elements as a new array. Unlike standard JavaScript array
+methods that require chaining or separate steps to both filter and clean
+up an existing array, <code>_.remove</code> accomplishes both tasks in a
+single pass. This article explains how <code>_.remove</code> operates
+under the hood, how it differs from native array methods, and how to use
+it effectively in your code.</p>
+<h2 id="the-dual-action-of-_remove">The Dual Action of
+<code>_.remove</code></h2>
+<p>JavaScript's native <code>Array.prototype.filter()</code> is an
+immutable operation; it evaluates each item and returns a brand-new
+array containing only the elements that satisfy the predicate, leaving
+the original array completely untouched.</p>
+<p>In contrast, Lodash's <code>_.remove</code> is destructive. It
+combines the functionality of <code>filter()</code> with the in-place
+deletion behavior of <code>Array.prototype.splice()</code>. When
+invoked, it performs two distinct actions simultaneously:</p>
+<ol type="1">
+<li><strong>Mutates the source array:</strong> It strips out all
+elements that return a truthy value from the predicate function.</li>
+<li><strong>Returns the extracted elements:</strong> It packages all the
+stripped elements into a new array and returns them to the caller.</li>
+</ol>
+<h2 id="how-it-works-internally">How It Works Internally</h2>
+<p>Under the hood, <code>_.remove</code> iterates over the target array
+and applies the provided predicate function to each item, its index, and
+the collection itself.</p>
+<p>Instead of calling the standard <code>splice()</code> on every
+match—which would lead to <span class="math inline">\(O(n^2)\)</span>
+time complexity due to constant array re-indexing—Lodash optimizes this
+process:</p>
+<ul>
+<li>It tracks the indices of items matching the predicate.</li>
+<li>It pulls the matched items out into a separate collection that will
+serve as the return value.</li>
+<li>It shifts the non-matching items forward in memory to fill the gaps
+and truncates the source array's <code>length</code> property
+directly.</li>
+</ul>
+<p>This ensures the source array is modified in-place with optimal
+performance while safely handling index tracking without skipping
+elements.</p>
+<h2 id="code-example">Code Example</h2>
+<p>The following example demonstrates how passing an array through
+<code>_.remove</code> impacts both the original array and the returned
+value:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">7</span><span class="op">,</span> <span class="dv">8</span>]<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Remove even numbers</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> evens <span class="op">=</span> _<span class="op">.</span><span class="fu">remove</span>(numbers<span class="op">,</span> (n) <span class="kw">=&gt;</span> n <span class="op">%</span> <span class="dv">2</span> <span class="op">===</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(numbers)<span class="op">;</span> </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [1, 3, 5, 7] (Original array mutated)</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(evens)<span class="op">;</span>   </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [2, 4, 6, 8] (Removed items returned)</span></span></code></pre></div>
+<p>You can also use Lodash's shorthand syntax for predicates, such as
+matching object properties:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> users <span class="op">=</span> [</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">false</span> }<span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Bob&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Charlie&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">false</span> }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Remove all inactive users</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> inactiveUsers <span class="op">=</span> _<span class="op">.</span><span class="fu">remove</span>(users<span class="op">,</span> { <span class="dt">active</span><span class="op">:</span> <span class="kw">false</span> })<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(users)<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [{ id: 2, name: &#39;Bob&#39;, active: true }]</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(inactiveUsers)<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [{ id: 1, name: &#39;Alice&#39;, active: false }, { id: 3, name: &#39;Charlie&#39;, active: false }]</span></span></code></pre></div>
+<h2 id="key-considerations">Key Considerations</h2>
+<ul>
+<li><strong>State Management:</strong> Because <code>_.remove</code>
+mutates the input array, avoid using it in environments where immutable
+data structures are strictly required, such as inside React component
+states or Redux reducers.</li>
+<li><strong>Reference Preservation:</strong> If other parts of your
+application hold a reference to the source array, they will immediately
+observe the changes, preventing stale references without needing
+reassignment.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

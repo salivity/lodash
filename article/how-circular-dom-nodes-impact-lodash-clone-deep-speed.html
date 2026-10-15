@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Circular DOM Nodes Impact Lodash cloneDeep Speed - lodash</title>
+    <meta name="description" content="Cloning native DOM nodes with Lodash&#39;s .cloneDeep causes severe performance degradation, often freezing the JavaScript main thread. This article examines the internal mechanics of .cloneDeep, explains how cyclical node graphs drastically increase processi">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-circular-dom-nodes-impact-lodash-clone-deep-speed">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Circular DOM Nodes Impact Lodash cloneDeep Speed - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-circular-dom-nodes-impact-lodash-clone-deep-speed" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Cloning native DOM nodes with Lodash&#39;s .cloneDeep causes severe performance degradation, often freezing the JavaScript main thread. This article examines the internal mechanics of .cloneDeep, explains how cyclical node graphs drastically increase processi" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-circular-dom-nodes-impact-lodash-clonedeep-speed">How
+Circular DOM Nodes Impact Lodash cloneDeep Speed</h1>
+<p>Cloning native DOM nodes with Lodash's <code>_.cloneDeep</code>
+causes severe performance degradation, often freezing the JavaScript
+main thread. This article examines the internal mechanics of
+<code>_.cloneDeep</code>, explains how cyclical node graphs drastically
+increase processing time, and outlines the precise bottlenecks that
+occur during execution alongside the standard native alternatives.</p>
+<h3 id="the-nature-of-dom-node-circular-references">The Nature of DOM
+Node Circular References</h3>
+<p>Document Object Model (DOM) elements are complex host objects rather
+than plain JavaScript objects. By design, DOM trees are densely
+interconnected and inherently circular. For example:</p>
+<ul>
+<li>An element references its parent via
+<code>element.parentNode</code>.</li>
+<li>The parent element references that same child via
+<code>parent.children</code> or <code>parent.childNodes</code>.</li>
+<li>Every node maintains references to <code>ownerDocument</code>, which
+in turn references the root element (<code>documentElement</code>), the
+window context, and all child nodes.</li>
+</ul>
+<p>These cyclical links mean a DOM node is not a simple hierarchical
+tree, but a fully cyclical directed graph with hundreds of native
+accessors and cross-references.</p>
+<h3 id="how-_clonedeep-handles-cyclical-structures">How
+<code>_.cloneDeep</code> Handles Cyclical Structures</h3>
+<p>Lodash's <code>_.cloneDeep</code> is designed to safely handle
+circular references without entering infinite recursion. It maintains an
+internal cache (using a <code>Stack</code> implementation that leverages
+<code>Map</code> or parallel arrays depending on the environment) to
+track previously traversed objects.</p>
+<p>When encountering an object:</p>
+<ol type="1">
+<li>Lodash queries the internal cache to determine if the reference has
+already been visited.</li>
+<li>If found, it returns the cached clone immediately, breaking the
+infinite cycle.</li>
+<li>If not found, it instantiates a new clone, registers the mapping in
+the cache, and recursively traverses all enumerable and inherited
+properties.</li>
+</ol>
+<h3 id="the-source-of-the-execution-bottleneck">The Source of the
+Execution Bottleneck</h3>
+<p>While <code>_.cloneDeep</code> avoids infinite loops, cloning DOM
+nodes still results in catastrophic performance drop-offs due to three
+main factors:</p>
+<h4 id="1-massive-property-explosion">1. Massive Property Explosion</h4>
+<p>Before reaching a cycle break, <code>_.cloneDeep</code> must
+enumerate all properties of each encountered object. A single standard
+<code>HTMLElement</code> exposes over 200 standard properties,
+accessors, and prototypes. Traversal attempts to explore
+<code>style</code>, <code>dataset</code>, <code>classList</code>, event
+targets, and document references. Because the DOM graph is dense, Lodash
+processes thousands of nested property paths before identifying all
+visited references.</p>
+<h4 id="2-cache-lookup-overhead">2. Cache Lookup Overhead</h4>
+<p>As the number of traversed sub-objects grows, querying and inserting
+entries into the circular reference tracking stack incurs linear or
+hash-based lookup costs. Checking thousands of references on every
+nested step compounds CPU time significantly.</p>
+<h4 id="3-native-getters-and-dynamic-state">3. Native Getters and
+Dynamic State</h4>
+<p>DOM objects often use native getters instead of static values.
+Evaluating properties recursively can invoke native browser engines,
+triggering layout calculations, security checks, or unexpected side
+effects that further stall execution speed.</p>
+<h3 id="real-world-performance-impact">Real-World Performance
+Impact</h3>
+<p>Cloning a standard plain JavaScript object with nested values
+typically executes in fractions of a millisecond. In contrast, running
+<code>_.cloneDeep</code> on a single active DOM element containing only
+a few child elements can take hundreds of milliseconds to several
+seconds. In modern web applications, running this operation on the main
+thread directly leads to noticeable frame drops, input lag, and
+unresponsive script warnings.</p>
+<h3 id="recommended-alternatives">Recommended Alternatives</h3>
+<p><code>_.cloneDeep</code> should never be used on DOM nodes or objects
+containing DOM references. Instead, use the native browser APIs designed
+specifically for DOM replication:</p>
+<ul>
+<li><p><strong><code>Node.cloneNode(deep)</code></strong>: The browser's
+native C++ implementation clones elements, attributes, and descendants
+instantly:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> clonedElement <span class="op">=</span> originalElement<span class="op">.</span><span class="fu">cloneNode</span>(<span class="kw">true</span>)<span class="op">;</span></span></code></pre></div></li>
+<li><p><strong>Extracting Data Before Cloning</strong>: If an
+application requires cloning state associated with a DOM node, isolate
+the required values into a plain JavaScript object before invoking
+<code>_.cloneDeep</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> nodeData <span class="op">=</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">id</span><span class="op">:</span> element<span class="op">.</span><span class="at">id</span><span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">value</span><span class="op">:</span> element<span class="op">.</span><span class="at">value</span><span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">customAttribute</span><span class="op">:</span> element<span class="op">.</span><span class="at">dataset</span><span class="op">.</span><span class="at">custom</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> clonedData <span class="op">=</span> _<span class="op">.</span><span class="fu">cloneDeep</span>(nodeData)<span class="op">;</span></span></code></pre></div></li>
+</ul>
+<p>Bypassing DOM structures entirely when utilizing general-purpose deep
+clone utilities preserves optimal execution speed and prevents
+main-thread blocking.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

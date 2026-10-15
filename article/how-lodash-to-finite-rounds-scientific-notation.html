@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash toFinite Rounds Scientific Notation - lodash</title>
+    <meta name="description" content="When parsing strings containing scientific notation, Lodash’s .toFinite function relies on JavaScript&#39;s native string-to-number coercion rules coupled with a finite boundary guard. This process subjects input values to IEEE 754 double-precision floating-p">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-to-finite-rounds-scientific-notation">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash toFinite Rounds Scientific Notation - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-to-finite-rounds-scientific-notation" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When parsing strings containing scientific notation, Lodash’s .toFinite function relies on JavaScript&#39;s native string-to-number coercion rules coupled with a finite boundary guard. This process subjects input values to IEEE 754 double-precision floating-p" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-tofinite-rounds-scientific-notation">How Lodash
+toFinite Rounds Scientific Notation</h1>
+<p>When parsing strings containing scientific notation, Lodash’s
+<code>_.toFinite</code> function relies on JavaScript's native
+string-to-number coercion rules coupled with a finite boundary guard.
+This process subjects input values to IEEE 754 double-precision
+floating-point rounding—specifically the "round to nearest, ties to
+even" algorithm—while rounding numbers that exceed maximum
+floating-point limits to the largest representable finite value.</p>
+<h3 id="underlying-parsing-mechanism">Underlying Parsing Mechanism</h3>
+<p>The <code>_.toFinite</code> method does not implement a custom parser
+for decimal strings. Instead, it delegates string conversion to Lodash's
+internal <code>toNumber</code> function, which processes strings
+formatted in scientific notation (such as
+<code>"1.23456789012345678e+5"</code>) using standard ECMAScript numeric
+conversion rules identical to <code>Number(string)</code>.</p>
+<h3 id="round-to-nearest-ties-to-even">Round-to-Nearest,
+Ties-to-Even</h3>
+<p>Because numeric values in JavaScript are 64-bit binary floating-point
+numbers (IEEE 754), any scientific notation string parsed by
+<code>_.toFinite</code> has a precision limit of 53 significand bits
+(approximately 15 to 17 decimal digits of precision).</p>
+<p>When a scientific notation string contains more precision than 53
+bits can represent, mathematical rounding occurs during conversion:</p>
+<ol type="1">
+<li><strong>Nearest Representable Value:</strong> The parser rounds the
+decimal fraction to the closest 64-bit binary float representation.</li>
+<li><strong>Tie-Breaking Rule (Ties to Even):</strong> If a decimal
+value sits precisely halfway between two representable binary
+floating-point numbers, the value rounds toward the representation with
+an even least significant bit (zero in the final bit of the
+mantissa).</li>
+</ol>
+<h3 id="underflow-to-zero">Underflow to Zero</h3>
+<p>For extremely small numbers specified in scientific notation (e.g.,
+<code>"1e-325"</code>), the exponent may fall below the smallest
+representable subnormal number (<code>Number.MIN_VALUE</code>,
+approximately <code>5e-324</code>). In this case, standard IEEE 754
+underflow rules apply, and the value mathematically rounds down to
+<code>0</code> (or <code>-0</code> if negative).</p>
+<h3 id="overflow-clamping-lodash-clamping">Overflow Clamping (Lodash
+Clamping)</h3>
+<p>The unique rounding characteristic of <code>_.toFinite</code> occurs
+when a scientific notation string specifies a value that exceeds
+standard numeric limits:</p>
+<ul>
+<li><strong>Native JavaScript Behavior:</strong> In native JavaScript,
+strings representing values greater than <code>Number.MAX_VALUE</code>
+(approximately <code>1.7976931348623157e+308</code>), such as
+<code>"1e+309"</code>, overflow and evaluate to <code>Infinity</code> or
+<code>-Infinity</code>.</li>
+<li><strong><code>_.toFinite</code> Behavior:</strong> Rather than
+preserving <code>Infinity</code>, <code>_.toFinite</code> intercepts
+infinite results and clamps them. Any value that overflows toward
+positive infinity is capped at <code>1.7976931348623157e+308</code>
+(<code>Number.MAX_VALUE</code>), and negative infinity is capped at
+<code>-1.7976931348623157e+308</code>.</li>
+</ul>
+<p>In summary, <code>_.toFinite</code> applies IEEE 754 "round to
+nearest, ties to even" rounding to the significant digits of scientific
+notation strings, underflows sub-minimal magnitudes to <code>0</code>,
+and clamps exponent overflows to <code>Number.MAX_VALUE</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

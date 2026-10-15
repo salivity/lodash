@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash Handles Async Predicates in Filter - lodash</title>
+    <meta name="description" content="The Lodash JavaScript library does not natively support asynchronous predicates in functions like .filter. Because Lodash was built around synchronous execution paradigms, passing an async function returning a Promise into .filter leads to unexpected resu">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-handles-async-predicates-in-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash Handles Async Predicates in Filter - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-handles-async-predicates-in-filter" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash JavaScript library does not natively support asynchronous predicates in functions like .filter. Because Lodash was built around synchronous execution paradigms, passing an async function returning a Promise into .filter leads to unexpected resu" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-handles-async-predicates-in-filter">How Lodash
+Handles Async Predicates in Filter</h1>
+<p>The Lodash JavaScript library does not natively support asynchronous
+predicates in functions like <code>_.filter</code>. Because Lodash was
+built around synchronous execution paradigms, passing an async function
+returning a Promise into <code>_.filter</code> leads to unexpected
+results, typically treating every element as truthy. This article
+explains the underlying mechanics of why Lodash fails with asynchronous
+predicates and provides the standard, reliable alternatives using native
+modern JavaScript and dedicated utility libraries.</p>
+<h2 id="why-async-predicates-fail-in-lodash">Why Async Predicates Fail
+in Lodash</h2>
+<p>When an <code>async</code> function is used as a predicate, it always
+returns a <code>Promise</code> object immediately, regardless of what it
+eventually resolves to. In JavaScript, all objects—including unresolved
+Promises—are truthy values:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span>]<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Intended to filter numbers greater than 2 asynchronously</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">filter</span>(numbers<span class="op">,</span> <span class="kw">async</span> (num) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> isLarge <span class="op">=</span> <span class="cf">await</span> <span class="fu">fakeApiCheck</span>(num)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> isLarge<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result)<span class="op">;</span> <span class="co">// Output: [1, 2, 3, 4, 5]</span></span></code></pre></div>
+<p>Because <code>_.filter</code> does not <code>await</code> the
+predicate callback, it evaluates the returned <code>Promise</code> in a
+boolean context (<code>Boolean(new Promise(...))</code>), which
+evaluates to <code>true</code>. Consequently, every item in the
+collection is kept, breaking the filtering logic.</p>
+<h2 id="the-native-javascript-workaround">The Native JavaScript
+Workaround</h2>
+<p>To asynchronously filter an array, the standard pattern involves
+mapping the elements to promises that resolve to boolean values, waiting
+for them to settle, and then filtering synchronously.</p>
+<h3 id="using-promiseall-and-map">Using <code>Promise.all</code> and
+<code>map</code></h3>
+<p>You can achieve reliable async filtering using native
+<code>Promise.all</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">asyncFilter</span>(arr<span class="op">,</span> predicate) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Step 1: Resolve all predicates to boolean values concurrently</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> results <span class="op">=</span> <span class="cf">await</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">all</span>(arr<span class="op">.</span><span class="fu">map</span>(predicate))<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Step 2: Synchronously filter the original array based on the resolved booleans</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> arr<span class="op">.</span><span class="fu">filter</span>((_<span class="op">,</span> index) <span class="kw">=&gt;</span> results[index])<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Usage</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span>]<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> filtered <span class="op">=</span> <span class="cf">await</span> <span class="fu">asyncFilter</span>(numbers<span class="op">,</span> <span class="kw">async</span> (num) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> num <span class="op">&gt;</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(filtered)<span class="op">;</span> <span class="co">// Output: [3, 4, 5]</span></span></code></pre></div>
+<p>This implementation runs all predicate checks concurrently. If
+sequential execution is required to limit API rate limits, an
+asynchronous <code>for...of</code> loop can be used instead:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">asyncFilterSequential</span>(arr<span class="op">,</span> predicate) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> results <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">const</span> item <span class="kw">of</span> arr) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="cf">await</span> <span class="fu">predicate</span>(item)) {</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      results<span class="op">.</span><span class="fu">push</span>(item)<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> results<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="third-party-libraries-for-async-iteration">Third-Party Libraries
+for Async Iteration</h2>
+<p>If you require robust support for asynchronous collection handling
+across an application, relying on dedicated async utility libraries is
+preferable to Lodash:</p>
+<ul>
+<li><strong>p-filter:</strong> Part of Sindre Sorhus's <code>p-</code>
+promise utilities, offering concurrency control out of the box.</li>
+<li><strong>Async.js (<code>async/filter</code>):</strong> A
+battle-tested library built specifically for asynchronous control flow
+in JavaScript.</li>
+<li><strong>Bluebird:</strong> A Promise library that includes built-in
+iteration helpers such as <code>Promise.filter</code>.</li>
+</ul>
+<p>Lodash remains an efficient tool for synchronous operations, but
+asynchronous collection manipulation should be handled via native
+<code>Promise</code> combinations or specialized asynchronous utility
+libraries.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

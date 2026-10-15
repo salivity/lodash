@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.sortedUniq Optimizes Duplicate Removal - lodash</title>
+    <meta name="description" content="The Lodash .sortedUniq method provides a highly performant alternative to standard deduplication algorithms by exploiting the mathematical guarantees of pre-sorted data. This article explains how .sortedUniq works under the hood, how its single-pass adjac">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-sorted-uniq-optimizes-duplicate-removal">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.sortedUniq Optimizes Duplicate Removal - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-sorted-uniq-optimizes-duplicate-removal" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .sortedUniq method provides a highly performant alternative to standard deduplication algorithms by exploiting the mathematical guarantees of pre-sorted data. This article explains how .sortedUniq works under the hood, how its single-pass adjac" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_sorteduniq-optimizes-duplicate-removal">How Lodash
+_.sortedUniq Optimizes Duplicate Removal</h1>
+<p>The Lodash <code>_.sortedUniq</code> method provides a highly
+performant alternative to standard deduplication algorithms by
+exploiting the mathematical guarantees of pre-sorted data. This article
+explains how <code>_.sortedUniq</code> works under the hood, how its
+single-pass adjacent comparison eliminates the need for auxiliary
+tracking structures like hash maps or sets, and why it drastically
+reduces time and memory overhead compared to generic uniqueness
+functions.</p>
+<h2 id="the-inefficiency-of-generic-deduplication">The Inefficiency of
+Generic Deduplication</h2>
+<p>Generic uniqueness methods, such as Lodash’s <code>_.uniq</code> or
+native JavaScript <code>[...new Set(array)]</code>, must assume that
+duplicates can appear at any index across the collection. To track
+whether an element has been encountered before, these methods
+typically:</p>
+<ol type="1">
+<li>Maintain an internal hash set or hash table of all previously seen
+values.</li>
+<li>Calculate hash keys or perform lookups for every incoming
+element.</li>
+<li>Allocate additional memory proportional to the number of unique
+elements (<span class="math inline">\(O(u)\)</span> auxiliary
+space).</li>
+</ol>
+<p>While this achieves an average time complexity of <span
+class="math inline">\(O(n)\)</span>, it incurs constant-factor overhead
+due to hash calculations, set insertions, and dynamic memory
+allocation.</p>
+<h2 id="the-core-optimization-adjacent-value-comparison">The Core
+Optimization: Adjacent Value Comparison</h2>
+<p>The optimization in <code>_.sortedUniq</code> relies on a fundamental
+property of sorted sequences: <strong>all duplicate instances of any
+element are strictly contiguous</strong>. If an item appears multiple
+times, every occurrence must be adjacent to the others.</p>
+<p>Because of this property, the algorithm does not need to remember
+every element it has ever seen. It only needs to remember the single
+most recent unique element added to the result.</p>
+<h3 id="how-the-algorithm-executes">How the Algorithm Executes</h3>
+<p>Internally, Lodash optimizes <code>_.sortedUniq</code> using a fast,
+single-pass pointer loop:</p>
+<ol type="1">
+<li><strong>Initialization:</strong> Lodash creates an empty result
+array. A temporary variable (often called <code>seen</code> or tracking
+the last index) stores the last accepted unique item.</li>
+<li><strong>First Element Insertion:</strong> The first item of the
+input array is directly pushed to the result array because it has no
+predecessor.</li>
+<li><strong>Linear Scan:</strong> The algorithm iterates through the
+remaining elements sequentially from index <code>1</code> to
+<code>n - 1</code>.</li>
+<li><strong>Neighbor Comparison:</strong> For each item, it performs an
+equality check against the last item written to the result array using
+the <code>SameValueZero</code> comparison:
+<ul>
+<li><strong>If the item differs from the previous item:</strong> It is
+unique. The item is pushed to the result array, and the "last seen"
+reference is updated to this new value.</li>
+<li><strong>If the item matches the previous item:</strong> It is a
+duplicate. The loop immediately skips to the next iteration without
+writing to the array or modifying state.</li>
+</ul></li>
+</ol>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Simplified conceptual implementation of _.sortedUniq</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">simpleSortedUniq</span>(array) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> length <span class="op">=</span> array <span class="op">==</span> <span class="kw">null</span> <span class="op">?</span> <span class="dv">0</span> <span class="op">:</span> array<span class="op">.</span><span class="at">length</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>length) {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> []<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> result <span class="op">=</span> [array[<span class="dv">0</span>]]<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> seen <span class="op">=</span> array[<span class="dv">0</span>]<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&lt;</span> length<span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> value <span class="op">=</span> array[i]<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// SameValueZero check: handles standard equality and NaN values</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (value <span class="op">!==</span> seen <span class="op">&amp;&amp;</span> <span class="op">!</span>(value <span class="op">!==</span> value <span class="op">&amp;&amp;</span> seen <span class="op">!==</span> seen)) {</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      seen <span class="op">=</span> value<span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      result<span class="op">.</span><span class="fu">push</span>(value)<span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="key-performance-advantages">Key Performance Advantages</h2>
+<h3 id="1-zero-auxiliary-tracking-structures">1. Zero Auxiliary Tracking
+Structures</h3>
+<p>Generic deduplication requires allocating a hash table or a native
+<code>Set</code>. <code>_.sortedUniq</code> requires only a single
+variable to store the previous value. This reduces auxiliary space
+complexity to <span class="math inline">\(O(1)\)</span> (excluding the
+returned array), avoiding garbage collection pressure and allocation
+latency.</p>
+<h3 id="2-elimination-of-lookup-overhead">2. Elimination of Lookup
+Overhead</h3>
+<p>Hashing and retrieving items from a <code>Set</code> or an object map
+involves internal bucket calculations, reference lookups, and collision
+handling. In <code>_.sortedUniq</code>, the lookup is replaced by a
+single scalar comparison against an active CPU register or local
+variable.</p>
+<h3 id="3-cpu-cache-locality">3. CPU Cache Locality</h3>
+<p>Because the loop accesses both the input array and the output array
+sequentially, it fully utilizes CPU L1/L2 cache prefetching. Random
+lookups in large hash maps often cause cache misses; sequential reads
+and writes in <code>_.sortedUniq</code> maximize cache line
+utilization.</p>
+<h2 id="when-to-use-_sorteduniq">When to Use
+<code>_.sortedUniq</code></h2>
+<p>Use <code>_.sortedUniq</code> whenever the incoming dataset is
+already sorted—such as results returned from a database query with an
+<code>ORDER BY</code> clause, time-series data, or outputs from binary
+search operations. When sorting is not already guaranteed, using a
+standard Set-based approach like <code>_.uniq</code> or
+<code>Array.from(new Set(arr))</code> is generally preferred, as sorting
+the array first (<span class="math inline">\(O(n \log n)\)</span>) just
+to use <code>_.sortedUniq</code> would eliminate the algorithmic
+performance gains.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

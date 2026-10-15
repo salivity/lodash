@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash flatMapDepth Logic on Node.js Buffer - lodash</title>
+    <meta name="description" content="This article explores the internal execution mechanics of Lodash’s .flatMapDepth when applied to a Node.js Buffer. When processing a Buffer, Lodash treats the binary structure as an array-like object, iteratively passing each byte into the provided iterat">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-flat-map-depth-logic-on-node-js-buffer">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash flatMapDepth Logic on Node.js Buffer - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-flat-map-depth-logic-on-node-js-buffer" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores the internal execution mechanics of Lodash’s .flatMapDepth when applied to a Node.js Buffer. When processing a Buffer, Lodash treats the binary structure as an array-like object, iteratively passing each byte into the provided iterat" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-flatmapdepth-logic-on-nodejs-buffer">Lodash flatMapDepth
+Logic on Node.js Buffer</h1>
+<p>This article explores the internal execution mechanics of Lodash’s
+<code>_.flatMapDepth</code> when applied to a Node.js
+<code>Buffer</code>. When processing a <code>Buffer</code>, Lodash
+treats the binary structure as an array-like object, iteratively passing
+each byte into the provided iteratee function via its internal mapping
+pipeline, and subsequently flattening the resulting intermediate array
+using recursive depth reduction. The following breakdown details each
+step in Lodash’s execution cycle from input evaluation to the final
+flattened array output.</p>
+<h3 id="1-invocation-and-depth-normalization">1. Invocation and Depth
+Normalization</h3>
+<p>The process begins when
+<code>_.flatMapDepth(collection, iteratee, depth)</code> is called with
+a Node.js <code>Buffer</code>.</p>
+<p>Lodash normalizes the <code>depth</code> parameter using its internal
+<code>toInteger</code> utility:</p>
+<ul>
+<li>If <code>depth</code> is <code>undefined</code>, it defaults to
+<code>1</code>.</li>
+<li>If a numeric or non-integer value is provided, it is coerced to an
+integer via <code>toInteger(depth)</code>.</li>
+</ul>
+<p>The method then immediately returns the result of calling
+<code>baseFlatten(map(collection, iteratee), depth)</code>.</p>
+<h3 id="2-collection-inspection-and-iteration-routing">2. Collection
+Inspection and Iteration Routing</h3>
+<p>Before mapping can occur, Lodash must determine how to iterate over
+the <code>Buffer</code>. Lodash’s <code>map</code> implementation checks
+whether the incoming collection is a native array using
+<code>Array.isArray(collection)</code>.</p>
+<ul>
+<li>Because a Node.js <code>Buffer</code> is an instance of
+<code>Uint8Array</code> rather than <code>Array</code>,
+<code>Array.isArray</code> evaluates to <code>false</code>.</li>
+<li>Lodash diverts from the optimized <code>arrayMap</code> path to
+<code>baseMap</code>.</li>
+<li><code>baseMap</code> calls <code>baseEach</code>, which invokes
+<code>isArrayLike(collection)</code>.</li>
+</ul>
+<p>A Node.js <code>Buffer</code> satisfies <code>isArrayLike</code>
+because:</p>
+<ol type="1">
+<li>It is not a function.</li>
+<li>It possesses a non-negative, integer-safe <code>.length</code>
+property matching its byte count.</li>
+</ol>
+<p>Because it is recognized as array-like, Lodash handles it through
+index-based iteration rather than iterating over enumerable object
+properties.</p>
+<h3 id="3-iteration-and-the-mapping-phase">3. Iteration and the Mapping
+Phase</h3>
+<p>During the <code>baseMap</code> execution, Lodash iterates
+sequentially from index <code>0</code> up to
+<code>buffer.length - 1</code>:</p>
+<ul>
+<li><strong>Byte Extraction:</strong> Each element is accessed by
+numeric index (e.g., <code>buffer[index]</code>). Node.js returns an
+integer between <code>0</code> and <code>255</code> representing the raw
+byte at that memory offset.</li>
+<li><strong>Iteratee Execution:</strong> The user-supplied
+<code>iteratee</code> function is invoked with three arguments:
+<code>iteratee(value, index, collection)</code>, where
+<code>value</code> is the single-byte integer, <code>index</code> is the
+numeric position, and <code>collection</code> is the reference to the
+original <code>Buffer</code>.</li>
+<li><strong>Collection of Results:</strong> The return values of the
+iteratee are accumulated into a newly created standard V8 JavaScript
+array (<code>result = []</code>).</li>
+</ul>
+<p>At the end of this phase, the <code>Buffer</code> has been converted
+into a standard array containing the outputs of the iteratee.</p>
+<h3 id="4-flattening-via-baseflatten">4. Flattening via
+<code>baseFlatten</code></h3>
+<p>Once the intermediate array is constructed, it is passed directly to
+<code>baseFlatten(array, depth)</code>. Lodash uses this function to
+unnest nested arrays up to the specified <code>depth</code> limit:</p>
+<ul>
+<li><strong>Flattenability Check:</strong> For each element in the
+intermediate array, Lodash calls <code>isFlattenable(value)</code>. An
+item is considered flattenable only if it is a native
+<code>Array</code>, an <code>arguments</code> object, or an object with
+<code>Symbol.isConcatSpreadable</code> set to <code>true</code>. Raw
+sub-buffers or TypedArrays returned by the iteratee are not considered
+flattenable by default unless explicitly configured with
+<code>Symbol.isConcatSpreadable</code>.</li>
+<li><strong>Depth Processing:</strong>
+<ul>
+<li>If <code>depth &gt; 0</code> and the element is flattenable,
+<code>baseFlatten</code> recursively processes the child items,
+decrementing the depth value by <code>1</code> on each recursive
+call.</li>
+<li>If <code>depth === 1</code>, it flattens the items into the target
+output array without further recursive descent.</li>
+<li>If the element is not flattenable or the depth counter reaches
+<code>0</code>, the element is appended to the output array as-is.</li>
+</ul></li>
+</ul>
+<h3 id="5-final-output">5. Final Output</h3>
+<p>The final return value of <code>_.flatMapDepth</code> is always a
+newly allocated, standard JavaScript array containing the mapped and
+flattened elements. The original Node.js <code>Buffer</code> remains
+mutated-free and untouched throughout the lifecycle.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

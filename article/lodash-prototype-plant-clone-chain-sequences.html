@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash prototype.plant: Clone Chain Sequences - lodash</title>
+    <meta name="description" content="This article provides a practical overview of the lodash.prototype.plant method, explaining how it enables the reuse and cloning of explicit Lodash chain sequences with new input data. You will learn the mechanics behind this method, observe a practical c">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-prototype-plant-clone-chain-sequences">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash prototype.plant: Clone Chain Sequences - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-prototype-plant-clone-chain-sequences" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical overview of the lodash.prototype.plant method, explaining how it enables the reuse and cloning of explicit Lodash chain sequences with new input data. You will learn the mechanics behind this method, observe a practical c" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-prototypeplant-clone-chain-sequences">Lodash
+prototype.plant: Clone Chain Sequences</h1>
+<p>This article provides a practical overview of the
+<code>lodash.prototype.plant</code> method, explaining how it enables
+the reuse and cloning of explicit Lodash chain sequences with new input
+data. You will learn the mechanics behind this method, observe a
+practical code demonstration, and understand the performance benefits of
+executing existing transformation pipelines without redefining them.</p>
+<h3 id="what-is-lodashprototypeplant">What is
+<code>lodash.prototype.plant</code>?</h3>
+<p>In Lodash, chaining allows developers to link multiple utility
+functions together into an explicit pipeline using the <code>_()</code>
+wrapper. Typically, a chain sequence is tied to the original data passed
+into the wrapper.</p>
+<p>The <code>lodash.prototype.plant(value)</code> method clones an
+existing chain sequence and replaces the wrapped value with a new one.
+It creates an exact copy of the queued transformation pipeline, leaving
+the original chain sequence unaltered while preparing the new pipeline
+for execution with the provided <code>value</code>.</p>
+<h3 id="how-it-works">How It Works</h3>
+<p>Lodash supports lazy evaluation, meaning chained operations are
+queued rather than executed immediately until <code>.value()</code> is
+called.</p>
+<p>When you call <code>.plant(value)</code> on a chain:</p>
+<ol type="1">
+<li>Lodash copies the internal pipeline of queued actions from the
+source chain.</li>
+<li>It attaches the new input <code>value</code> as the target of these
+queued actions.</li>
+<li>It returns a new wrapped Lodash instance ready for evaluation.</li>
+</ol>
+<h3 id="syntax">Syntax</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>chain<span class="op">.</span><span class="fu">plant</span>(value)</span></code></pre></div>
+<ul>
+<li><strong><code>chain</code></strong>: The existing Lodash chain
+sequence containing the queued operations.</li>
+<li><strong><code>value</code></strong>: The new data source to inject
+into the cloned chain.</li>
+<li><strong>Returns</strong>: A new Lodash wrapper instance containing
+the cloned chain applied to the new value.</li>
+</ul>
+<h3 id="code-example">Code Example</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Define a transformation pipeline on an initial dataset</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> initialArray <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span>]<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> doubleAndFilter <span class="op">=</span> <span class="fu">_</span>(initialArray)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">map</span>(n <span class="kw">=&gt;</span> n <span class="op">*</span> <span class="dv">2</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">filter</span>(n <span class="kw">=&gt;</span> n <span class="op">&gt;</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Evaluate the original chain</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(doubleAndFilter<span class="op">.</span><span class="fu">value</span>())<span class="op">;</span> </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [4, 6]</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Plant a new dataset into the pipeline without re-declaring the chain</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> newArray <span class="op">=</span> [<span class="dv">5</span><span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="dv">15</span>]<span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> plantedChain <span class="op">=</span> doubleAndFilter<span class="op">.</span><span class="fu">plant</span>(newArray)<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">// Evaluate the newly planted chain</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(plantedChain<span class="op">.</span><span class="fu">value</span>())<span class="op">;</span> </span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [10, 20, 30]</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co">// The original chain remains functional and unchanged</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(doubleAndFilter<span class="op">.</span><span class="fu">value</span>())<span class="op">;</span> </span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [4, 6]</span></span></code></pre></div>
+<h3 id="when-to-use-prototypeplant">When to Use
+<code>prototype.plant</code></h3>
+<ul>
+<li><strong>Pipeline Reusability</strong>: When applying the exact same
+sequence of transformations to multiple sets of data over time,
+<code>plant</code> avoids the need to repeatedly wrap logic inside
+custom functions.</li>
+<li><strong>Performance Optimization</strong>: Creating a chain sequence
+incurs small overhead as Lodash sets up internal execution queues. Using
+<code>plant</code> copies the existing sequence structure rather than
+constructing a new one from scratch, optimizing repeated executions over
+high-throughput data streams.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.before Memory and Garbage Collection - lodash</title>
+    <meta name="description" content="In the Lodash library, the .before utility restricts a function to running fewer than a specified number of times, caching and returning the last calculated result on subsequent calls. Because the contract of .before requires it to return that last comput">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-before-memory-and-garbage-collection">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.before Memory and Garbage Collection - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-before-memory-and-garbage-collection" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the Lodash library, the .before utility restricts a function to running fewer than a specified number of times, caching and returning the last calculated result on subsequent calls. Because the contract of .before requires it to return that last comput" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_before-memory-and-garbage-collection">Lodash _.before
+Memory and Garbage Collection</h1>
+<p>In the Lodash library, the <code>_.before</code> utility restricts a
+function to running fewer than a specified number of times, caching and
+returning the last calculated result on subsequent calls. Because the
+contract of <code>_.before</code> requires it to return that last
+computed value indefinitely after the invocation limit is reached, it
+deliberately does not garbage collect the cached return value on its
+own. Instead, it maintains the cached value within its closure while
+actively releasing the reference to the original function to prevent
+larger memory leaks, leaving the return value's lifecycle tied directly
+to the returned wrapper function.</p>
+<h3 id="the-internal-mechanism-of-_before">The Internal Mechanism of
+<code>_.before</code></h3>
+<p>To understand how memory is handled, consider the internal structure
+of Lodash's <code>before</code> implementation:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">before</span>(n<span class="op">,</span> func) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> result<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="kw">typeof</span> func <span class="op">!==</span> <span class="st">&#39;function&#39;</span>) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">TypeError</span>(<span class="st">&#39;Expected a function&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">function</span>(<span class="op">...</span>args) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">--</span>n <span class="op">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      result <span class="op">=</span> func<span class="op">.</span><span class="fu">apply</span>(<span class="kw">this</span><span class="op">,</span> args)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (n <span class="op">&lt;=</span> <span class="dv">1</span>) {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      func <span class="op">=</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When <code>_.before(n, func)</code> is invoked, it sets up a lexical
+closure holding three variables: the remaining count <code>n</code>, the
+target function <code>func</code>, and the cached return value
+<code>result</code>.</p>
+<h3 id="retention-of-the-cached-return-value">Retention of the Cached
+Return Value</h3>
+<p>The cached <code>result</code> variable is not cleared once the
+invocation limit is reached. The core behavior of <code>_.before</code>
+is to yield the result of the final allowed invocation on every
+subsequent call. Clearing or nullifying <code>result</code> would break
+this behavior, making it impossible to return the stored outcome.
+Consequently, <code>result</code> remains reachable inside the closure
+as long as the wrapper function exists.</p>
+<h3 id="proactive-garbage-collection-of-the-original-function">Proactive
+Garbage Collection of the Original Function</h3>
+<p>While <code>result</code> is retained, Lodash optimizes memory
+consumption by nullifying the original function reference. As soon as
+<code>n &lt;= 1</code> (the limit has been exhausted), the
+implementation sets <code>func = undefined</code>.</p>
+<p>This step is critical for memory management:</p>
+<ul>
+<li>It severs the closure's hold on the original function instance.</li>
+<li>It permits the JavaScript engine's garbage collector to reclaim the
+function, its closure scopes, and any large variables or objects that
+the original function closed over, assuming there are no other active
+references to it elsewhere in the application.</li>
+</ul>
+<h3 id="reclaiming-the-cached-return-value">Reclaiming the Cached Return
+Value</h3>
+<p>Because <code>result</code> cannot be cleared internally without
+mutating the expected API behavior, garbage collection of the cached
+return value depends entirely on the consumer:</p>
+<ol type="1">
+<li><strong>Active Reference:</strong> As long as your application
+retains a reference to the wrapper function returned by
+<code>_.before</code>, the closure remains active, and
+<code>result</code> cannot be garbage collected.</li>
+<li><strong>Dereferencing:</strong> To allow the JavaScript engine to
+reclaim <code>result</code>, you must remove all references to the
+wrapper function (e.g., setting the variable or property holding the
+wrapper to <code>null</code> or letting it fall out of scope). Once the
+wrapper itself becomes unreachable, the entire closure—including
+<code>result</code>—is marked and swept during the next garbage
+collection cycle.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

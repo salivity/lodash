@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash intersection and ES6 Symbol Values - lodash</title>
+    <meta name="description" content="Lodash’s .intersection method computes the set of shared elements across multiple arrays using the SameValueZero equality comparison algorithm. When applied to arrays containing ECMAScript 2015 (ES6) Symbol values, .intersection handles them strictly acco">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-intersection-and-es-6-symbol-values">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash intersection and ES6 Symbol Values - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-intersection-and-es-6-symbol-values" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .intersection method computes the set of shared elements across multiple arrays using the SameValueZero equality comparison algorithm. When applied to arrays containing ECMAScript 2015 (ES6) Symbol values, .intersection handles them strictly acco" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-intersection-and-es6-symbol-values">Lodash intersection
+and ES6 Symbol Values</h1>
+<p>Lodash’s <code>_.intersection</code> method computes the set of
+shared elements across multiple arrays using the SameValueZero equality
+comparison algorithm. When applied to arrays containing ECMAScript 2015
+(ES6) <code>Symbol</code> values, <code>_.intersection</code> handles
+them strictly according to standard JavaScript reference identity. This
+article explains how <code>_.intersection</code> evaluates local versus
+global symbols, how Lodash's internal caching accommodates symbol
+primitives, and what to expect when intersecting arrays with symbol
+data.</p>
+<h3 id="samevaluezero-comparison-and-reference-identity">SameValueZero
+Comparison and Reference Identity</h3>
+<p>The <code>_.intersection</code> function determines whether an
+element from the first array exists in all subsequent arrays by
+utilizing Lodash's internal comparator based on the SameValueZero
+specification. Because <code>Symbol</code> is a primitive type designed
+to be unique and immutable, equality is determined strictly by reference
+identity:</p>
+<ul>
+<li><strong>Matching References:</strong> If the exact same
+<code>Symbol</code> reference is present across all provided arrays,
+<code>_.intersection</code> recognizes the match and retains the symbol
+in the output array.</li>
+<li><strong>Distinct Symbols with Identical Descriptions:</strong>
+Calling <code>Symbol('desc')</code> creates a completely unique
+primitive every time. Even if two symbols in separate arrays share the
+exact same description, they are not equal
+(<code>Symbol('desc') !== Symbol('desc')</code>). Consequently, they
+will not be treated as matching values and will be excluded from the
+intersection result.</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sharedSymbol <span class="op">=</span> <span class="bu">Symbol</span>(<span class="st">&#39;shared&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> array1 <span class="op">=</span> [sharedSymbol<span class="op">,</span> <span class="bu">Symbol</span>(<span class="st">&#39;unique&#39;</span>)<span class="op">,</span> <span class="st">&#39;apple&#39;</span>]<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> array2 <span class="op">=</span> [sharedSymbol<span class="op">,</span> <span class="bu">Symbol</span>(<span class="st">&#39;unique&#39;</span>)<span class="op">,</span> <span class="st">&#39;banana&#39;</span>]<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">intersection</span>(array1<span class="op">,</span> array2)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [sharedSymbol]</span></span></code></pre></div>
+<h3 id="global-symbols-via-symbolfor">Global Symbols via
+<code>Symbol.for()</code></h3>
+<p>When symbols are registered using the runtime's global symbol
+registry via <code>Symbol.for(key)</code>, the registry returns the same
+symbol reference for identical keys across different parts of the code.
+Because <code>Symbol.for('key') === Symbol.for('key')</code>,
+<code>_.intersection</code> will successfully identify these values as
+identical across multiple arrays:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> listA <span class="op">=</span> [<span class="bu">Symbol</span><span class="op">.</span><span class="fu">for</span>(<span class="st">&#39;token&#39;</span>)<span class="op">,</span> <span class="dv">10</span>]<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> listB <span class="op">=</span> [<span class="bu">Symbol</span><span class="op">.</span><span class="fu">for</span>(<span class="st">&#39;token&#39;</span>)<span class="op">,</span> <span class="dv">20</span>]<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">intersection</span>(listA<span class="op">,</span> listB)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [Symbol(token)]</span></span></code></pre></div>
+<h3 id="internal-caching-and-mapset-compatibility">Internal Caching and
+Map/Set Compatibility</h3>
+<p>For performance optimization when dealing with larger arrays, Lodash
+constructs internal lookup structures such as <code>SetCache</code> and
+<code>MapCache</code>. In modern JavaScript engines, native
+<code>Set</code> and <code>Map</code> structures natively support
+<code>Symbol</code> primitives as distinct keys.</p>
+<p>Older manual object hashing techniques that coerce keys to
+strings—such as using an element as a plain object property key
+(<code>cache[key] = true</code>)—would throw a runtime
+<code>TypeError: Cannot convert a Symbol value to a string</code>.
+Lodash's implementation avoids this error by delegating lookups to
+modern native collections or guarded key-retrieval mechanisms that
+preserve <code>Symbol</code> identity without coercion.</p>
+<h3 id="output-order-and-uniqueness">Output Order and Uniqueness</h3>
+<p>When <code>Symbol</code> values are included in the result:</p>
+<ol type="1">
+<li><strong>Ordering:</strong> Matches maintain the order of their first
+appearance in the primary (first) array passed to
+<code>_.intersection</code>.</li>
+<li><strong>Uniqueness:</strong> The resulting array contains no
+duplicate symbols, even if the primary array contains multiple
+references to the same symbol.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

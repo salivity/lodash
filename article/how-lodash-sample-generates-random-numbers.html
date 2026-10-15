@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash sample Generates Random Numbers - lodash</title>
+    <meta name="description" content="The Lodash .sample function selects a single random element from an array by delegating index selection to an internal helper that relies on JavaScript&#39;s native Math.random() method. Rather than implementing its own proprietary PRNG (pseudo-random number">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-sample-generates-random-numbers">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash sample Generates Random Numbers - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-sample-generates-random-numbers" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .sample function selects a single random element from an array by delegating index selection to an internal helper that relies on JavaScript&#39;s native Math.random() method. Rather than implementing its own proprietary PRNG (pseudo-random number" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-sample-generates-random-numbers">How Lodash sample
+Generates Random Numbers</h1>
+<p>The Lodash <code>_.sample</code> function selects a single random
+element from an array by delegating index selection to an internal
+helper that relies on JavaScript's native <code>Math.random()</code>
+method. Rather than implementing its own proprietary PRNG (pseudo-random
+number generator) algorithm, Lodash normalizes bounds and maps
+floating-point numbers to integers, relying directly on the host
+engine's PRNG—predominantly the xorshift128+ algorithm in modern
+environments like V8. This article explores how <code>_.sample</code>
+calculates random indices and details the mathematical mechanics of the
+underlying PRNG engine.</p>
+<h3 id="the-lodash-implementation-layer">The Lodash Implementation
+Layer</h3>
+<p>When you pass an array to <code>_.sample</code>, Lodash executes a
+concise call stack to extract an item:</p>
+<ol type="1">
+<li><strong>Length Validation:</strong> The method checks the
+collection's length. If the array is empty or null, it returns
+<code>undefined</code>.</li>
+<li><strong>Index Generation:</strong> For non-empty collections, it
+calls the internal utility function
+<code>baseRandom(lower, upper)</code>.</li>
+<li><strong>Range Calculation:</strong> The random index is obtained by
+setting <code>lower = 0</code> and <code>upper = length - 1</code>.</li>
+</ol>
+<p>The source logic inside Lodash's <code>baseRandom</code> performs the
+standard range-mapping calculation:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseRandom</span>(lower<span class="op">,</span> upper) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> lower <span class="op">+</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">random</span>() <span class="op">*</span> (upper <span class="op">-</span> lower <span class="op">+</span> <span class="dv">1</span>))<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This formula scales the output of <code>Math.random()</code>, which
+produces a floating-point value in the half-open interval <span
+class="math inline">\([0, 1)\)</span>, across the discrete integer range
+of array indices <span class="math inline">\([0, \text{length} -
+1]\)</span>. The operation <code>Math.floor</code> truncates the
+fractional part, ensuring each valid index has an equal probability of
+selection:</p>
+<p><span class="math display">\[P(i) =
+\frac{1}{\text{length}}\]</span></p>
+<h3 id="the-delegation-to-native-prngs">The Delegation to Native
+PRNGs</h3>
+<p>Lodash does not maintain an internal random seed or implement custom
+mathematical PRNG algorithms like a Linear Congruential Generator (LCG)
+or Mersenne Twister. Instead, it fully delegates generation to the
+JavaScript runtime environment via <code>Math.random()</code>.</p>
+<p>Historically, early JavaScript runtimes used basic PRNGs, such as
+Multiply-With-Carry (MWC1616), which suffered from short period lengths
+and poor statistical entropy. To correct this, major JavaScript engines
+standardized on more robust non-cryptographic PRNGs. In modern V8
+engines (Chrome, Node.js), <code>Math.random()</code> is powered by the
+<strong>xorshift128+</strong> algorithm.</p>
+<h3 id="the-math-behind-xorshift128">The Math Behind xorshift128+</h3>
+<p>The xorshift128+ PRNG operates on an internal state composed of two
+64-bit unsigned integers, providing an overall state space of 128 bits.
+The algorithm generates a sequence of pseudo-random numbers using linear
+operations (bitwise XOR and bit-shifts) combined with non-linear
+addition.</p>
+<h4 id="state-transition-mechanics">State Transition Mechanics</h4>
+<p>With an internal state represented as <span
+class="math inline">\(s_0\)</span> and <span
+class="math inline">\(s_1\)</span>, the generator updates the state via
+the following sequence of transformations per step:</p>
+<ol type="1">
+<li>Let <span class="math inline">\(a = s_0\)</span></li>
+<li>Let <span class="math inline">\(b = s_1\)</span></li>
+<li>Update <span class="math inline">\(s_0 = b\)</span></li>
+<li>Apply bitwise shifts and XOR operations to <span
+class="math inline">\(a\)</span>: <span class="math display">\[a
+\leftarrow a \oplus (a \ll 23)\]</span> <span class="math display">\[a
+\leftarrow a \oplus (a \gg 17)\]</span> <span class="math display">\[a
+\leftarrow a \oplus b \oplus (b \gg 26)\]</span></li>
+<li>Update <span class="math inline">\(s_1 = a\)</span></li>
+</ol>
+<p>The result of the step is then calculated by adding the state
+variables:</p>
+<p><span class="math display">\[\text{Output} = (s_0 + s_1)
+\pmod{2^{64}}\]</span></p>
+<h4 id="conversion-to-floating-point">Conversion to Floating-Point</h4>
+<p>Because <code>Math.random()</code> returns a double-precision float
+in the range <span class="math inline">\([0, 1)\)</span>, the 64-bit
+integer generated by xorshift128+ is mapped directly into an IEEE 754
+floating-point representation.</p>
+<p>A standard 64-bit float contains a 52-bit mantissa (fraction). The
+engine takes the upper 52 bits of the generated integer, places them
+into the mantissa bits of the IEEE 754 structure with an exponent set to
+1, and then subtracts 1.0. This yields a uniformly distributed
+floating-point value in <span class="math inline">\([0, 1)\)</span>,
+which Lodash immediately consumes to produce an array index.</p>
+<h3 id="characteristics-and-limitations">Characteristics and
+Limitations</h3>
+<ul>
+<li><strong>Period Length:</strong> The xorshift128+ algorithm has a
+cycle period of <span class="math inline">\(2^{128} - 1\)</span>. An
+application calling <code>_.sample</code> will not repeat its
+pseudo-random cycle under practical usage lifetimes.</li>
+<li><strong>Statistical Quality:</strong> It passes modern statistical
+test suites like BigCrush, preventing systematic bias or clustering when
+selecting items from a collection.</li>
+<li><strong>Non-Cryptographic Nature:</strong> Because xorshift128+ is
+linear, observing a short sequence of consecutive outputs allows the
+full internal state to be reconstructed. Consequently,
+<code>_.sample</code> is not suitable for cryptographic functions, token
+generation, or security-sensitive shuffling.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

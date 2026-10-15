@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash isArrayLike Safely Validates Strings - lodash</title>
+    <meta name="description" content="Lodash’s .isArrayLike utility evaluates whether a value has an indexed collection format without throwing runtime exceptions, treating strings as valid array-like targets. This article details the internal mechanics of .isArrayLike, demonstrating how it s">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-array-like-safely-validates-strings">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash isArrayLike Safely Validates Strings - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-array-like-safely-validates-strings" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .isArrayLike utility evaluates whether a value has an indexed collection format without throwing runtime exceptions, treating strings as valid array-like targets. This article details the internal mechanics of .isArrayLike, demonstrating how it s" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-isarraylike-safely-validates-strings">How Lodash
+isArrayLike Safely Validates Strings</h1>
+<p>Lodash’s <code>_.isArrayLike</code> utility evaluates whether a value
+has an indexed collection format without throwing runtime exceptions,
+treating strings as valid array-like targets. This article details the
+internal mechanics of <code>_.isArrayLike</code>, demonstrating how it
+safely interacts with primitive strings and <code>String</code> wrapper
+objects by combining null-checks, JavaScript's autoboxing behavior,
+strict numeric range validation, and function exclusion guards.</p>
+<h3 id="the-underlying-implementation-of-_isarraylike">The Underlying
+Implementation of <code>_.isArrayLike</code></h3>
+<p>In the Lodash source code, <code>_.isArrayLike</code> is defined with
+a concise implementation:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isArrayLike</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> value <span class="op">!==</span> <span class="st">&#39;function&#39;</span> <span class="op">&amp;&amp;</span> <span class="fu">isLength</span>(value<span class="op">.</span><span class="at">length</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When a string instance is passed into this function, each component
+of the expression works sequentially to ensure safety and
+correctness.</p>
+<h3 id="guarding-against-nullish-values">Guarding Against Nullish
+Values</h3>
+<p>The initial condition <code>value != null</code> performs a loose
+inequality check. This filters out both <code>null</code> and
+<code>undefined</code> in a single comparison. If this guard were
+omitted, attempting to read <code>value.length</code> on a nullish input
+would immediately cause the JavaScript engine to throw a
+<code>TypeError: Cannot read properties of undefined (reading 'length')</code>.
+By evaluating this first, Lodash prevents unhandled exceptions prior to
+property inspection.</p>
+<h3 id="safe-property-access-via-autoboxing">Safe Property Access via
+Autoboxing</h3>
+<p>In JavaScript, string primitives (e.g., <code>'hello'</code>) are not
+objects, but reading <code>.length</code> on a string primitive does not
+throw an error. The runtime uses a mechanism called autoboxing, which
+temporarily wraps the primitive in an internal <code>String</code>
+object to access its properties.</p>
+<p>Because JavaScript strings inherently possess an immutable,
+non-negative integer <code>.length</code> property reflecting their
+UTF-16 code unit count, accessing <code>.length</code> returns a valid
+number. For explicit <code>String</code> object instances created via
+<code>new String('hello')</code>, the property access behaves as
+standard object property lookup. In both scenarios, property retrieval
+succeeds without throwing exceptions.</p>
+<h3 id="validating-the-length-property-with-islength">Validating the
+Length Property with <code>isLength</code></h3>
+<p>Even if an entity contains a <code>.length</code> property, it might
+not be a valid collection length. Lodash delegates the validation of
+this property to the internal <code>isLength</code> helper:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> <span class="cn">MAX_SAFE_INTEGER</span> <span class="op">=</span> <span class="dv">9007199254740991</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isLength</span>(value) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">typeof</span> value <span class="op">===</span> <span class="st">&#39;number&#39;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    value <span class="op">&gt;</span> <span class="op">-</span><span class="dv">1</span> <span class="op">&amp;&amp;</span> value <span class="op">%</span> <span class="dv">1</span> <span class="op">===</span> <span class="dv">0</span> <span class="op">&amp;&amp;</span> value <span class="op">&lt;=</span> <span class="cn">MAX_SAFE_INTEGER</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>For string instances, <code>isLength(value.length)</code> ensures
+that:</p>
+<ul>
+<li>The <code>length</code> value is strictly a primitive number
+(<code>typeof value === 'number'</code>).</li>
+<li>The value is non-negative (<code>value &gt; -1</code>).</li>
+<li>The value is an integer rather than a floating-point number
+(<code>value % 1 === 0</code>).</li>
+<li>The value does not exceed JavaScript's safe integer threshold
+(<code>value &lt;= MAX_SAFE_INTEGER</code>).</li>
+</ul>
+<p>Because a string's <code>.length</code> is always a non-negative
+integer within standard memory limits, strings consistently satisfy all
+criteria defined in <code>isLength</code>.</p>
+<h3 id="eliminating-function-false-positives">Eliminating Function False
+Positives</h3>
+<p>JavaScript functions also possess a <code>.length</code> property,
+which represents the function's arity (the number of formal parameters).
+Despite having a valid numerical length, functions are not intended to
+be processed as collections.</p>
+<p>The condition <code>typeof value !== 'function'</code> explicitly
+excludes functions before checking <code>isLength</code>. Since strings
+have a <code>typeof</code> value of <code>'string'</code> (or
+<code>'object'</code> when using the <code>String</code> constructor),
+they safely pass this exclusion check.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

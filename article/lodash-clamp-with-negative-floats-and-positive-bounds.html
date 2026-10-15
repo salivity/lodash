@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Clamp with Negative Floats and Positive Bounds - lodash</title>
+    <meta name="description" content="This article examines how Lodash’s .clamp method processes negative floating-point numbers when restricted by an exclusively positive boundary range. It covers the underlying algorithmic mechanics, numeric evaluation, edge cases involving floating-point r">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-clamp-with-negative-floats-and-positive-bounds">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Clamp with Negative Floats and Positive Bounds - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-clamp-with-negative-floats-and-positive-bounds" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how Lodash’s .clamp method processes negative floating-point numbers when restricted by an exclusively positive boundary range. It covers the underlying algorithmic mechanics, numeric evaluation, edge cases involving floating-point r" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-clamp-with-negative-floats-and-positive-bounds">Lodash
+Clamp with Negative Floats and Positive Bounds</h1>
+<p>This article examines how Lodash’s <code>_.clamp</code> method
+processes negative floating-point numbers when restricted by an
+exclusively positive boundary range. It covers the underlying
+algorithmic mechanics, numeric evaluation, edge cases involving
+floating-point representation, and the functional outcome when an
+out-of-bounds negative value encounters a positive lower limit.</p>
+<h3 id="how-_clamp-operates">How <code>_.clamp</code> Operates</h3>
+<p>The <code>_.clamp</code> function restricts an input number within an
+inclusive lower and upper bound. Its syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">clamp</span>(number<span class="op">,</span> lower<span class="op">,</span> upper)<span class="op">;</span></span></code></pre></div>
+<p>Internally, Lodash converts parameters to numeric primitives and
+performs boundary comparisons equivalent to:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>number <span class="op">=</span> number <span class="op">&lt;=</span> upper <span class="op">?</span> number <span class="op">:</span> upper<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>number <span class="op">=</span> number <span class="op">&gt;=</span> lower <span class="op">?</span> number <span class="op">:</span> lower<span class="op">;</span></span></code></pre></div>
+<p>If <code>Math.min</code> and <code>Math.max</code> were used, the
+logic mirrors <code>Math.min(Math.max(number, lower), upper)</code>.</p>
+<h3
+id="processing-negative-floats-against-positive-constraints">Processing
+Negative Floats Against Positive Constraints</h3>
+<p>When a negative float (e.g., <code>-4.75</code>) is passed alongside
+an exclusively positive range (such as <code>lower = 1.0</code> and
+<code>upper = 10.0</code>), the function executes the following
+steps:</p>
+<ol type="1">
+<li><strong>Upper Bound Check:</strong> The negative float is compared
+to the positive upper bound. Because <code>-4.75 &lt;= 10.0</code>
+evaluates to <code>true</code>, the value remains
+<code>-4.75</code>.</li>
+<li><strong>Lower Bound Check:</strong> The value is compared to the
+positive lower bound. Because <code>-4.75 &gt;= 1.0</code> evaluates to
+<code>false</code>, the lower bound replaces the value.</li>
+<li><strong>Return Value:</strong> The function returns the lower bound
+(<code>1.0</code>).</li>
+</ol>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> value <span class="op">=</span> <span class="op">-</span><span class="fl">12.345</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> lower <span class="op">=</span> <span class="fl">0.5</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> upper <span class="op">=</span> <span class="fl">5.5</span><span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">clamp</span>(value<span class="op">,</span> lower<span class="op">,</span> upper)<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result)<span class="op">;</span> <span class="co">// Output: 0.5</span></span></code></pre></div>
+<p>Functionally, any negative float intersecting an exclusively positive
+range will always resolve directly to the positive lower bound.</p>
+<h3 id="ieee-754-floating-point-considerations">IEEE 754 Floating-Point
+Considerations</h3>
+<p>JavaScript represents all numbers using double-precision IEEE 754
+binary floating-point format. When handling negative floats in
+<code>_.clamp</code>:</p>
+<ul>
+<li><strong>Negative Zero (<code>-0.0</code>):</strong> In standard
+JavaScript comparisons, <code>-0.0 &gt;= 0</code> evaluates to
+<code>true</code>, but against an exclusively positive boundary (such as
+<code>0.1</code>), <code>-0.0 &gt;= 0.1</code> evaluates to
+<code>false</code>. Lodash returns the positive lower bound without sign
+inversion side effects.</li>
+<li><strong>Subnormal Numbers:</strong> Very small negative values close
+to zero (e.g., <code>-Number.MIN_VALUE</code>) follow standard
+comparison rules and will be elevated to the positive lower bound.</li>
+<li><strong>Precision:</strong> The return value preserves the precision
+of the <code>lower</code> argument, rather than altering or rounding the
+input negative float.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

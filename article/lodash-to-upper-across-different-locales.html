@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.toUpper Across Different Locales - lodash</title>
+    <meta name="description" content="Lodash&#39;s .toUpper method converts string inputs to uppercase, but its behavior across different locales is strictly limited by its internal implementation. This article examines how .toUpper processes strings, why it does not provide custom locale-sensiti">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-to-upper-across-different-locales">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.toUpper Across Different Locales - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-to-upper-across-different-locales" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .toUpper method converts string inputs to uppercase, but its behavior across different locales is strictly limited by its internal implementation. This article examines how .toUpper processes strings, why it does not provide custom locale-sensiti" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_toupper-across-different-locales">Lodash _.toUpper
+Across Different Locales</h1>
+<p>Lodash's <code>_.toUpper</code> method converts string inputs to
+uppercase, but its behavior across different locales is strictly limited
+by its internal implementation. This article examines how
+<code>_.toUpper</code> processes strings, why it does not provide custom
+locale-sensitive transformations, how it behaves with regional edge
+cases like Turkish or German characters, and what alternatives should be
+used when locale-aware uppercase conversions are required.</p>
+<h2 id="how-lodash-_toupper-works-internally">How Lodash _.toUpper Works
+Internally</h2>
+<p>The <code>_.toUpper</code> function in the Lodash JavaScript library
+is designed to safely convert any provided value to an uppercase string.
+Internally, the method performs two primary steps:</p>
+<ol type="1">
+<li>It converts the incoming input to a string using Lodash's internal
+<code>toString</code> conversion logic, safely handling
+<code>null</code>, <code>undefined</code>, symbols, and other
+primitives.</li>
+<li>It delegates the casing transformation directly to JavaScript’s
+native <code>String.prototype.toUpperCase()</code> method.</li>
+</ol>
+<p>Because <code>_.toUpper</code> directly invokes native
+<code>toUpperCase()</code>, it does not accept a locale argument or
+configure custom internationalization rules.</p>
+<h2 id="default-unicode-mapping-vs-locale-sensitivity">Default Unicode
+Mapping vs. Locale Sensitivity</h2>
+<p>JavaScript's standard <code>String.prototype.toUpperCase()</code>
+method applies the default Unicode standard case mappings. It does not
+take the user's environment, language settings, or explicit locale
+arguments into account.</p>
+<p>Consequently, <code>_.toUpper</code> applies the exact same universal
+Unicode casing rules regardless of the target locale:</p>
+<ul>
+<li><strong>Standard Latin Characters:</strong> Letters such as
+<code>a-z</code> map uniformly to <code>A-Z</code>.</li>
+<li><strong>Accented Characters:</strong> Accented glyphs with universal
+mappings, such as <code>é</code> or <code>ñ</code>, become
+<code>É</code> or <code>Ñ</code>.</li>
+<li><strong>Length-Changing Characters:</strong> Standard Unicode
+mappings that expand character counts are honored. For example, the
+German lowercase sharp s (<code>ß</code>) converts to
+<code>SS</code>.</li>
+</ul>
+<p>However, <code>_.toUpper</code> fails to respect language-specific
+orthographic conventions that deviate from standard Unicode
+defaults.</p>
+<h2 id="the-turkish-and-azerbaijani-dotless-i-issue">The Turkish and
+Azerbaijani Dotless "I" Issue</h2>
+<p>The most notable consequence of lacking locale awareness occurs with
+Turkic languages, such as Turkish and Azerbaijani, which distinguish
+between dotted and dotless versions of the letter "I":</p>
+<ul>
+<li>In Turkish:
+<ul>
+<li>Lowercase <code>i</code> (dotted) should become uppercase
+<code>İ</code> (dotted).</li>
+<li>Lowercase <code>ı</code> (dotless) should become uppercase
+<code>I</code> (dotless).</li>
+</ul></li>
+</ul>
+<p>When using <code>_.toUpper</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">toUpper</span>(<span class="st">&#39;i&#39;</span>)<span class="op">;</span> <span class="co">// Returns &quot;I&quot; instead of &quot;İ&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">toUpper</span>(<span class="st">&#39;ı&#39;</span>)<span class="op">;</span> <span class="co">// Returns &quot;I&quot;</span></span></code></pre></div>
+<p>Because <code>_.toUpper</code> lacks locale parameters, it cannot
+produce the grammatically correct uppercase <code>İ</code> for Turkish
+text, leading to potential data corruption or improper text display in
+localized applications.</p>
+<h2 id="locale-aware-alternative-tolocaleuppercase">Locale-Aware
+Alternative: toLocaleUpperCase</h2>
+<p>If an application requires case conversions that respect specific
+linguistic rules, <code>_.toUpper</code> is not the appropriate tool.
+Instead, native JavaScript provides
+<code>String.prototype.toLocaleUpperCase()</code>, which accepts a BCP
+47 language tag:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> text <span class="op">=</span> <span class="st">&#39;istanbul&#39;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Standard Lodash (Non-locale-aware)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">toUpper</span>(text)<span class="op">;</span> </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;ISTANBUL&quot; (Incorrect in Turkish)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Native JavaScript (Locale-aware)</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>text<span class="op">.</span><span class="fu">toLocaleUpperCase</span>(<span class="st">&#39;tr-TR&#39;</span>)<span class="op">;</span> </span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;İSTANBUL&quot; (Correct in Turkish)</span></span></code></pre></div>
+<h2 id="summary">Summary</h2>
+<p><code>_.toUpper</code> provides a safe, <code>null</code>-tolerant
+wrapper around JavaScript's default uppercase functionality, but it is
+entirely locale-agnostic. Across all environments and intended locales,
+it applies standard Unicode mappings. For applications requiring
+accurate language-specific conversions, developers should bypass
+<code>_.toUpper</code> in favor of native
+<code>toLocaleUpperCase(locale)</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

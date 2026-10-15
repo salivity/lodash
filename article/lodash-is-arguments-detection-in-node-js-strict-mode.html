@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash isArguments Detection in Node.js Strict Mode - lodash</title>
+    <meta name="description" content="The Lodash utility .isArguments determines whether a given value is a native JavaScript arguments object by leveraging both internal type tags and specific structural object markers. In Node.js environments—including those executing in strict mode—Lodash">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-is-arguments-detection-in-node-js-strict-mode">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash isArguments Detection in Node.js Strict Mode - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-is-arguments-detection-in-node-js-strict-mode" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash utility .isArguments determines whether a given value is a native JavaScript arguments object by leveraging both internal type tags and specific structural object markers. In Node.js environments—including those executing in strict mode—Lodash" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-isarguments-detection-in-nodejs-strict-mode">Lodash
+isArguments Detection in Node.js Strict Mode</h1>
+<p>The Lodash utility <code>_.isArguments</code> determines whether a
+given value is a native JavaScript arguments object by leveraging both
+internal type tags and specific structural object markers. In Node.js
+environments—including those executing in strict mode—Lodash primarily
+inspects the internal <code>[[Class]]</code> via
+<code>Object.prototype.toString</code>. When that check is insufficient
+or across varying runtime contexts, it falls back to inspecting specific
+property descriptors on the object, notably the presence and
+non-enumerability of the <code>callee</code> property alongside basic
+object-like characteristics.</p>
+<h3 id="primary-marker-the-internal-class-tag">Primary Marker: The
+Internal Class Tag</h3>
+<p>In modern Node.js runtimes (V8), the engine assigns the internal
+<code>[[Class]]</code> tag <code>[object Arguments]</code> to arguments
+objects created in both sloppy and strict modes.</p>
+<p>Lodash first evaluates:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">baseGetTag</span>(value) <span class="op">===</span> <span class="st">&#39;[object Arguments]&#39;</span></span></code></pre></div>
+<p>If the environment correctly exposes this tag via
+<code>Object.prototype.toString.call(value)</code>, Lodash uses it
+directly. In standard Node.js execution, strict mode does not alter this
+internal tag, allowing this primary check to pass.</p>
+<h3 id="fallback-environment-markers-in-strict-mode">Fallback
+Environment Markers in Strict Mode</h3>
+<p>If environment inconsistencies arise (such as cross-realm boundary
+issues, transpiled code, or older engine shims), Lodash relies on a
+fallback function. In Node.js strict mode, accessing certain properties
+like <code>callee</code> directly throws a <code>TypeError</code>. To
+safely detect arguments without triggering errors, Lodash inspects
+structural environment markers using prototype methods:</p>
+<ol type="1">
+<li><p><strong>Object-Like Verification
+(<code>isObjectLike</code>)</strong><br />
+The target value must be non-null and have a <code>typeof</code>
+evaluation of <code>'object'</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>value <span class="op">!==</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> value <span class="op">===</span> <span class="st">&#39;object&#39;</span></span></code></pre></div></li>
+<li><p><strong>The <code>callee</code> Own Property
+Marker</strong><br />
+In strict mode, the JavaScript engine attaches a non-configurable,
+non-enumerable "poison-pill" getter/setter to
+<code>arguments.callee</code>. Lodash tests for the presence of this key
+using <code>Object.prototype.hasOwnProperty</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>hasOwnProperty<span class="op">.</span><span class="fu">call</span>(value<span class="op">,</span> <span class="st">&#39;callee&#39;</span>) <span class="op">===</span> <span class="kw">true</span></span></code></pre></div>
+<p>Calling <code>hasOwnProperty</code> checks for the existence of the
+property descriptor without invoking the getter, preventing the strict
+mode <code>TypeError</code>.</p></li>
+<li><p><strong>Non-Enumerability of <code>callee</code></strong><br />
+Ordinary objects that spoof arguments typically declare an enumerable
+<code>callee</code> property. Lodash verifies that <code>callee</code>
+is strictly non-enumerable:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>propertyIsEnumerable<span class="op">.</span><span class="fu">call</span>(value<span class="op">,</span> <span class="st">&#39;callee&#39;</span>)</span></code></pre></div></li>
+</ol>
+<h3 id="combined-fallback-logic">Combined Fallback Logic</h3>
+<p>When the primary tag check is unavailable or bypassed, Lodash
+compiles these markers into a single structural condition:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseIsArguments</span>(value) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">isObjectLike</span>(value) <span class="op">&amp;&amp;</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>         hasOwnProperty<span class="op">.</span><span class="fu">call</span>(value<span class="op">,</span> <span class="st">&#39;callee&#39;</span>) <span class="op">&amp;&amp;</span> </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>         <span class="op">!</span>propertyIsEnumerable<span class="op">.</span><span class="fu">call</span>(value<span class="op">,</span> <span class="st">&#39;callee&#39;</span>)<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By coupling the non-enumerable <code>'callee'</code> descriptor check
+with object validation, <code>_.isArguments</code> safely and accurately
+isolates native strict-mode arguments objects in Node.js without
+producing runtime evaluation faults.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

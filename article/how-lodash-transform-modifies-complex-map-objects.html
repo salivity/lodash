@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash Transform Modifies Complex Map Objects - lodash</title>
+    <meta name="description" content="When Lodash’s .transform method processes a JavaScript Map, it alters the internal and enumerable structure of the data rather than performing a standard deep collection iteration. Because .transform is designed around plain JavaScript objects and arrays,">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-transform-modifies-complex-map-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash Transform Modifies Complex Map Objects - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-transform-modifies-complex-map-objects" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When Lodash’s .transform method processes a JavaScript Map, it alters the internal and enumerable structure of the data rather than performing a standard deep collection iteration. Because .transform is designed around plain JavaScript objects and arrays," />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-transform-modifies-complex-map-objects">How Lodash
+Transform Modifies Complex Map Objects</h1>
+<p>When Lodash’s <code>_.transform</code> method processes a JavaScript
+<code>Map</code>, it alters the internal and enumerable structure of the
+data rather than performing a standard deep collection iteration.
+Because <code>_.transform</code> is designed around plain JavaScript
+objects and arrays, passing a <code>Map</code> causes unexpected
+prototype binding without the allocation of native internal slots,
+filters out non-enumerable Map entries, and produces an object that
+mimics the prototype chain of a <code>Map</code> while fundamentally
+breaking native Map operations.</p>
+<h3 id="accumulator-instantiation-and-prototype-inheritance">Accumulator
+Instantiation and Prototype Inheritance</h3>
+<p>When <code>_.transform</code> is invoked on an object without an
+explicit accumulator, it inspects the target constructor and
+prototype:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>accumulator <span class="op">=</span> <span class="fu">isFunction</span>(Ctor) <span class="op">?</span> <span class="fu">baseCreate</span>(<span class="fu">getPrototype</span>(object)) <span class="op">:</span> {}<span class="op">;</span></span></code></pre></div>
+<p>When evaluating a native <code>Map</code>,
+<code>object.constructor</code> resolves to <code>Map</code>. Instead of
+executing <code>new Map()</code>, Lodash calls its internal
+<code>baseCreate</code> method, effectively running
+<code>Object.create(Map.prototype)</code>.</p>
+<p>This applies a specific structural change:</p>
+<ul>
+<li>The accumulator becomes a generic object inheriting from
+<code>Map.prototype</code>.</li>
+<li>It lacks the native <code>[[MapData]]</code> internal slot required
+by the ECMAScript specification for <code>Map</code> instances.</li>
+<li>Any downstream attempt within the iteratee to use native methods
+such as <code>accumulator.set(key, value)</code> throws a
+<code>TypeError: Method Map.prototype.set called on incompatible receiver</code>.</li>
+</ul>
+<h3 id="traversal-mechanics-via-baseforown">Traversal Mechanics via
+<code>baseForOwn</code></h3>
+<p><code>_.transform</code> divides collections into two categories:
+array-like objects and general objects. Because a <code>Map</code> does
+not qualify as array-like, the iteration defaults to
+<code>baseForOwn</code>:</p>
+<ul>
+<li><code>baseForOwn</code> iterates exclusively over the <strong>own
+enumerable string and symbol properties</strong> of the object via
+<code>Object.keys</code> or equivalent iteration routines.</li>
+<li>The internal key-value entries of the <code>Map</code> stored in
+<code>[[MapData]]</code> are completely ignored.</li>
+<li>If the complex <code>Map</code> has standard entries added via
+<code>map.set('key', 'value')</code>, the iteratee does not execute for
+these pairs.</li>
+<li>The iteratee executes only if arbitrary custom properties were
+directly attached to the Map instance (e.g.,
+<code>map.customProperty = 'meta'</code>).</li>
+</ul>
+<h3 id="structural-modifications-on-complex-nested-maps">Structural
+Modifications on Complex, Nested Maps</h3>
+<p>When processing a complex <code>Map</code> (such as a nested
+structure or one containing arbitrary attached properties), the exact
+transformations occur as follows:</p>
+<ol type="1">
+<li><strong>Loss of Native Map Entries</strong>: Any sub-maps, objects,
+or primitive entries held inside the <code>Map</code> via
+<code>.set()</code> are dropped from the transformation process
+entirely.</li>
+<li><strong>Flattening of Custom Properties</strong>: Any monkey-patched
+properties attached as own-enumerable keys are visited. If the iteratee
+assigns these properties to the default accumulator, they are attached
+as standard properties on the newly created object.</li>
+<li><strong>Internal Reference Decoupling</strong>: Because the default
+accumulator inherits <code>Map.prototype</code> without instance
+initialization, the resulting object retains <code>Map</code> methods
+along its prototype chain (<code>get</code>, <code>set</code>,
+<code>has</code>, <code>clear</code>), but all of them are permanently
+non-functional on that instance.</li>
+<li><strong>Explicit Accumulator Deviation</strong>: If an initialized
+instance—such as a valid <code>new Map()</code>—is explicitly supplied
+as the third argument to <code>_.transform</code>,
+<code>baseForOwn</code> still governs the source iteration. The target
+will only receive modifications driven by the source's own enumerable
+properties, leaving the native entries of the source unread.</li>
+</ol>
+<h3 id="transformation-summary">Transformation Summary</h3>
+<p>Directly applying <code>_.transform</code> to an ES6 <code>Map</code>
+reduces the complex map to a hollow prototype wrapper. It strips native
+key-value storage, ignores internal collections, transforms own
+properties into standard object keys on the accumulator, and severs
+compatibility with the ECMAScript Map API. To preserve map entries
+during transformation, the <code>Map</code> must first be converted to
+an array via <code>Array.from(map.entries())</code> or iterated using
+native <code>Map.prototype.forEach</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

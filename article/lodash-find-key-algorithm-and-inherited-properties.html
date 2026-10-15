@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash findKey Algorithm and Inherited Properties - lodash</title>
+    <meta name="description" content="This article examines the internal algorithm of Lodash&#39;s .findKey method and details how it interacts with an object&#39;s prototype chain. While developers often expect object-traversal utilities to inspect all accessible properties, .findKey is specifically">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-find-key-algorithm-and-inherited-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash findKey Algorithm and Inherited Properties - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-find-key-algorithm-and-inherited-properties" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines the internal algorithm of Lodash&#39;s .findKey method and details how it interacts with an object&#39;s prototype chain. While developers often expect object-traversal utilities to inspect all accessible properties, .findKey is specifically" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-findkey-algorithm-and-inherited-properties">Lodash
+findKey Algorithm and Inherited Properties</h1>
+<p>This article examines the internal algorithm of Lodash's
+<code>_.findKey</code> method and details how it interacts with an
+object's prototype chain. While developers often expect object-traversal
+utilities to inspect all accessible properties, <code>_.findKey</code>
+is specifically designed to evaluate only an object's own enumerable
+properties, intentionally ignoring any inherited enumerable properties.
+Below is an explanation of the execution flow, underlying helper
+methods, and the exact mechanism that excludes inherited properties
+during execution.</p>
+<h3 id="the-_findkey-execution-chain">The <code>_.findKey</code>
+Execution Chain</h3>
+<p>When <code>_.findKey(object, predicate)</code> is called, Lodash
+routes execution through internal modular helper functions:</p>
+<ol type="1">
+<li><strong>Iteratee Normalization:</strong> Lodash transforms the
+passed <code>predicate</code> into a callable function using internal
+iteratee handlers (such as <code>baseIteratee</code>). This allows
+property shorthands, matches objects, or custom functions to evaluate
+uniformly.</li>
+<li><strong>Iteration Delegation via <code>baseFindKey</code>:</strong>
+The core search mechanism is managed by <code>baseFindKey</code>, which
+takes three arguments: the target <code>object</code>, the resolved
+<code>predicate</code>, and an iteration function. Lodash passes
+<code>baseForOwn</code> as this iteration function.</li>
+<li><strong>Property Enumeration via <code>baseForOwn</code>:</strong>
+<code>baseForOwn</code> enforces own-property iteration by passing
+Lodash's internal <code>keys</code> utility to the generic loop handler
+<code>baseFor</code>.</li>
+</ol>
+<h3 id="handling-inherited-enumerable-properties">Handling Inherited
+Enumerable Properties</h3>
+<p>Inherited enumerable properties—properties defined on an object's
+prototype with their <code>enumerable</code> descriptor set to
+<code>true</code>—are excluded directly at the key-retrieval phase.</p>
+<p>Lodash's internal <code>keys</code> implementation mirrors the
+ECMAScript standard <code>Object.keys()</code> method. Under standard
+JavaScript behavior:</p>
+<ul>
+<li><code>Object.keys()</code> returns an array of a given object's own
+enumerable property names.</li>
+<li>It explicitly excludes properties further up the prototype
+chain.</li>
+<li>In environments lacking native <code>Object.keys</code>, Lodash uses
+a fallback that loops using <code>for...in</code> combined with explicit
+<code>Object.prototype.hasOwnProperty.call(object, key)</code> checks to
+filter out prototype members.</li>
+</ul>
+<p>Because <code>baseForOwn</code> relies strictly on this list of own
+keys, inherited properties are never passed to the loop runner.
+Consequently, the <code>predicate</code> function is never invoked for
+any inherited enumerable property.</p>
+<h3 id="predicate-evaluation-and-termination">Predicate Evaluation and
+Termination</h3>
+<p>The loop proceeds over the collected own keys in the following
+order:</p>
+<ol type="1">
+<li><strong>Value Access:</strong> The key is retrieved, and the
+corresponding value is accessed directly from the object
+(<code>object[key]</code>).</li>
+<li><strong>Predicate Invocation:</strong> The iteratee is called with
+arguments <code>(value, key, object)</code>.</li>
+<li><strong>Truthiness Check:</strong> If the predicate returns a truthy
+value, <code>baseFindKey</code> immediately halts execution and returns
+the current <code>key</code>.</li>
+<li><strong>Default Exit:</strong> If all own enumerable properties are
+evaluated without the predicate returning a truthy value, the function
+completes its traversal and returns <code>undefined</code>.</li>
+</ol>
+<p>If a search across both own and inherited enumerable properties is
+required, developers cannot rely on <code>_.findKey</code>. Instead, an
+explicit search utilizing <code>_.forIn</code> must be constructed, as
+<code>_.forIn</code> employs <code>keysIn</code> (using an unconstrained
+<code>for...in</code> traversal) rather than <code>keys</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.curry with ES6 Rest Parameters - lodash</title>
+    <meta name="description" content="Applying Lodash&#39;s .curry method to a function that uses ES6 rest parameters causes the curried function to execute immediately upon its first invocation, failing to curry the arguments as expected. Because .curry relies on JavaScript&#39;s native Function.pro">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-curry-with-es-6-rest-parameters">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.curry with ES6 Rest Parameters - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-curry-with-es-6-rest-parameters" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Applying Lodash&#39;s .curry method to a function that uses ES6 rest parameters causes the curried function to execute immediately upon its first invocation, failing to curry the arguments as expected. Because .curry relies on JavaScript&#39;s native Function.pro" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_curry-with-es6-rest-parameters">Lodash _.curry with ES6
+Rest Parameters</h1>
+<p>Applying Lodash's <code>_.curry</code> method to a function that uses
+ES6 rest parameters causes the curried function to execute immediately
+upon its first invocation, failing to curry the arguments as expected.
+Because <code>_.curry</code> relies on JavaScript's native
+<code>Function.prototype.length</code> property to determine how many
+arguments to collect, and rest parameters do not count toward this
+property, the curried function detects an arity of zero. This article
+explains the underlying mechanics of this behavior, illustrates the
+resulting issues with code examples, and provides the standard solution
+to make currying work properly with rest parameters.</p>
+<h2 id="the-role-of-function-arity-in-lodash">The Role of Function Arity
+in Lodash</h2>
+<p>In JavaScript, <code>_.curry</code> creates a function that accepts
+one or more arguments of the target function. If the number of provided
+arguments is less than the target function's expected argument count
+(its arity), it returns a new function expecting the remaining
+arguments. Once the required number of arguments is met, the underlying
+function executes.</p>
+<p>To determine this arity automatically, Lodash inspects the function's
+<code>.length</code> property:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">regularFunction</span>(a<span class="op">,</span> b<span class="op">,</span> c) {}</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(regularFunction<span class="op">.</span><span class="at">length</span>)<span class="op">;</span> <span class="co">// 3</span></span></code></pre></div>
+<p>Because <code>regularFunction.length</code> is <code>3</code>,
+<code>_.curry(regularFunction)</code> waits until it has received three
+arguments across its invocations before returning the final result.</p>
+<h2 id="how-es6-rest-parameters-affect-function-length">How ES6 Rest
+Parameters Affect Function Length</h2>
+<p>The ECMAScript 6 specification states that rest parameters
+(<code>...args</code>) do not contribute to a function's
+<code>.length</code> property. Only standard parameters declared before
+the first default parameter or rest parameter are counted.</p>
+<p>Consider the following examples:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> onlyRest <span class="op">=</span> (<span class="op">...</span>args) <span class="kw">=&gt;</span> args<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(onlyRest<span class="op">.</span><span class="at">length</span>)<span class="op">;</span> <span class="co">// 0</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> mixed <span class="op">=</span> (a<span class="op">,</span> b<span class="op">,</span> <span class="op">...</span>rest) <span class="kw">=&gt;</span> [a<span class="op">,</span> b<span class="op">,</span> <span class="op">...</span>rest]<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(mixed<span class="op">.</span><span class="at">length</span>)<span class="op">;</span> <span class="co">// 2</span></span></code></pre></div>
+<p>When a function relies entirely on rest parameters to receive its
+inputs, its <code>.length</code> is always <code>0</code>.</p>
+<h2 id="the-result-of-applying-_curry-to-rest-parameters">The Result of
+Applying _.curry to Rest Parameters</h2>
+<p>When <code>_.curry</code> wraps a function that uses only rest
+parameters, it reads <code>func.length</code> as <code>0</code>. Because
+the detected arity threshold is <code>0</code>, <code>_.curry</code>
+considers the argument requirements satisfied immediately upon the very
+first call, regardless of how many arguments were supplied.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sum <span class="op">=</span> (<span class="op">...</span>numbers) <span class="kw">=&gt;</span> numbers<span class="op">.</span><span class="fu">reduce</span>((acc<span class="op">,</span> n) <span class="kw">=&gt;</span> acc <span class="op">+</span> n<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> curriedSum <span class="op">=</span> _<span class="op">.</span><span class="fu">curry</span>(sum)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Intended curried usage:</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> addFive <span class="op">=</span> <span class="fu">curriedSum</span>(<span class="dv">5</span>)<span class="op">;</span> </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Actual result:</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(addFive)<span class="op">;</span> <span class="co">// Output: 5 (number), not a partially applied function</span></span></code></pre></div>
+<p>Instead of returning a new function that waits for subsequent
+numbers, <code>curriedSum(5)</code> executes immediately and outputs
+<code>5</code>. Subsequent calls intended to provide additional
+arguments will fail with a <code>TypeError</code> because the returned
+value is a primitive result rather than a function.</p>
+<h2 id="the-solution-explicit-arity">The Solution: Explicit Arity</h2>
+<p>To properly curry a function that utilizes rest parameters, you must
+bypass Lodash's automatic <code>.length</code> inspection. Lodash
+supports this via an optional second argument in <code>_.curry</code>,
+which explicitly defines the expected arity:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sumThree <span class="op">=</span> (<span class="op">...</span>numbers) <span class="kw">=&gt;</span> numbers<span class="op">.</span><span class="fu">reduce</span>((acc<span class="op">,</span> n) <span class="kw">=&gt;</span> acc <span class="op">+</span> n<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Explicitly set the arity to 3</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> curriedSumThree <span class="op">=</span> _<span class="op">.</span><span class="fu">curry</span>(sumThree<span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> step1 <span class="op">=</span> <span class="fu">curriedSumThree</span>(<span class="dv">1</span>)<span class="op">;</span>       <span class="co">// Returns a function</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> step2 <span class="op">=</span> <span class="fu">step1</span>(<span class="dv">2</span>)<span class="op">;</span>                 <span class="co">// Returns a function</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> finalResult <span class="op">=</span> <span class="fu">step2</span>(<span class="dv">3</span>)<span class="op">;</span>           <span class="co">// Returns 6</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(finalResult)<span class="op">;</span> <span class="co">// 6</span></span></code></pre></div>
+<p>By providing the explicit arity argument, <code>_.curry</code>
+ignores the <code>0</code> reported by the rest parameter's
+<code>.length</code> property and successfully delays execution until
+the specified number of arguments are accumulated.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

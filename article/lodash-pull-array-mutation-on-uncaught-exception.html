@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.pull Array Mutation on Uncaught Exception - lodash</title>
+    <meta name="description" content="When the Lodash .pull method is interrupted by an uncaught exception, the target array is left in a partially mutated state containing only the deletions completed before the error occurred. Because Lodash executes in-place removals eagerly using standard">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-pull-array-mutation-on-uncaught-exception">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.pull Array Mutation on Uncaught Exception - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-pull-array-mutation-on-uncaught-exception" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When the Lodash .pull method is interrupted by an uncaught exception, the target array is left in a partially mutated state containing only the deletions completed before the error occurred. Because Lodash executes in-place removals eagerly using standard" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_pull-array-mutation-on-uncaught-exception">Lodash _.pull
+Array Mutation on Uncaught Exception</h1>
+<p>When the Lodash <code>_.pull</code> method is interrupted by an
+uncaught exception, the target array is left in a partially mutated
+state containing only the deletions completed before the error occurred.
+Because Lodash executes in-place removals eagerly using standard
+JavaScript array operations without an atomic rollback mechanism, any
+index shifts and removals processed prior to the exception persist on
+the original reference.</p>
+<h2 id="internal-mechanism-of-_pull">Internal Mechanism of
+<code>_.pull</code></h2>
+<p>The <code>_.pull</code> method in Lodash is a mutating operation that
+strips specified values from an array. Internally, it relies on the
+<code>basePullAll</code> implementation, which iterates through the
+supplied target values and searches for matches within the original
+array using the <code>SameValueZero</code> comparison.</p>
+<p>When a match is identified, Lodash immediately calls
+<code>Array.prototype.splice</code> directly on the array to remove the
+item at the matching index. This triggers an immediate shift of all
+subsequent elements to fill the vacant index and decrements the array's
+<code>length</code> property.</p>
+<h2 id="how-uncaught-exceptions-cause-partial-mutation">How Uncaught
+Exceptions Cause Partial Mutation</h2>
+<p>Because JavaScript execution is single-threaded and synchronous, an
+uncaught exception halts execution at the exact step where the error is
+thrown. Exceptions during a <code>_.pull</code> call can occur due
+to:</p>
+<ul>
+<li>Accessor properties (getters) throwing errors when array elements
+are read or shifted during a <code>splice</code> operation.</li>
+<li>A <code>Proxy</code> wrapping the array or target values that throws
+an error on <code>get</code>, <code>set</code>, or
+<code>deleteProperty</code> traps.</li>
+<li>Tampered or monkey-patched built-ins, such as an altered
+<code>Array.prototype.splice</code> or <code>indexOf</code>.</li>
+</ul>
+<p>When an exception is thrown during any of these operations, the
+execution stack unwinds immediately. Lodash does not maintain a shadow
+copy or transaction log of the original array, meaning no rollback
+routine exists to restore previously deleted elements.</p>
+<h2 id="observable-state-of-the-array-after-an-interruption">Observable
+State of the Array After an Interruption</h2>
+<p>If an uncaught exception interrupts <code>_.pull</code>, inspecting
+the original array reveals specific structural changes:</p>
+<ol type="1">
+<li><strong>Permanent Prior Deletions:</strong> Any elements matched and
+spliced before the iteration reached the error-producing step are
+permanently gone from the array.</li>
+<li><strong>Shifted Elements:</strong> Any elements that followed the
+already-deleted items remain at their shifted, lower index
+positions.</li>
+<li><strong>Truncated Length:</strong> The <code>length</code> property
+of the array reflects only the removals completed prior to the
+failure.</li>
+<li><strong>Untouched Trailing Elements:</strong> Elements that were
+scheduled to be evaluated or removed after the failure point remain in
+the array at their current shifted positions.</li>
+</ol>
+<h2 id="preventing-corrupted-states">Preventing Corrupted States</h2>
+<p>To avoid corrupted, partially mutated arrays in systems where
+exceptions might occur during iteration or property access, use
+non-mutating alternatives such as Lodash's <code>_.without</code> or
+native JavaScript <code>Array.prototype.filter</code>. Non-mutating
+methods construct and return a new array instance upon successful
+completion, ensuring the original array remains untouched if an error
+terminates the process prematurely.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

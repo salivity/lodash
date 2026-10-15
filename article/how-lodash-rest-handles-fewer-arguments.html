@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.rest Handles Fewer Arguments - lodash</title>
+    <meta name="description" content="This article explains how the Lodash utility .rest processes trailing arguments when a wrapped function is invoked with fewer arguments than expected. In short, when the number of supplied arguments does not reach the designated rest parameter index, Loda">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-rest-handles-fewer-arguments">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.rest Handles Fewer Arguments - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-rest-handles-fewer-arguments" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the Lodash utility .rest processes trailing arguments when a wrapped function is invoked with fewer arguments than expected. In short, when the number of supplied arguments does not reach the designated rest parameter index, Loda" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_rest-handles-fewer-arguments">How Lodash _.rest
+Handles Fewer Arguments</h1>
+<p>This article explains how the Lodash utility <code>_.rest</code>
+processes trailing arguments when a wrapped function is invoked with
+fewer arguments than expected. In short, when the number of supplied
+arguments does not reach the designated rest parameter index, Lodash
+calculates a non-negative length of zero, resulting in an empty array
+(<code>[]</code>) being passed as the trailing parameter rather than
+<code>null</code> or <code>undefined</code>.</p>
+<h2 id="the-mechanics-of-_rest">The Mechanics of
+<code>_.rest</code></h2>
+<p>The <code>_.rest</code> method wraps a function so that any arguments
+provided from a specified start index onward are collected into a single
+trailing array. By default, the start index is derived from the
+function's arity, specifically <code>func.length - 1</code>.</p>
+<p>When the wrapped function executes, Lodash dynamically determines the
+size of this rest array by evaluating the total number of passed
+arguments against the defined start index:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> length <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">max</span>(args<span class="op">.</span><span class="at">length</span> <span class="op">-</span> start<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span></code></pre></div>
+<h2 id="behavior-when-arguments-fall-short">Behavior When Arguments Fall
+Short</h2>
+<p>If a caller provides fewer arguments than the <code>start</code>
+position specifies, <code>args.length - start</code> evaluates to a
+negative number. Because of the <code>Math.max(..., 0)</code>
+constraint, Lodash safely clamps the length to <code>0</code>.</p>
+<p>From there, the internal logic constructs the rest array:</p>
+<ol type="1">
+<li><strong>Array Allocation</strong>: Lodash initializes a new array of
+size <code>0</code> (<code>Array(length)</code>).</li>
+<li><strong>Element Population</strong>: Since the loop boundary is
+determined by <code>length</code> (which is <code>0</code>), the loop
+terminates immediately without inserting elements.</li>
+<li><strong>Invocation</strong>: The original function is invoked with
+the positional arguments mapped sequentially, followed by the empty
+array.</li>
+</ol>
+<p>Any positional arguments that were defined prior to the rest
+parameter but were omitted by the caller simply receive
+<code>undefined</code>, consistent with standard JavaScript function
+call behavior.</p>
+<h2 id="code-example">Code Example</h2>
+<p>Consider a function expecting two regular parameters and a rest
+parameter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> fn <span class="op">=</span> _<span class="op">.</span><span class="fu">rest</span>(<span class="kw">function</span>(a<span class="op">,</span> b<span class="op">,</span> restArgs) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> { a<span class="op">,</span> b<span class="op">,</span> restArgs }<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// fn.length is 3, so start defaults to index 2 (the 3rd parameter)</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">fn</span>(<span class="st">&#39;only-one&#39;</span>))<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: { a: &#39;only-one&#39;, b: undefined, restArgs: [] }</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">fn</span>())<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: { a: undefined, b: undefined, restArgs: [] }</span></span></code></pre></div>
+<p>Regardless of whether the caller passes zero arguments or just enough
+to satisfy some of the positional slots, <code>restArgs</code> is
+guaranteed to be an empty array (<code>[]</code>). This design mirrors
+native ES6 rest parameters, ensuring predictable array operations like
+<code>.map()</code> or <code>.length</code> can be executed on the
+trailing parameter without throwing <code>TypeError</code>
+exceptions.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

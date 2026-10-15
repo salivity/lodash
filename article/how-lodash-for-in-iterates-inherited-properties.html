@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.forIn Iterates Inherited Properties - lodash</title>
+    <meta name="description" content="Lodash&#39;s .forIn method traverses an object&#39;s enumerable properties, encompassing both direct (&quot;own&quot;) properties and those inherited through its prototype chain. By wrapping native JavaScript iteration behaviors and coupling them with customizable iteratee">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-for-in-iterates-inherited-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.forIn Iterates Inherited Properties - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-for-in-iterates-inherited-properties" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .forIn method traverses an object&#39;s enumerable properties, encompassing both direct (&quot;own&quot;) properties and those inherited through its prototype chain. By wrapping native JavaScript iteration behaviors and coupling them with customizable iteratee" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_forin-iterates-inherited-properties">How Lodash
+_.forIn Iterates Inherited Properties</h1>
+<p>Lodash's <code>_.forIn</code> method traverses an object's enumerable
+properties, encompassing both direct ("own") properties and those
+inherited through its prototype chain. By wrapping native JavaScript
+iteration behaviors and coupling them with customizable iteratee
+execution, <code>_.forIn</code> provides a reliable, cross-environment
+way to process inherited states. This article explains the underlying
+mechanism of <code>_.forIn</code>, examines how it differs from methods
+like <code>_.forOwn</code>, and illustrates its mechanics with practical
+examples.</p>
+<h2 id="the-core-mechanism-behind-_forin">The Core Mechanism Behind
+<code>_.forIn</code></h2>
+<p>At its core, <code>_.forIn</code> relies on the native JavaScript
+<code>for...in</code> statement, which is inherently designed to
+traverse both own and inherited enumerable properties across an object's
+prototype chain.</p>
+<p>Internally, Lodash builds <code>_.forIn</code> using higher-order
+factory functions, primarily <code>createBaseFor()</code> and
+<code>baseFor()</code>. Unlike standard array or object traversal
+functions in Lodash that extract keys into an array using
+<code>Object.keys()</code> (which only retrieves an object’s own
+enumerable properties), <code>_.forIn</code> avoids eager key
+extraction. Instead, it delegates the traversal directly to an iteration
+loop that allows JavaScript's prototype lookup resolution to evaluate
+every enumerable property in the chain.</p>
+<p>The basic internal flow operates as follows:</p>
+<ol type="1">
+<li><strong>Object Validation:</strong> Lodash casts or normalizes the
+target input to ensure it can be treated as an object.</li>
+<li><strong>Loop Execution:</strong> A specialized loop walks over the
+object using native prototype-traversing iteration logic.</li>
+<li><strong>Iteratee Invocation:</strong> For each property, the
+callback iteratee is invoked with three arguments:
+<code>(value, key, object)</code>.</li>
+<li><strong>Early Exit Support:</strong> If the iteratee explicitly
+returns <code>false</code>, <code>_.forIn</code> halts iteration
+immediately, offering an optimization not natively available in standard
+<code>for...in</code> statements without explicit <code>break</code>
+handling.</li>
+</ol>
+<h2 id="_forin-vs-_forown"><code>_.forIn</code> vs.
+<code>_.forOwn</code></h2>
+<p>The primary distinction between <code>_.forIn</code> and
+<code>_.forOwn</code> is the filtering of inherited properties:</p>
+<ul>
+<li><strong><code>_.forOwn</code></strong>: Uses an internal check
+equivalent to
+<code>Object.prototype.hasOwnProperty.call(object, key)</code> before
+invoking the iteratee. This limits processing strictly to properties
+defined directly on the target object itself.</li>
+<li><strong><code>_.forIn</code></strong>: Intentionally omits the
+<code>hasOwnProperty</code> check. Any property marked as
+<code>enumerable: true</code> anywhere along the target's prototype
+chain is processed.</li>
+</ul>
+<h2 id="practical-code-example">Practical Code Example</h2>
+<p>Consider an example using object inheritance through
+<code>Object.create()</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Define a prototype object</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> vehicle <span class="op">=</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">hasWheels</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drive</span>() {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&#39;Moving&#39;</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Create a new object inheriting from vehicle</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> car <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">create</span>(vehicle)<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>car<span class="op">.</span><span class="at">make</span> <span class="op">=</span> <span class="st">&#39;Toyota&#39;</span><span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>car<span class="op">.</span><span class="at">model</span> <span class="op">=</span> <span class="st">&#39;Corolla&#39;</span><span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co">// Using _.forIn to iterate</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">forIn</span>(car<span class="op">,</span> (value<span class="op">,</span> key) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`</span><span class="sc">${</span>key<span class="sc">}</span><span class="vs">: </span><span class="sc">${</span>value<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p><strong>Output:</strong></p>
+<pre class="text"><code>make: Toyota
+model: Corolla
+hasWheels: true
+drive: [Function: drive]</code></pre>
+<p>In this example, <code>make</code> and <code>model</code> are own
+properties of <code>car</code>. <code>hasWheels</code> and
+<code>drive</code> are inherited from <code>vehicle</code>. Because
+<code>_.forIn</code> does not enforce property ownership, all four keys
+are visited.</p>
+<h2 id="iteration-rules-and-caveats">Iteration Rules and Caveats</h2>
+<p>When utilizing <code>_.forIn</code>, several behaviors of JavaScript
+prototype iteration apply:</p>
+<ul>
+<li><strong>Enumerable Only:</strong> Properties set with
+<code>enumerable: false</code> (such as native methods on
+<code>Object.prototype</code> like <code>toString</code> or properties
+configured via <code>Object.defineProperty</code>) are ignored.</li>
+<li><strong>Symbol Properties:</strong> Like the native
+<code>for...in</code> loop, <code>_.forIn</code> ignores properties
+keyed by <code>Symbol</code> primitives.</li>
+<li><strong>Property Shadowing:</strong> If an object defines an own
+property with the exact same key as an inherited prototype property, the
+own property takes precedence and is processed once. The shadowed
+prototype property will not be evaluated again.</li>
+<li><strong>Order of Traversal:</strong> Modern JavaScript engines
+prioritize own keys first, followed by keys further up the prototype
+chain in order of traversal, respecting creation and enumeration
+order.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

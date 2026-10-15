@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash clamp Limits with Dynamic Upper Bounds - lodash</title>
+    <meta name="description" content="This article examines the boundary restrictions and operational behavior of Lodash&#39;s .clamp function when evaluated against a dynamically changing upper limit. It outlines how the internal implementation handles moving constraints, specifically addressing">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-clamp-limits-with-dynamic-upper-bounds">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash clamp Limits with Dynamic Upper Bounds - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-clamp-limits-with-dynamic-upper-bounds" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines the boundary restrictions and operational behavior of Lodash&#39;s .clamp function when evaluated against a dynamically changing upper limit. It outlines how the internal implementation handles moving constraints, specifically addressing" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-clamp-limits-with-dynamic-upper-bounds">Lodash clamp
+Limits with Dynamic Upper Bounds</h1>
+<p>This article examines the boundary restrictions and operational
+behavior of Lodash's <code>_.clamp</code> function when evaluated
+against a dynamically changing upper limit. It outlines how the internal
+implementation handles moving constraints, specifically addressing bound
+inversion where the upper limit falls below the lower limit,
+<code>NaN</code> coercion rules, and JavaScript's native numeric
+thresholds.</p>
+<h3 id="lower-bound-precedence-in-dynamic-inversion">Lower Bound
+Precedence in Dynamic Inversion</h3>
+<p>The primary logical boundary affecting a moving upper limit is the
+defined <code>lower</code> bound. Internally, Lodash's
+<code>baseClamp</code> evaluates limits sequentially:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseClamp</span>(number<span class="op">,</span> lower<span class="op">,</span> upper) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (number <span class="op">===</span> number) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (upper <span class="op">!==</span> <span class="kw">undefined</span>) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      number <span class="op">=</span> number <span class="op">&lt;=</span> upper <span class="op">?</span> number <span class="op">:</span> upper<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (lower <span class="op">!==</span> <span class="kw">undefined</span>) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      number <span class="op">=</span> number <span class="op">&gt;=</span> lower <span class="op">?</span> number <span class="op">:</span> lower<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> number<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because the <code>lower</code> check executes after the
+<code>upper</code> check, <code>lower</code> always takes final
+precedence. If a dynamic upper limit decreases to a value less than
+<code>lower</code>, the method will never return the dynamic upper
+limit. Instead, any value clamped to that dynamic upper limit is
+immediately overridden and clamped up to <code>lower</code>.
+Consequently, a moving upper bound is strictly bounded below by
+<code>lower</code>.</p>
+<h3 id="the-zero-fallback-for-invalid-numbers">The Zero-Fallback for
+Invalid Numbers</h3>
+<p>If dynamic calculations produce an invalid value such as
+<code>NaN</code>, Lodash applies fallback normalization:</p>
+<ul>
+<li>Lodash casts inputs using <code>toNumber()</code>.</li>
+<li>If <code>upper === upper</code> evaluates to <code>false</code>
+(indicating <code>NaN</code>), Lodash sets <code>upper</code> to
+<code>0</code>.</li>
+</ul>
+<p>This means an unresolved or invalid dynamic upper limit collapses to
+<code>0</code>. If your fixed <code>lower</code> bound is greater than
+<code>0</code>, this triggers an inversion where the effective clamp
+defaults directly to <code>lower</code>.</p>
+<h3 id="synchronous-state-boundaries">Synchronous State Boundaries</h3>
+<p>Lodash's <code>_.clamp</code> is a pure, stateless utility. It
+possesses no built-in mechanism to subscribe to streams, reactive
+variables, or asynchronous value shifts. When evaluating an upper bound
+that changes dynamically (such as during animation frames or window
+resizing), the evaluation is bound strictly to the synchronous value
+passed at the exact moment of invocation. Rate mismatches or race
+conditions in updating the upper limit variable must be managed
+externally before the value enters <code>_.clamp</code>.</p>
+<h3 id="numeric-precision-thresholds">Numeric Precision Thresholds</h3>
+<p>The absolute boundary limits for any dynamic calculation in
+<code>_.clamp</code> correspond to JavaScript's <code>Number</code>
+primitives:</p>
+<ul>
+<li><strong>Infinity:</strong> If the moving upper limit reaches
+<code>Infinity</code>, <code>_.clamp(number, lower, Infinity)</code>
+effectively functions as <code>Math.max(number, lower)</code>.
+Conversely, an upper limit of <code>-Infinity</code> forces the return
+value directly to <code>lower</code>.</li>
+<li><strong>Safe Integers:</strong> Beyond
+<code>Number.MAX_SAFE_INTEGER</code> (<span class="math inline">\(2^{53}
+- 1\)</span>) and <code>Number.MIN_SAFE_INTEGER</code> (<span
+class="math inline">\(-(2^{53} - 1)\)</span>), dynamic calculations lose
+precision, leading to rounding errors that can cause unexpected clamping
+evaluations.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

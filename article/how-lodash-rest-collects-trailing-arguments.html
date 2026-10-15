@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash rest Collects Trailing Arguments - lodash</title>
+    <meta name="description" content="The Lodash .rest method is a higher-order function designed to collect trailing arguments into a single array before passing them to a target function. By default, it captures all arguments beginning from the target function&#39;s final declared parameter, en">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-rest-collects-trailing-arguments">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash rest Collects Trailing Arguments - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-rest-collects-trailing-arguments" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .rest method is a higher-order function designed to collect trailing arguments into a single array before passing them to a target function. By default, it captures all arguments beginning from the target function&#39;s final declared parameter, en" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-rest-collects-trailing-arguments">How Lodash rest
+Collects Trailing Arguments</h1>
+<p>The Lodash <code>_.rest</code> method is a higher-order function
+designed to collect trailing arguments into a single array before
+passing them to a target function. By default, it captures all arguments
+beginning from the target function's final declared parameter, enabling
+flexible argument handling without relying on the legacy
+<code>arguments</code> object or requiring native ES6 rest syntax.</p>
+<h2 id="how-the-method-works-internally">How the Method Works
+Internally</h2>
+<p>The <code>_.rest</code> function takes two parameters: the target
+function (<code>func</code>) and an optional index representing where
+collection should begin (<code>start</code>).</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">rest</span>(func<span class="op">,</span> [start<span class="op">=</span>func<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>])</span></code></pre></div>
+<p>When <code>_.rest</code> is invoked, it returns a new wrapper
+function. The argument collection process follows these direct
+steps:</p>
+<ol type="1">
+<li><strong>Determining the Start Index:</strong> If a
+<code>start</code> index is not explicitly provided, Lodash calculates
+it based on the arity of the function (<code>func.length - 1</code>).
+The parameter at this index will hold the collected array.</li>
+<li><strong>Separating Leading Arguments:</strong> When the wrapped
+function is called, Lodash extracts the arguments that precede the
+<code>start</code> index. These arguments are preserved as individual,
+positional parameters.</li>
+<li><strong>Collecting Trailing Arguments:</strong> All arguments
+received at or beyond the <code>start</code> index are sliced and
+accumulated into a standard JavaScript array. If no arguments are
+provided past the start index, an empty array is used.</li>
+<li><strong>Invocation:</strong> The wrapper calls the original function
+using the caller's <code>this</code> binding, passing the leading
+individual parameters followed by the newly constructed rest array.</li>
+</ol>
+<h2 id="practical-implementation">Practical Implementation</h2>
+<p>In practice, <code>_.rest</code> eliminates the need to manually
+slice the <code>arguments</code> object inside a function body.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> buildMessage <span class="op">=</span> _<span class="op">.</span><span class="fu">rest</span>(<span class="kw">function</span>(header<span class="op">,</span> tags) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="vs">`</span><span class="sc">${</span>header<span class="sc">}</span><span class="vs">: [</span><span class="sc">${</span>tags<span class="op">.</span><span class="fu">join</span>(<span class="st">&#39;, &#39;</span>)<span class="sc">}</span><span class="vs">]`</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Calling the function with trailing arguments</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">buildMessage</span>(<span class="st">&#39;Status&#39;</span><span class="op">,</span> <span class="st">&#39;urgent&#39;</span><span class="op">,</span> <span class="st">&#39;bug&#39;</span><span class="op">,</span> <span class="st">&#39;backend&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;Status: [urgent, bug, backend]&quot;</span></span></code></pre></div>
+<p>In this example:</p>
+<ul>
+<li><code>header</code> receives the first argument:
+<code>'Status'</code>.</li>
+<li>Because <code>buildMessage</code> has two parameters,
+<code>start</code> defaults to <code>2 - 1 = 1</code>.</li>
+<li>Lodash gathers all remaining arguments (<code>'urgent'</code>,
+<code>'bug'</code>, <code>'backend'</code>) into an array and maps it to
+<code>tags</code>.</li>
+</ul>
+<h2 id="customizing-the-collection-point">Customizing the Collection
+Point</h2>
+<p>The <code>start</code> parameter allows you to override the default
+arity-based behavior. If you want collection to begin earlier or later
+than the final parameter, pass a explicit numeric index:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> aggregate <span class="op">=</span> _<span class="op">.</span><span class="fu">rest</span>(<span class="kw">function</span>(allArgs) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> allArgs<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">aggregate</span>(<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [1, 2, 3, 4]</span></span></code></pre></div>
+<p>By specifying <code>0</code>, every argument supplied to
+<code>aggregate</code> is collected directly into the
+<code>allArgs</code> array.</p>
+<h2 id="comparison-to-native-rest-parameters">Comparison to Native Rest
+Parameters</h2>
+<p>While the native ES6 rest syntax (<code>...args</code>) accomplishes
+a similar outcome at the language level, <code>_.rest</code> provides
+two distinct advantages in certain codebases:</p>
+<ul>
+<li><strong>Dynamic Collection Indexes:</strong> Unlike native rest
+parameters, which must strictly reside at the end of a function
+declaration, <code>_.rest</code> can dynamically define the collection
+index at runtime via its second argument.</li>
+<li><strong>Function Composition:</strong> Because <code>_.rest</code>
+operates as an adapter, it can wrap existing third-party or predefined
+functions to modify their argument reception without altering their
+source code.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

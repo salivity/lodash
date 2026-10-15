@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.isArray Enables Cross-Environment Checks - lodash</title>
+    <meta name="description" content="This article explores how the Lodash utility function .isArray reliably identifies arrays across distinct JavaScript execution environments. You will learn the limitations of traditional type-checking mechanisms, such as instanceof, why cross-realm contex">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-array-enables-cross-environment-checks">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.isArray Enables Cross-Environment Checks - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-array-enables-cross-environment-checks" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how the Lodash utility function .isArray reliably identifies arrays across distinct JavaScript execution environments. You will learn the limitations of traditional type-checking mechanisms, such as instanceof, why cross-realm contex" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_isarray-enables-cross-environment-checks">How Lodash
+_.isArray Enables Cross-Environment Checks</h1>
+<p>This article explores how the Lodash utility function
+<code>_.isArray</code> reliably identifies arrays across distinct
+JavaScript execution environments. You will learn the limitations of
+traditional type-checking mechanisms, such as <code>instanceof</code>,
+why cross-realm contexts like iframes cause standard checks to fail, and
+how Lodash implements native features and fallback methods to ensure
+consistent, fail-safe array detection.</p>
+<h3 id="the-limitation-of-instanceof-array">The Limitation of
+<code>instanceof Array</code></h3>
+<p>The most common native approach to check if an object is an array is
+using the <code>instanceof</code> operator:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>value <span class="kw">instanceof</span> <span class="bu">Array</span></span></code></pre></div>
+<p>While this works within a single execution context, it fails in
+cross-realm environments. A realm represents an execution context with
+its own global environment and built-in objects. Examples of multiple
+realms include:</p>
+<ul>
+<li>Web pages containing <code>&lt;iframe&gt;</code> elements</li>
+<li>Node.js scripts running code inside <code>vm</code> contexts</li>
+<li>Browser extensions interacting with host pages</li>
+</ul>
+<p>Each realm has its own distinct global object and its own native
+<code>Array</code> constructor. If an array is initialized inside an
+iframe and passed to the parent window, evaluating
+<code>iframeArray instanceof Array</code> inside the parent window
+returns <code>false</code>. This happens because
+<code>iframeArray</code> inherits from the iframe’s
+<code>Array.prototype</code>, not the parent window's
+<code>Array.prototype</code>.</p>
+<h3 id="native-delegation-arrayisarray">Native Delegation:
+<code>Array.isArray</code></h3>
+<p>To resolve the realm issue, ECMAScript 5.1 introduced
+<code>Array.isArray()</code>. This method checks the internal
+characteristics of an object rather than its prototype chain, making it
+natively realm-agnostic.</p>
+<p>Under the hood, Lodash's <code>_.isArray</code> first attempts to
+delegate directly to the native <code>Array.isArray</code> method:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> nativeIsArray <span class="op">=</span> <span class="bu">Array</span><span class="op">.</span><span class="at">isArray</span><span class="op">;</span></span></code></pre></div>
+<p>If the running JavaScript engine provides <code>Array.isArray</code>,
+Lodash utilizes it directly for optimal performance and built-in
+cross-realm reliability.</p>
+<h3 id="the-fallback-mechanism-objectprototypetostring">The Fallback
+Mechanism: <code>Object.prototype.toString</code></h3>
+<p>In environments where native <code>Array.isArray</code> is
+unavailable or altered, Lodash falls back on the standard
+<code>Object.prototype.toString</code> technique:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isArray</span>(value) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>         <span class="kw">typeof</span> value <span class="op">==</span> <span class="st">&#39;object&#39;</span> <span class="op">&amp;&amp;</span> </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>         <span class="bu">Object</span><span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">toString</span><span class="op">.</span><span class="fu">call</span>(value) <span class="op">==</span> <span class="st">&#39;[object Array]&#39;</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Every built-in JavaScript object has an internal
+<code>[[Class]]</code> property (or in modern specifications, an
+internal slot associated with <code>Symbol.toStringTag</code>). When
+<code>Object.prototype.toString.call(value)</code> is invoked:</p>
+<ol type="1">
+<li>The runtime accesses the target object's internal type
+designation.</li>
+<li>It returns a string in the format <code>[object Type]</code>.</li>
+<li>For any native array created in any realm, the returned value is
+always <code>"[object Array]"</code>.</li>
+</ol>
+<p>Because this check evaluates a primitive string rather than object
+references in memory, it completely bypasses identity checks between
+different <code>Array</code> constructors. Whether an array originates
+from a different frame, window, or virtual context, the string tag
+remains identical.</p>
+<h3 id="guarding-against-edge-cases">Guarding Against Edge Cases</h3>
+<p>Beyond realm differences, <code>_.isArray</code> guards against
+several JavaScript type anomalies:</p>
+<ul>
+<li><strong>Null and Undefined:</strong> It verifies that the passed
+value is neither <code>null</code> nor <code>undefined</code> before
+performing operations, preventing runtime errors.</li>
+<li><strong>Array-Like Objects:</strong> Objects such as the
+<code>arguments</code> object, NodeLists, or custom objects with a
+<code>length</code> property are identified as objects, but their
+internal tag is not <code>[object Array]</code>. <code>_.isArray</code>
+correctly evaluates them as <code>false</code>.</li>
+<li><strong>Tampered Prototypes:</strong> Modifying an object's
+prototype chain with <code>Object.setPrototypeOf</code> does not alter
+its internal array representation, allowing <code>_.isArray</code> to
+maintain accurate detection.</li>
+</ul>
+<p>Through native delegation combined with internal tag inspection,
+<code>_.isArray</code> guarantees accurate array detection regardless of
+the JavaScript environment, realm, or runtime variation.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

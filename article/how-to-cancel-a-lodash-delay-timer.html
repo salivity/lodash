@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Cancel a Lodash Delay Timer - lodash</title>
+    <meta name="description" content="This article explains how to successfully terminate an active timer created with Lodash&#39;s .delay function. While Lodash provides specialized utilities for asynchronous operations, .delay relies directly on the JavaScript runtime&#39;s native timer mechanisms">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-to-cancel-a-lodash-delay-timer">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Cancel a Lodash Delay Timer - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-to-cancel-a-lodash-delay-timer" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to successfully terminate an active timer created with Lodash&#39;s .delay function. While Lodash provides specialized utilities for asynchronous operations, .delay relies directly on the JavaScript runtime&#39;s native timer mechanisms" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-cancel-a-lodash-delay-timer">How to Cancel a Lodash Delay
+Timer</h1>
+<p>This article explains how to successfully terminate an active timer
+created with Lodash's <code>_.delay</code> function. While Lodash
+provides specialized utilities for asynchronous operations,
+<code>_.delay</code> relies directly on the JavaScript runtime's native
+timer mechanisms and does not feature a proprietary cancellation method.
+By capturing the timer identifier returned upon invocation and passing
+it to the global <code>clearTimeout()</code> function, you can reliably
+abort the execution before the callback runs.</p>
+<h2 id="understanding-the-_delay-return-value">Understanding the
+<code>_.delay</code> Return Value</h2>
+<p>The <code>_.delay</code> function serves as an abstraction over the
+native <code>setTimeout</code> method. When you call
+<code>_.delay</code>, it schedules the specified callback function to
+run after a designated number of milliseconds and immediately returns
+the underlying timer identifier.</p>
+<p>Because <code>_.delay</code> returns this native identifier (a
+positive integer in web browsers or a <code>Timeout</code> object in
+Node.js), it does not wrap the process in a custom Lodash cancellation
+wrapper.</p>
+<h2 id="how-to-terminate-the-timer">How to Terminate the Timer</h2>
+<p>To cancel the timer, store the identifier returned by
+<code>_.delay</code> in a variable, then supply that variable to the
+native <code>clearTimeout</code> method:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Schedule a function to execute after 5000 milliseconds</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> timerId <span class="op">=</span> _<span class="op">.</span><span class="fu">delay</span>((message) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(message)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> <span class="dv">5000</span><span class="op">,</span> <span class="st">&#39;This message will not appear&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Terminate the active timer before it executes</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="pp">clearTimeout</span>(timerId)<span class="op">;</span></span></code></pre></div>
+<p>Once <code>clearTimeout(timerId)</code> is called, the runtime
+removes the scheduled operation from the event loop, ensuring the
+delayed function never executes.</p>
+<h2 id="best-practices-and-alternatives">Best Practices and
+Alternatives</h2>
+<ul>
+<li><strong>Clear References:</strong> After canceling the timer with
+<code>clearTimeout</code>, set your timer reference variable to
+<code>null</code> or <code>undefined</code> to prevent memory leaks and
+avoid attempting to cancel an already aborted timer.</li>
+<li><strong>Environment Agnostic:</strong> Native
+<code>clearTimeout</code> works universally across all major execution
+environments, including modern web browsers, Node.js, and Deno.</li>
+<li><strong>Using <code>_.debounce</code> for Native
+<code>.cancel()</code> Support:</strong> If your application
+architecture requires calling a cancel method directly on the delayed
+function, consider using <code>_.debounce</code> instead of
+<code>_.delay</code>. A debounced function created with Lodash exposes a
+built-in <code>.cancel()</code> method:</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> debouncedFn <span class="op">=</span> _<span class="op">.</span><span class="fu">debounce</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Execution&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> <span class="dv">5000</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">debouncedFn</span>()<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Cancel using Lodash&#39;s built-in cancel method</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>debouncedFn<span class="op">.</span><span class="fu">cancel</span>()<span class="op">;</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

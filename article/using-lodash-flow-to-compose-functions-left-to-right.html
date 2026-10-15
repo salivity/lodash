@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Lodash flow to Compose Functions Left to Right - lodash</title>
+    <meta name="description" content="This article explains how the .flow method in the Lodash JavaScript library creates a function pipeline through left-to-right composition. You will learn the mechanics behind how arguments are passed between composed functions, see practical code demonstr">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/using-lodash-flow-to-compose-functions-left-to-right">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Lodash flow to Compose Functions Left to Right - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/using-lodash-flow-to-compose-functions-left-to-right" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the .flow method in the Lodash JavaScript library creates a function pipeline through left-to-right composition. You will learn the mechanics behind how arguments are passed between composed functions, see practical code demonstr" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-lodash-flow-to-compose-functions-left-to-right">Using
+Lodash flow to Compose Functions Left to Right</h1>
+<p>This article explains how the <code>_.flow</code> method in the
+Lodash JavaScript library creates a function pipeline through
+left-to-right composition. You will learn the mechanics behind how
+arguments are passed between composed functions, see practical code
+demonstrations, and understand how to implement the underlying logic
+using native JavaScript.</p>
+<h2 id="understanding-_flow">Understanding <code>_.flow</code></h2>
+<p>In functional programming, function composition is the process of
+combining two or more functions to produce a new function. While
+mathematical composition traditionally evaluates from right to left,
+Lodash provides <code>_.flow</code> to evaluate functions in natural
+reading order: from left to right.</p>
+<p>The <code>_.flow</code> method takes an array of functions (or
+functions supplied as individual arguments) and returns a new composite
+function.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> add <span class="op">=</span> (x<span class="op">,</span> y) <span class="kw">=&gt;</span> x <span class="op">+</span> y<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> square <span class="op">=</span> n <span class="kw">=&gt;</span> n <span class="op">*</span> n<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> double <span class="op">=</span> n <span class="kw">=&gt;</span> n <span class="op">*</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> transform <span class="op">=</span> _<span class="op">.</span><span class="fu">flow</span>([add<span class="op">,</span> square<span class="op">,</span> double])<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">transform</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span> <span class="co">// Output: 50</span></span></code></pre></div>
+<h2 id="how-evaluation-works-step-by-step">How Evaluation Works
+Step-by-Step</h2>
+<p>When the composed function produced by <code>_.flow</code> is
+invoked, the execution follows a strict sequence:</p>
+<ol type="1">
+<li><strong>Initial Invocation:</strong> The first function in the
+pipeline can accept multiple arguments. In the example above,
+<code>add(2, 3)</code> receives both inputs and evaluates to
+<code>5</code>.</li>
+<li><strong>Intermediate Handoff:</strong> The return value of the first
+function is supplied as the sole argument to the second function. Here,
+<code>square(5)</code> evaluates to <code>25</code>.</li>
+<li><strong>Pipeline Continuation:</strong> Each subsequent function
+receives the resolved output of the function directly preceding it.
+<code>double(25)</code> evaluates to <code>50</code>.</li>
+<li><strong>Final Output:</strong> The return value of the final
+function in the sequence becomes the return value of the entire
+composite function call.</li>
+</ol>
+<h2 id="native-javascript-equivalent">Native JavaScript Equivalent</h2>
+<p>Under the hood, <code>_.flow</code> operates essentially like
+<code>Array.prototype.reduce</code>. Understanding this implementation
+demystifies the behavior:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> customFlow <span class="op">=</span> (<span class="op">...</span>funcs) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (<span class="op">...</span>initialArgs) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> funcs<span class="op">.</span><span class="fu">slice</span>(<span class="dv">1</span>)<span class="op">.</span><span class="fu">reduce</span>((accumulator<span class="op">,</span> currentFunc) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="fu">currentFunc</span>(accumulator)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span> funcs[<span class="dv">0</span>](<span class="op">...</span>initialArgs))<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> processNumber <span class="op">=</span> <span class="fu">customFlow</span>(</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  (a<span class="op">,</span> b) <span class="kw">=&gt;</span> a <span class="op">+</span> b<span class="op">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  n <span class="kw">=&gt;</span> n <span class="op">*</span> <span class="dv">3</span><span class="op">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  n <span class="kw">=&gt;</span> <span class="vs">`Result: </span><span class="sc">${</span>n<span class="sc">}</span><span class="vs">`</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">processNumber</span>(<span class="dv">4</span><span class="op">,</span> <span class="dv">2</span>))<span class="op">;</span> <span class="co">// Output: &quot;Result: 18&quot;</span></span></code></pre></div>
+<p>In this mechanism, the accumulator holds the intermediate result at
+each step, moving forward through the list of functions until the final
+result is calculated.</p>
+<h2 id="practical-use-case-data-transformation">Practical Use Case: Data
+Transformation</h2>
+<p>Left-to-right composition is particularly useful for readable data
+sanitization and transformation pipelines:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> trim <span class="op">=</span> str <span class="kw">=&gt;</span> str<span class="op">.</span><span class="fu">trim</span>()<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> toLowerCase <span class="op">=</span> str <span class="kw">=&gt;</span> str<span class="op">.</span><span class="fu">toLowerCase</span>()<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> removePunctuation <span class="op">=</span> str <span class="kw">=&gt;</span> str<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">[.,\/#!$%\^&amp;\*;:{}=\-_`~()]</span><span class="ss">/g</span><span class="op">,</span> <span class="st">&quot;&quot;</span>)<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> splitWords <span class="op">=</span> str <span class="kw">=&gt;</span> str<span class="op">.</span><span class="fu">split</span>(<span class="st">&quot; &quot;</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> cleanAndTokenize <span class="op">=</span> _<span class="op">.</span><span class="fu">flow</span>([</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  trim<span class="op">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  toLowerCase<span class="op">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  removePunctuation<span class="op">,</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  splitWords</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>])<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> tokens <span class="op">=</span> <span class="fu">cleanAndTokenize</span>(<span class="st">&quot;  Hello, World! Welcome to Lodash.  &quot;</span>)<span class="op">;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Result: [&quot;hello&quot;, &quot;world&quot;, &quot;welcome&quot;, &quot;to&quot;, &quot;lodash&quot;]</span></span></code></pre></div>
+<p>Without <code>_.flow</code>, performing these operations requires
+either nested function calls evaluated from the inside out
+(<code>splitWords(removePunctuation(toLowerCase(trim(text))))</code>) or
+storing intermediate values in temporary variables.</p>
+<h2 id="_flow-vs-_flowright"><code>_.flow</code> vs.
+<code>_.flowRight</code></h2>
+<p>Lodash also provides <code>_.flowRight</code>, which is an alias for
+traditional mathematical composition (<code>compose</code>). The
+distinction is purely directional:</p>
+<ul>
+<li><strong><code>_.flow</code></strong>: Executes from index
+<code>0</code> to index <code>n</code> (Left-to-Right).</li>
+<li><strong><code>_.flowRight</code></strong>: Executes from index
+<code>n</code> down to index <code>0</code> (Right-to-Left).</li>
+</ul>
+<p>For readability and consistency with standard data processing
+pipelines, <code>_.flow</code> is preferred because its execution
+matches standard top-to-bottom or left-to-right reading order.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

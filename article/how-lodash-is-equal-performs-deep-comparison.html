@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash isEqual Performs Deep Comparison - lodash</title>
+    <meta name="description" content="Lodash&#39;s .isEqual method provides deep value comparison across JavaScript data structures, moving beyond the reference-based checks of the native strict equality operator (===). To determine whether two values are functionally and structurally identical,">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-equal-performs-deep-comparison">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash isEqual Performs Deep Comparison - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-equal-performs-deep-comparison" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .isEqual method provides deep value comparison across JavaScript data structures, moving beyond the reference-based checks of the native strict equality operator (===). To determine whether two values are functionally and structurally identical," />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-isequal-performs-deep-comparison">How Lodash isEqual
+Performs Deep Comparison</h1>
+<p>Lodash's <code>_.isEqual</code> method provides deep value comparison
+across JavaScript data structures, moving beyond the reference-based
+checks of the native strict equality operator (<code>===</code>). To
+determine whether two values are functionally and structurally
+identical, the utility combines primitive fast-paths, internal type-tag
+checks, specialized object unwrapping, recursive traversal, and cycle
+detection. This article breaks down the internal algorithms and
+heuristics Lodash utilizes to implement robust deep equality.</p>
+<h3 id="1-the-fast-path-primitive-comparison">1. The Fast-Path Primitive
+Comparison</h3>
+<p>Before initiating expensive traversal algorithms,
+<code>_.isEqual</code> performs a rapid equality check. It relies on the
+<code>SameValueZero</code> algorithm, which mirrors <code>===</code>
+with two exceptions: it treats <code>NaN</code> as equal to
+<code>NaN</code>, and <code>+0</code> as equal to <code>-0</code>. If
+both references are identical or both values evaluate to
+<code>true</code> under this primitive check, the function immediately
+returns <code>true</code>.</p>
+<h3 id="2-internal-tag-resolution">2. Internal Tag Resolution</h3>
+<p>When values fail the initial fast-path check, Lodash determines their
+underlying JavaScript types using internal type tags obtained via
+<code>Object.prototype.toString.call()</code>. This step ensures that
+values sharing an apparent structural similarity but differing in
+underlying specifications (for instance, an <code>Array</code> versus an
+<code>Arguments</code> object) are identified correctly before comparing
+values. If the type tags differ, the comparison immediately returns
+<code>false</code>.</p>
+<h3 id="3-specialized-value-unwrapping">3. Specialized Value
+Unwrapping</h3>
+<p>Lodash defines explicit comparison routines for built-in JavaScript
+objects based on their internal tag:</p>
+<ul>
+<li><strong>Dates:</strong> Compared by their primitive millisecond
+timestamps using <code>+dateA == +dateB</code>.</li>
+<li><strong>RegExps:</strong> Compared by matching both their pattern
+sources (<code>source</code>) and their attached flags
+(<code>flags</code>).</li>
+<li><strong>Booleans, Numbers, and Strings:</strong> Object-wrapped
+primitives (e.g., <code>new Number(5)</code>) are unwrapped via
+<code>valueOf()</code> or coerced to their primitive states before
+comparison.</li>
+<li><strong>ArrayBuffers and TypedArrays:</strong> Validated first by
+byte length, followed by a byte-by-byte comparison of their underlying
+memory buffers.</li>
+</ul>
+<h3 id="4-collection-handling-sets-and-maps">4. Collection Handling:
+Sets and Maps</h3>
+<p>For modern ES6 collections like <code>Map</code> and
+<code>Set</code>, Lodash first checks the <code>size</code> property as
+a quick-fail condition. If sizes match:</p>
+<ul>
+<li><strong>Sets:</strong> Each item in the first set must have an
+equivalent deep match in the second set, regardless of insertion
+order.</li>
+<li><strong>Maps:</strong> Keys are checked for deep equivalence,
+followed by a recursive check of the corresponding values.</li>
+</ul>
+<h3 id="5-object-and-array-traversal">5. Object and Array Traversal</h3>
+<p>For plain objects and arrays, Lodash executes a structured recursive
+traversal:</p>
+<ul>
+<li><strong>Length/Key-Count Verification:</strong> Arrays are compared
+by <code>length</code>, and objects are verified by the count of their
+own enumerable properties using <code>Object.keys()</code>. If counts
+differ, the check fails.</li>
+<li><strong>Prototype Equality:</strong> Lodash checks whether both
+objects share the same <code>constructor</code> property to prevent
+treating instances of different classes as equal, even if they contain
+the identical properties.</li>
+<li><strong>Recursive Property Matching:</strong> Lodash iterates
+through the keys of the first object, ensuring every key exists on the
+second object and recursively calling the internal equality function on
+the values.</li>
+</ul>
+<h3 id="6-circular-reference-and-cycle-detection">6. Circular Reference
+and Cycle Detection</h3>
+<p>To prevent infinite recursion when traversing self-referencing or
+circularly-linked data structures, Lodash maintains internal tracking
+stacks (historically parallel arrays, modernly implemented via tracking
+structures like <code>Map</code> or <code>Set</code>). Before evaluating
+nested properties, the algorithm checks if the current pair of objects
+is already undergoing comparison in the active call stack. If the pair
+has already been traversed, Lodash treats the reference as equal and
+unwinds the recursion.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

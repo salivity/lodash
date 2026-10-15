@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Debounce with requestAnimationFrame Timing Issues - lodash</title>
+    <meta name="description" content="When Lodash&#39;s .debounce is invoked without a specified wait parameter in browser environments, it defaults to using requestAnimationFrame (rAF) instead of standard timer APIs like setTimeout. While this design aligns function executions with the browser&#39;s">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-debounce-with-request-animation-frame-timing-issues">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Debounce with requestAnimationFrame Timing Issues - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-debounce-with-request-animation-frame-timing-issues" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When Lodash&#39;s .debounce is invoked without a specified wait parameter in browser environments, it defaults to using requestAnimationFrame (rAF) instead of standard timer APIs like setTimeout. While this design aligns function executions with the browser&#39;s" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-debounce-with-requestanimationframe-timing-issues">Lodash
+Debounce with requestAnimationFrame Timing Issues</h1>
+<p>When Lodash's <code>_.debounce</code> is invoked without a specified
+<code>wait</code> parameter in browser environments, it defaults to
+using <code>requestAnimationFrame</code> (rAF) instead of standard timer
+APIs like <code>setTimeout</code>. While this design aligns function
+executions with the browser's display rendering pipeline, it introduces
+several notable timing discrepancies. This article examines the specific
+anomalies that arise, including frame rate variance, background tab
+throttling, main-thread jank, and edge-trigger synchronization
+drift.</p>
+<h3 id="variable-execution-latency-across-refresh-rates">Variable
+Execution Latency Across Refresh Rates</h3>
+<p>When using standard millisecond values, <code>_.debounce</code>
+targets a consistent interval. With <code>requestAnimationFrame</code>,
+the delay becomes strictly coupled to the client display's refresh rate
+(VSync):</p>
+<ul>
+<li><strong>Standard 60Hz Displays:</strong> Debounced callbacks fire
+roughly every 16.67ms.</li>
+<li><strong>High-Refresh-Rate Displays (120Hz to 240Hz):</strong>
+Callbacks execute significantly faster, firing every 8.33ms down to
+4.16ms.</li>
+<li><strong>Low-Power or 30Hz Displays:</strong> Callbacks are delayed
+to approximately 33.33ms.</li>
+</ul>
+<p>This introduces cross-device inconsistencies, causing debounced
+events (such as search filtering or resize handling) to execute twice or
+four times as frequently on modern high-end displays as they do on
+standard screens.</p>
+<h3 id="background-tab-suspension-and-complete-freezing">Background Tab
+Suspension and Complete Freezing</h3>
+<p>Browsers actively optimize resource usage by altering how event loop
+queues operate when a tab is inactive or minimized:</p>
+<ul>
+<li><strong>Standard Timers:</strong> <code>setTimeout</code> calls are
+typically throttled down to a frequency of 1000ms.</li>
+<li><strong><code>requestAnimationFrame</code>:</strong> Inactive tabs
+suspend <code>requestAnimationFrame</code> loops entirely to conserve
+GPU and CPU cycles.</li>
+</ul>
+<p>If an event triggers an rAF-backed debounced function immediately
+before a user switches tabs, the trailing execution will stall
+indefinitely. The queued function will not execute until the user brings
+the tab back into focus, potentially causing stale state updates or
+out-of-order execution long after the triggering event occurred.</p>
+<h3 id="frame-drops-and-main-thread-contention">Frame Drops and
+Main-Thread Contention</h3>
+<p>Standard macrotasks managed by <code>setTimeout</code> resolve as
+soon as the call stack clears and their scheduled duration expires. In
+contrast, <code>requestAnimationFrame</code> callbacks only run prior to
+the next browser rendering phase.</p>
+<p>If heavy computation or garbage collection blocks the main thread,
+frames drop. In this scenario, the rAF callback is not merely delayed;
+it is deferred until the browser is ready to produce a new frame. This
+can cause the debounced callback to experience non-linear delays that
+correlate with layout calculations, style recalculations, and paint
+events rather than the elapsed time since the last event trigger.</p>
+<h3 id="timestamp-misalignment-with-maxwait">Timestamp Misalignment with
+<code>maxWait</code></h3>
+<p>Lodash tracks elapsed time internally using wall-clock timestamps
+(<code>Date.now()</code> or <code>performance.now()</code>). When
+combining an rAF-driven debounce with options like <code>maxWait</code>,
+a discrepancy emerges between internal time-tracking and callback
+dispatching:</p>
+<ol type="1">
+<li>Lodash checks if the time elapsed exceeds <code>maxWait</code>.</li>
+<li>Because rAF executes solely at discrete VSync intervals, the
+execution will systematically overshoot the <code>maxWait</code>
+deadline.</li>
+<li>If a frame deadline is narrowly missed, the callback cannot fire
+until the next VSync tick, causing the actual execution delay to exceed
+<code>maxWait</code> by the duration of one or more full frame
+intervals.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

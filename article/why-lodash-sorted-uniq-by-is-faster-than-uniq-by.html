@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Lodash sortedUniqBy Is Faster Than uniqBy - lodash</title>
+    <meta name="description" content="In the Lodash JavaScript library, .sortedUniqBy delivers significantly higher performance than standard uniqueness utilities like .uniqBy by taking advantage of pre-sorted data. While general uniqueness functions must allocate extra memory and track every">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/why-lodash-sorted-uniq-by-is-faster-than-uniq-by">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Lodash sortedUniqBy Is Faster Than uniqBy - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/why-lodash-sorted-uniq-by-is-faster-than-uniq-by" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the Lodash JavaScript library, .sortedUniqBy delivers significantly higher performance than standard uniqueness utilities like .uniqBy by taking advantage of pre-sorted data. While general uniqueness functions must allocate extra memory and track every" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-lodash-sorteduniqby-is-faster-than-uniqby">Why Lodash
+sortedUniqBy Is Faster Than uniqBy</h1>
+<p>In the Lodash JavaScript library, <code>_.sortedUniqBy</code>
+delivers significantly higher performance than standard uniqueness
+utilities like <code>_.uniqBy</code> by taking advantage of pre-sorted
+data. While general uniqueness functions must allocate extra memory and
+track every previously seen item, <code>_.sortedUniqBy</code> only
+compares contiguous elements in a single linear pass. This architectural
+difference eliminates the need for hash lookups, reduces memory
+allocation, and minimizes garbage collection overhead, making it
+drastically faster when operating on sorted arrays.</p>
+<h3 id="algorithmic-differences-and-time-complexity">Algorithmic
+Differences and Time Complexity</h3>
+<p>Standard uniqueness functions like <code>_.uniq</code> and
+<code>_.uniqBy</code> assume the input array is unsorted. To identify
+duplicates, these functions must maintain a lookup table—typically a
+JavaScript <code>Set</code> or Lodash's internal <code>SetCache</code>
+structure—to record every unique value encountered. As the algorithm
+iterates through the collection, it executes the iteratee function and
+checks whether the resulting computed key already exists in the set.
+While <code>Set.prototype.has</code> provides average <span
+class="math inline">\(O(1)\)</span> lookup time, hashing values and
+maintaining dynamic hash structures introduce significant CPU constant
+factors.</p>
+<p>In contrast, <code>_.sortedUniqBy</code> operates under the strict
+assumption that the incoming array is already ordered according to the
+criteria defined by the iteratee. Because identical values are
+guaranteed to be adjacent to one another, the algorithm does not need to
+maintain a global history of seen values. It only needs to compare the
+transformed value of the current item with the transformed value of the
+most recently retained item. Both approaches operate in <span
+class="math inline">\(O(n)\)</span> linear time, but
+<code>_.sortedUniqBy</code> executes far fewer CPU instructions per
+element.</p>
+<h3 id="minimal-memory-allocation">Minimal Memory Allocation</h3>
+<p>The primary bottleneck in <code>_.uniqBy</code> during large-scale
+operations is memory allocation. Creating and resizing a
+<code>Set</code> or hash map to store up to <span
+class="math inline">\(n\)</span> elements places substantial pressure on
+the JavaScript engine's heap memory. This leads to frequent garbage
+collection cycles, which pause execution and degrade overall
+throughput.</p>
+<p><code>_.sortedUniqBy</code> requires zero auxiliary storage for
+tracking seen items. It utilizes a single variable to retain the last
+computed value. By eliminating hash-map allocations,
+<code>_.sortedUniqBy</code> operates with <span
+class="math inline">\(O(1)\)</span> auxiliary space complexity
+(excluding the output array). This lightweight footprint avoids memory
+bloat and keeps the JavaScript runtime focused solely on iteration and
+comparison.</p>
+<h3 id="cpu-cache-locality">CPU Cache Locality</h3>
+<p>Because <code>_.sortedUniqBy</code> processes the array sequentially
+without jumping into external hash-table memory locations, it benefits
+heavily from CPU cache locality. Modern processors excel at reading
+contiguous blocks of memory. A simple comparison between adjacent values
+keeps the relevant data inside the CPU's L1/L2 cache lines, drastically
+lowering latency compared to the scattered memory reads inherent in
+hash-table lookups.</p>
+<h3 id="practical-application">Practical Application</h3>
+<p>The performance gains of <code>_.sortedUniqBy</code> only apply if
+the dataset is already sorted. If an unsorted array must first be
+ordered using an <span class="math inline">\(O(n \log n)\)</span>
+sorting algorithm simply to use <code>_.sortedUniqBy</code>, the
+combined operation will often be slower than running
+<code>_.uniqBy</code> directly. However, when working with data
+retrieved in sorted order—such as rows returned from a database query
+with an <code>ORDER BY</code> clause or ordered time-series
+events—<code>_.sortedUniqBy</code> is the optimal choice for removing
+duplicates with maximum speed and minimal memory consumption.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

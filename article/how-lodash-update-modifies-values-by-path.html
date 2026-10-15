@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.update Modifies Values by Path - lodash</title>
+    <meta name="description" content="The .update method in the Lodash JavaScript library provides a clean, functional approach to updating deeply nested properties within an object. Instead of manually traversing nested keys and assigning a new static value, .update takes an object, a path,">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-update-modifies-values-by-path">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.update Modifies Values by Path - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-update-modifies-values-by-path" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .update method in the Lodash JavaScript library provides a clean, functional approach to updating deeply nested properties within an object. Instead of manually traversing nested keys and assigning a new static value, .update takes an object, a path," />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_update-modifies-values-by-path">How Lodash _.update
+Modifies Values by Path</h1>
+<p>The <code>_.update</code> method in the Lodash JavaScript library
+provides a clean, functional approach to updating deeply nested
+properties within an object. Instead of manually traversing nested keys
+and assigning a new static value, <code>_.update</code> takes an object,
+a path, and an updater function. It retrieves the current value located
+at the specified path, passes that value into the updater function, and
+writes the returned result directly back to that path, mutating the
+source object.</p>
+<h2 id="syntax-and-core-arguments">Syntax and Core Arguments</h2>
+<p>The syntax for <code>_.update</code> is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">update</span>(object<span class="op">,</span> path<span class="op">,</span> updater)</span></code></pre></div>
+<ul>
+<li><strong><code>object</code></strong>: The target object to
+modify.</li>
+<li><strong><code>path</code></strong>: The path of the property to
+update. This can be expressed as a dot-notated string (e.g.,
+<code>'a.b.c'</code>), an array notation string (e.g.,
+<code>'a[0].b'</code>), or an array of property names/indices (e.g.,
+<code>['a', 0, 'b']</code>).</li>
+<li><strong><code>updater</code></strong>: The function invoked to
+produce the updated value. It receives the existing value at the path as
+its single argument: <code>(currentValue) =&gt; newValue</code>.</li>
+</ul>
+<h2 id="how-_update-operates-under-the-hood">How <code>_.update</code>
+Operates Under the Hood</h2>
+<p>When <code>_.update</code> is invoked, it follows a specific sequence
+of operations:</p>
+<ol type="1">
+<li><strong>Path Resolution:</strong> Lodash parses the provided path
+into segments. It navigates down the object structure step-by-step.</li>
+<li><strong>Path Creation (if missing):</strong> If any intermediate
+segment in the path does not exist, Lodash automatically creates an
+empty object (or an array, if a segment is numeric) to prevent
+<code>TypeError: Cannot read properties of undefined</code>
+exceptions.</li>
+<li><strong>Retrieving Current Value:</strong> Lodash extracts the
+current value located at the final destination key. If the key does not
+exist, the resolved value is <code>undefined</code>.</li>
+<li><strong>Executing the Updater:</strong> The updater function is
+executed with the retrieved value passed in as the first argument.</li>
+<li><strong>Assignment and Return:</strong> The return value of the
+updater function is assigned to the target property. The original object
+is mutated and returned.</li>
+</ol>
+<h2 id="code-example-modifying-existing-values">Code Example: Modifying
+Existing Values</h2>
+<p>In standard JavaScript, mutating a nested value requires defensive
+checks to avoid runtime errors. <code>_.update</code> handles this
+traversal cleanly:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> state <span class="op">=</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">user</span><span class="op">:</span> {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">profile</span><span class="op">:</span> {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">loginCount</span><span class="op">:</span> <span class="dv">5</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Increment the login count</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">update</span>(state<span class="op">,</span> <span class="st">&#39;user.profile.loginCount&#39;</span><span class="op">,</span> count <span class="kw">=&gt;</span> count <span class="op">+</span> <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(state<span class="op">.</span><span class="at">user</span><span class="op">.</span><span class="at">profile</span><span class="op">.</span><span class="at">loginCount</span>)<span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: 6</span></span></code></pre></div>
+<h2 id="handling-missing-paths-and-arrays">Handling Missing Paths and
+Arrays</h2>
+<p>If the path does not exist, <code>_.update</code> supplies
+<code>undefined</code> to the updater function and builds the necessary
+object structure automatically:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> data <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Updating a non-existent path</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">update</span>(data<span class="op">,</span> <span class="st">&#39;inventory.items[0].quantity&#39;</span><span class="op">,</span> (quantity <span class="op">=</span> <span class="dv">0</span>) <span class="kw">=&gt;</span> quantity <span class="op">+</span> <span class="dv">10</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(data)<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: { inventory: { items: [ { quantity: 10 } ] } }</span></span></code></pre></div>
+<p>In this example, default parameter values (<code>quantity = 0</code>)
+can be used inside the updater function to handle the initial
+<code>undefined</code> state safely.</p>
+<h2 id="_update-vs-_set"><code>_.update</code> vs
+<code>_.set</code></h2>
+<p>While <code>_.set</code> also writes values to deep paths, it
+requires the caller to supply the final static value upfront.
+<code>_.update</code> is designed specifically for scenarios where the
+new value depends on the previous state (such as incrementing counters,
+toggling booleans, or appending elements to an array), eliminating the
+need for an intermediate <code>_.get</code> call.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

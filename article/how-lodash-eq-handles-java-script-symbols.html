@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.eq Handles JavaScript Symbols - lodash</title>
+    <meta name="description" content="This article provides an overview of how the Lodash utility function .eq evaluates the equivalence of two isolated Symbol instances that have matching descriptions. It examines the underlying comparison algorithm used by Lodash, explains the inherent iden">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-eq-handles-java-script-symbols">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.eq Handles JavaScript Symbols - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-eq-handles-java-script-symbols" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how the Lodash utility function .eq evaluates the equivalence of two isolated Symbol instances that have matching descriptions. It examines the underlying comparison algorithm used by Lodash, explains the inherent iden" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_eq-handles-javascript-symbols">How Lodash _.eq
+Handles JavaScript Symbols</h1>
+<p>This article provides an overview of how the Lodash utility function
+<code>_.eq</code> evaluates the equivalence of two isolated
+<code>Symbol</code> instances that have matching descriptions. It
+examines the underlying comparison algorithm used by Lodash, explains
+the inherent identity characteristics of JavaScript symbols, and
+clarifies why <code>_.eq</code> treats structurally identical, isolated
+symbols as unequal.</p>
+<h2 id="the-comparison-mechanism-of-_eq">The Comparison Mechanism of
+<code>_.eq</code></h2>
+<p>In the Lodash library, <code>_.eq</code> is designed to perform a
+comparison based on the ECMAScript <code>SameValueZero</code>
+specification. Internally, the function is implemented essentially as
+follows:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">eq</span>(value<span class="op">,</span> other) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">===</span> other <span class="op">||</span> (value <span class="op">!==</span> value <span class="op">&amp;&amp;</span> other <span class="op">!==</span> other)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The <code>SameValueZero</code> check differs from strict equality
+(<code>===</code>) primarily in its handling of <code>NaN</code>,
+treating <code>NaN === NaN</code> as <code>true</code>. For all other
+primitive data types, including symbols, <code>_.eq</code> behaves
+identically to the JavaScript strict equality operator.</p>
+<h2 id="javascript-symbol-uniqueness">JavaScript Symbol Uniqueness</h2>
+<p>In JavaScript, a <code>Symbol</code> is a primitive data type where
+every call to <code>Symbol()</code> produces a globally unique token.
+Even when two symbols are instantiated with identical descriptions (for
+example, <code>Symbol('key')</code>), their internal identities remain
+distinct.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> symbolA <span class="op">=</span> <span class="bu">Symbol</span>(<span class="st">&#39;identifier&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> symbolB <span class="op">=</span> <span class="bu">Symbol</span>(<span class="st">&#39;identifier&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(symbolA <span class="op">===</span> symbolB)<span class="op">;</span> <span class="co">// false</span></span></code></pre></div>
+<p>The string passed to the <code>Symbol()</code> factory function is
+merely an optional, human-readable description for debugging purposes
+and does not establish structural identity.</p>
+<h2 id="processing-isolated-symbols-with-_eq">Processing Isolated
+Symbols with <code>_.eq</code></h2>
+<p>When <code>_.eq</code> processes two isolated <code>Symbol</code>
+instances, the comparison proceeds through standard identity checks:</p>
+<ol type="1">
+<li>Lodash receives <code>symbolA</code> and <code>symbolB</code>.</li>
+<li>It evaluates <code>symbolA === symbolB</code>. Because the
+JavaScript runtime allocates unique memory references to each symbol
+primitive, this returns <code>false</code>.</li>
+<li>It performs the fallback <code>NaN</code> check
+(<code>value !== value &amp;&amp; other !== other</code>), which also
+evaluates to <code>false</code> because symbols are not
+<code>NaN</code>.</li>
+<li>The function returns <code>false</code>.</li>
+</ol>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> first <span class="op">=</span> <span class="bu">Symbol</span>(<span class="st">&#39;config&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> second <span class="op">=</span> <span class="bu">Symbol</span>(<span class="st">&#39;config&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">eq</span>(first<span class="op">,</span> second)<span class="op">;</span> <span class="co">// returns false</span></span></code></pre></div>
+<h2 id="_eq-vs-structural-equivalence"><code>_.eq</code> vs. Structural
+Equivalence</h2>
+<p>The <code>_.eq</code> method is a shallow comparison function and
+does not inspect internal properties, prototypes, or string descriptions
+of non-matching values. It does not attempt to parse
+<code>symbolA.description === symbolB.description</code>.</p>
+<p>Even if you use Lodash's deep comparison method,
+<code>_.isEqual</code>, two distinct symbol primitives will still
+evaluate to <code>false</code> because JavaScript symbols are
+deliberately non-interchangeable primitives.</p>
+<p>The only scenario where <code>_.eq</code> evaluates two symbols as
+equal is when both references point to the exact same symbol instance in
+memory, or when they point to the same registered symbol created via the
+global symbol registry:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Referencing the same instance</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> original <span class="op">=</span> <span class="bu">Symbol</span>(<span class="st">&#39;data&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> reference <span class="op">=</span> original<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">eq</span>(original<span class="op">,</span> reference)<span class="op">;</span> <span class="co">// returns true</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Referencing the global symbol registry</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> globalA <span class="op">=</span> <span class="bu">Symbol</span><span class="op">.</span><span class="fu">for</span>(<span class="st">&#39;shared&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> globalB <span class="op">=</span> <span class="bu">Symbol</span><span class="op">.</span><span class="fu">for</span>(<span class="st">&#39;shared&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">eq</span>(globalA<span class="op">,</span> globalB)<span class="op">;</span> <span class="co">// returns true</span></span></code></pre></div>
+<p>For isolated symbols created via <code>Symbol()</code>, structural
+equivalence is intentionally ignored by <code>_.eq</code> in strict
+adherence to ECMAScript primitive identity rules.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

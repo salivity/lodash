@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash isNative Bypasses Overridden Functions - lodash</title>
+    <meta name="description" content="Lodash’s .isNative utility function determines whether a target function is a genuine host-environment built-in rather than a userland polyfill or an overridden implementation. This article examines the internal mechanisms Lodash uses to achieve this, inc">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-native-bypasses-overridden-functions">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash isNative Bypasses Overridden Functions - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-native-bypasses-overridden-functions" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .isNative utility function determines whether a target function is a genuine host-environment built-in rather than a userland polyfill or an overridden implementation. This article examines the internal mechanisms Lodash uses to achieve this, inc" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-isnative-bypasses-overridden-functions">How Lodash
+isNative Bypasses Overridden Functions</h1>
+<p>Lodash’s <code>_.isNative</code> utility function determines whether
+a target function is a genuine host-environment built-in rather than a
+userland polyfill or an overridden implementation. This article examines
+the internal mechanisms Lodash uses to achieve this, including isolating
+pristine prototype methods, dynamically generating engine-tailored
+regular expressions, and detecting hidden metadata flags from
+third-party polyfills to ensure functions are evaluated securely without
+executing untrusted code.</p>
+<h3 id="the-problem-with-naive-function-verification">The Problem with
+Naive Function Verification</h3>
+<p>In JavaScript, functions can be monkey-patched or assigned custom
+properties. A naive check for a native function often looks like
+this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isNative</span>(fn) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> fn<span class="op">.</span><span class="fu">toString</span>()<span class="op">.</span><span class="fu">includes</span>(<span class="st">&#39;[native code]&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This approach has critical vulnerabilities:</p>
+<ol type="1">
+<li><strong>Method Overriding</strong>: If a function object defines its
+own <code>toString</code> method (e.g.,
+<code>fn.toString = () =&gt; "function () { [native code] }"</code>); it
+can easily deceive the caller.</li>
+<li><strong>Engine Discrepancies</strong>: Different JavaScript engines
+format native function representations differently (for instance,
+differences between V8, SpiderMonkey, and JavaScriptCore).</li>
+</ol>
+<h3 id="bypassing-instance-level-tostring-hijacking">Bypassing
+Instance-Level <code>toString</code> Hijacking</h3>
+<p>To prevent a function from forging its own string representation,
+Lodash does not call the method on the target instance directly.
+Instead, it captures and uses the original, unmutated
+<code>Function.prototype.toString</code> method:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> fnToString <span class="op">=</span> <span class="bu">Function</span><span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">toString</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Invocation</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>fnToString<span class="op">.</span><span class="fu">call</span>(value)<span class="op">;</span></span></code></pre></div>
+<p>By explicitly invoking the native
+<code>Function.prototype.toString</code> with <code>.call(value)</code>,
+Lodash completely bypasses any custom <code>.toString</code> properties
+an attacker or library may have placed directly onto the function
+instance.</p>
+<h3 id="dynamic-regular-expression-generation">Dynamic Regular
+Expression Generation</h3>
+<p>Different JavaScript environments output variations of native
+functions. Rather than relying on a hardcoded string or static pattern,
+Lodash builds a dynamic regular expression tailored to the host
+environment at load time.</p>
+<p>Lodash generates this expression by converting a known native
+function—<code>Object.prototype.hasOwnProperty</code>—to a string and
+escaping special characters:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> reIsNative <span class="op">=</span> <span class="bu">RegExp</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;^&#39;</span> <span class="op">+</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  fnToString<span class="op">.</span><span class="fu">call</span>(<span class="bu">Object</span><span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">hasOwnProperty</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">[\\^$.*+?()[\]{}|]</span><span class="ss">/g</span><span class="op">,</span> <span class="st">&#39;</span><span class="sc">\\</span><span class="st">$&amp;&#39;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">replace</span>(<span class="ss">/hasOwnProperty</span><span class="sc">|(</span><span class="ss">function</span><span class="sc">)</span><span class="ss">.</span><span class="sc">*?(?</span><span class="ss">=</span><span class="sc">\\\()|</span><span class="ss"> for .</span><span class="sc">+?(?</span><span class="ss">=</span><span class="sc">\\\])</span><span class="ss">/g</span><span class="op">,</span> <span class="st">&#39;$1.*?&#39;</span>) <span class="op">+</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;$&#39;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span></code></pre></div>
+<p>This dynamic pattern captures the precise format used by the current
+engine while replacing the function name with a wildcard pattern
+(<code>.*?</code>). When an arbitrary function is passed into
+<code>_.isNative</code>, its string representation via
+<code>Function.prototype.toString.call(value)</code> must match this
+engine-specific template exactly.</p>
+<h3 id="detecting-polyfill-masking">Detecting Polyfill Masking</h3>
+<p>Modern polyfill libraries like <code>core-js</code> often attempt to
+hide their presence by spoofing <code>Function.prototype.toString</code>
+to return <code>[native code]</code>. To prevent false positives, Lodash
+inspects the function for internal masking flags.</p>
+<p>When <code>core-js</code> replaces or wraps a native method, it
+typically leaves a metadata fingerprint on the global environment or
+function instance:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> coreJsData <span class="op">=</span> <span class="bu">root</span>[<span class="st">&#39;__core-js_shared__&#39;</span>]<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> maskFunctionKey <span class="op">=</span> coreJsData <span class="op">?</span> coreJsData<span class="op">.</span><span class="at">keys</span> <span class="op">&amp;&amp;</span> coreJsData<span class="op">.</span><span class="at">keys</span><span class="op">.</span><span class="at">IE_PROTO</span> <span class="op">:</span> <span class="st">&#39;&#39;</span><span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isMasked</span>(func) {</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">!!</span>maskFunctionKey <span class="op">&amp;&amp;</span> (maskFunctionKey <span class="kw">in</span> func)<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Lodash checks whether a function contains these masking markers. If a
+function matches the native regular expression but has been flagged by a
+polyfill framework, Lodash rejects it as non-native.</p>
+<h3 id="handling-host-objects-and-proxies">Handling Host Objects and
+Proxies</h3>
+<p>In addition to string inspection, <code>_.isNative</code>
+incorporates basic type validation:</p>
+<ul>
+<li>It asserts that the input is a valid object or function
+(<code>typeof value === 'function'</code> or non-null object for host
+methods in older environments).</li>
+<li>It safely catches errors that might be thrown when inspecting
+non-standard host objects (such as those in legacy Internet Explorer or
+specific embedded runtimes).</li>
+</ul>
+<p>While ES2015 <code>Proxy</code> objects cannot be completely
+distinguished from native functions if explicitly configured to mimic
+them at the prototype level, Lodash's multi-layered strategy protects
+against common override techniques, monkey-patching, and polyfill
+impersonation.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

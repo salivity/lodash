@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.uniqueId: Prefix Generation Guarantees - lodash</title>
+    <meta name="description" content="The .uniqueId method in Lodash is a lightweight utility designed to generate unique identifiers within a running JavaScript process. This article breaks down the guarantees .uniqueId provides when generating IDs with custom prefixes, details how its inter">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-unique-id-prefix-generation-guarantees">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.uniqueId: Prefix Generation Guarantees - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-unique-id-prefix-generation-guarantees" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .uniqueId method in Lodash is a lightweight utility designed to generate unique identifiers within a running JavaScript process. This article breaks down the guarantees .uniqueId provides when generating IDs with custom prefixes, details how its inter" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_uniqueid-prefix-generation-guarantees">Lodash
+_.uniqueId: Prefix Generation Guarantees</h1>
+<p>The <code>_.uniqueId</code> method in Lodash is a lightweight utility
+designed to generate unique identifiers within a running JavaScript
+process. This article breaks down the guarantees <code>_.uniqueId</code>
+provides when generating IDs with custom prefixes, details how its
+internal counter functions, and highlights the scope and architectural
+boundaries developers must consider when relying on it.</p>
+<h2 id="the-core-mechanism-of-_uniqueid">The Core Mechanism of
+<code>_.uniqueId</code></h2>
+<p>Under the hood, Lodash implements <code>_.uniqueId</code> with a
+simple global counter and basic string concatenation. When invoked, it
+increments an internal integer variable and appends it to the
+user-supplied prefix string:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> idCounter <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">uniqueId</span>(prefix <span class="op">=</span> <span class="st">&#39;&#39;</span>) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> id <span class="op">=</span> <span class="op">++</span>idCounter<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="vs">`</span><span class="sc">${</span>prefix<span class="sc">}${</span>id<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>If no prefix is provided, it simply returns the stringified counter
+value.</p>
+<h2 id="guarantees-provided-for-prefix-generation">Guarantees Provided
+for Prefix Generation</h2>
+<p>When utilizing <code>_.uniqueId</code> with a prefix, Lodash offers
+specific behaviors you can reliably expect:</p>
+<h3 id="1-in-memory-session-uniqueness">1. In-Memory Session
+Uniqueness</h3>
+<p>Every call to <code>_.uniqueId</code> is guaranteed to return a
+unique string within the lifecycle of the current JavaScript runtime
+environment. If you supply a prefix like <code>'user_'</code>, the
+generated ID will not collide with another <code>'user_'</code> ID
+generated during the same execution session.</p>
+<h3 id="2-strict-sequential-monotonicity">2. Strict Sequential
+Monotonicity</h3>
+<p>The generated suffixes are strictly monotonic integers starting from
+<code>1</code> and increasing by <code>1</code> with each call. For a
+single prefix executed in isolation, outputs follow a predictable
+sequence: <code>prefix_1</code>, <code>prefix_2</code>,
+<code>prefix_3</code>.</p>
+<h3 id="3-reliable-type-coercion">3. Reliable Type Coercion</h3>
+<p>Regardless of the prefix type passed (strings, numbers, or objects),
+Lodash safely casts the prefix to a string. Calling
+<code>_.uniqueId('item_')</code> produces <code>'item_1'</code>, and
+calling <code>_.uniqueId(42)</code> produces <code>'421'</code>.</p>
+<hr />
+<h2 id="important-limitations-and-non-guarantees">Important Limitations
+and Non-Guarantees</h2>
+<p>Understanding what <code>_.uniqueId</code> does <strong>not</strong>
+provide is critical for avoiding bugs in distributed or persistent
+architectures.</p>
+<h3 id="independent-prefix-counters-are-not-guaranteed">Independent
+Prefix Counters Are Not Guaranteed</h3>
+<p>Lodash uses a single, shared counter across all invocations of
+<code>_.uniqueId</code>, regardless of the prefix provided. Counters are
+not partitioned per prefix.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">uniqueId</span>(<span class="st">&#39;button_&#39;</span>)<span class="op">;</span> <span class="co">// &quot;button_1&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">uniqueId</span>(<span class="st">&#39;input_&#39;</span>)<span class="op">;</span>  <span class="co">// &quot;input_2&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">uniqueId</span>(<span class="st">&#39;button_&#39;</span>)<span class="op">;</span> <span class="co">// &quot;button_3&quot;</span></span></code></pre></div>
+<p>Notice that the second <code>button_</code> ID is
+<code>button_3</code>, not <code>button_2</code>.</p>
+<h3 id="no-cross-process-or-distributed-uniqueness">No Cross-Process or
+Distributed Uniqueness</h3>
+<p>Because the counter lives solely in module-level memory:</p>
+<ul>
+<li><strong>Page Refreshes:</strong> Refreshing a browser resets the
+internal counter back to <code>0</code>.</li>
+<li><strong>Server Restarts:</strong> Restarting a Node.js process
+resets the counter.</li>
+<li><strong>Clustered / Serverless Environments:</strong> Different
+worker threads, Node.js clusters, or AWS Lambda instances maintain
+distinct memory heaps. Two separate instances will produce identical IDs
+(<code>button_1</code>).</li>
+</ul>
+<p><code>_.uniqueId</code> is not a replacement for UUIDs (v4) or
+distributed IDs (like Snowflake or ULID) when uniqueness across
+networks, databases, or processes is required.</p>
+<h3 id="no-cryptographic-security-or-unpredictability">No Cryptographic
+Security or Unpredictability</h3>
+<p>The incrementing nature of <code>_.uniqueId</code> makes IDs
+completely predictable. It should never be used for security tokens,
+session identifiers, password reset links, or any context where an
+attacker could guess sequential values.</p>
+<h3 id="integer-bounds">Integer Bounds</h3>
+<p>In standard JavaScript runtimes, numbers are represented as IEEE 754
+double-precision floats. While Lodash counters can safely increment up
+to <code>Number.MAX_SAFE_INTEGER</code> (9,007,199,254,740,991) before
+losing precision, long-lived Node.js processes calling the method
+billions of times could theoretically exceed safe bounds, though this is
+rare in practice.</p>
+<hr />
+<h2 id="ideal-use-cases">Ideal Use Cases</h2>
+<p>Given these properties, <code>_.uniqueId</code> with a prefix is best
+suited for ephemeral, client-side identifiers such as:</p>
+<ul>
+<li>Dynamically mapping HTML form <code>&lt;label for="..."&gt;</code>
+attributes to <code>&lt;input id="..."&gt;</code> elements.</li>
+<li>Providing stable keys for temporary UI components within a single
+page render.</li>
+<li>Creating local DOM element IDs to prevent collisions across multiple
+instances of a reusable UI component.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

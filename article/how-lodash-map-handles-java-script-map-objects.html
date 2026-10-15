@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.map Handles JavaScript Map Objects - lodash</title>
+    <meta name="description" content="In the Lodash utility library, .map handles native JavaScript ES6 Map objects fundamentally differently than standard arrays or plain objects. Rather than unpacking the internal key-value entries stored in the Map, Lodash treats the Map instance as a gene">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-map-handles-java-script-map-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.map Handles JavaScript Map Objects - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-map-handles-java-script-map-objects" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the Lodash utility library, .map handles native JavaScript ES6 Map objects fundamentally differently than standard arrays or plain objects. Rather than unpacking the internal key-value entries stored in the Map, Lodash treats the Map instance as a gene" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_map-handles-javascript-map-objects">How Lodash _.map
+Handles JavaScript Map Objects</h1>
+<p>In the Lodash utility library, <code>_.map</code> handles native
+JavaScript ES6 <code>Map</code> objects fundamentally differently than
+standard arrays or plain objects. Rather than unpacking the internal
+key-value entries stored in the <code>Map</code>, Lodash treats the
+<code>Map</code> instance as a generic non-array object. Consequently,
+the iteratee does not execute over the <code>Map</code> entries at all,
+executing only over any enumerable object properties manually assigned
+to the instance itself.</p>
+<h3 id="the-collection-detection-mechanism">The Collection Detection
+Mechanism</h3>
+<p>When <code>_.map</code> receives a collection, it determines
+iteration behavior by evaluating <code>isArrayLike(collection)</code>. A
+native JavaScript <code>Map</code> instance defines a <code>.size</code>
+property rather than a numeric <code>.length</code> property, causing
+<code>isArrayLike</code> to return <code>false</code>.</p>
+<p>Because it fails the array-like check, Lodash routes the
+<code>Map</code> through its internal object iteration path
+(<code>baseForOwn</code>), which inspects the object using standard
+property enumeration methods equivalent to
+<code>Object.keys()</code>.</p>
+<h3 id="internal-slots-vs-enumerable-properties">Internal Slots vs.
+Enumerable Properties</h3>
+<p>A JavaScript <code>Map</code> stores its entries in private internal
+slots accessed via methods such as <code>.set()</code>,
+<code>.get()</code>, and the <code>[Symbol.iterator]</code> protocol.
+These entries are not own enumerable string or symbol properties of the
+<code>Map</code> object:</p>
+<ul>
+<li><strong>Entry Bypassing:</strong> Because internal entries are not
+enumerable properties, Lodash's property scanner finds zero keys. The
+iteratee function is executed zero times, and
+<code>_.map(myMap, iteratee)</code> evaluates to an empty array
+<code>[]</code>.</li>
+<li><strong>Ad-hoc Property Execution:</strong> If enumerable properties
+are assigned directly to the <code>Map</code> object (such as
+<code>myMap.customProp = 'value'</code>), <code>_.map</code> executes
+the iteratee on those specific properties instead. In this scenario, the
+iteratee receives <code>(value, key, collection)</code>, where
+<code>key</code> is the property name string rather than any key managed
+via <code>myMap.set()</code>.</li>
+</ul>
+<h3 id="differences-from-native-map-iteration">Differences from Native
+Map Iteration</h3>
+<p>Lodash's execution model contrasts sharply with both native
+<code>Map.prototype.forEach</code> and standard array mapping:</p>
+<ol type="1">
+<li><strong>Native <code>Map.prototype.forEach</code>:</strong> Executes
+its callback for every entry with
+<code>callback(value, key, map)</code>, preserving entry types and
+ignoring arbitrary non-entry properties.</li>
+<li><strong>Lodash <code>_.map</code> on Arrays and Objects:</strong>
+Unpacks values and keys/indices automatically, calling
+<code>iteratee(value, index|key, collection)</code>.</li>
+<li><strong>Lodash <code>_.map</code> on Converted Maps:</strong> If the
+<code>Map</code> is converted to an iterable array via
+<code>Array.from(myMap)</code> or <code>[...myMap]</code>,
+<code>_.map</code> iterates over arrays of entries. In this state, the
+iteratee receives <code>(entry, index, array)</code>, where
+<code>entry</code> is a two-element array <code>[key, value]</code>,
+rather than distinct <code>value</code> and <code>key</code>
+parameters.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

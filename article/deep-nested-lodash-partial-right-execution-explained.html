@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Nested Lodash partialRight Execution Explained - lodash</title>
+    <meta name="description" content="This article breaks down the mechanics of deeply nesting .partialRight within the Lodash library, detailing how arguments are stacked, merged, and executed. When multiple .partialRight wrappers are applied to a function, Lodash evaluates and merges partia">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/deep-nested-lodash-partial-right-execution-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Deep Nested Lodash partialRight Execution Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/deep-nested-lodash-partial-right-execution-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article breaks down the mechanics of deeply nesting .partialRight within the Lodash library, detailing how arguments are stacked, merged, and executed. When multiple .partialRight wrappers are applied to a function, Lodash evaluates and merges partia" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="deep-nested-lodash-partialright-execution-explained">Deep Nested
+Lodash partialRight Execution Explained</h1>
+<p>This article breaks down the mechanics of deeply nesting
+<code>_.partialRight</code> within the Lodash library, detailing how
+arguments are stacked, merged, and executed. When multiple
+<code>_.partialRight</code> wrappers are applied to a function, Lodash
+evaluates and merges partial arguments from the inside out, causing
+arguments bound by the innermost wrappers to occupy the furthest right
+positions in the final argument list. Understanding this internal
+argument resolution, execution stack, and wrapper metadata optimization
+reveals precisely how Lodash evaluates complex partial compositions.</p>
+<h3 id="core-behavior-of-_partialright">Core Behavior of
+<code>_.partialRight</code></h3>
+<p>The standard <code>_.partialRight</code> method takes a target
+function and pre-binds arguments to the end of its parameter list. When
+the resulting partially applied function is invoked, incoming runtime
+arguments are placed first, followed by the pre-bound partial
+arguments:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> fn <span class="op">=</span> (a<span class="op">,</span> b<span class="op">,</span> c) <span class="kw">=&gt;</span> [a<span class="op">,</span> b<span class="op">,</span> c]<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> partial <span class="op">=</span> _<span class="op">.</span><span class="fu">partialRight</span>(fn<span class="op">,</span> <span class="st">&#39;c&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">partial</span>(<span class="st">&#39;a&#39;</span><span class="op">,</span> <span class="st">&#39;b&#39;</span>)<span class="op">;</span> <span class="co">// =&gt; [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span></span></code></pre></div>
+<h3 id="execution-dynamics-in-nested-calls">Execution Dynamics in Nested
+Calls</h3>
+<p>When <code>_.partialRight</code> is nested multiple times, each
+wrapper layer conceptually wraps the preceding function. Consider three
+layers of partial application:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> step1 <span class="op">=</span> _<span class="op">.</span><span class="fu">partialRight</span>(baseFn<span class="op">,</span> <span class="st">&#39;Z&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> step2 <span class="op">=</span> _<span class="op">.</span><span class="fu">partialRight</span>(step1<span class="op">,</span> <span class="st">&#39;Y&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> step3 <span class="op">=</span> _<span class="op">.</span><span class="fu">partialRight</span>(step2<span class="op">,</span> <span class="st">&#39;X&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">step3</span>(<span class="st">&#39;A&#39;</span><span class="op">,</span> <span class="st">&#39;B&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<p>At runtime, invocation flows through the layers conceptually as
+follows:</p>
+<ol type="1">
+<li><code>step3('A', 'B')</code> is invoked. It appends <code>'X'</code>
+to its arguments and invokes <code>step2('A', 'B', 'X')</code>.</li>
+<li><code>step2</code> receives <code>('A', 'B', 'X')</code>. It appends
+<code>'Y'</code> and invokes
+<code>step1('A', 'B', 'X', 'Y')</code>.</li>
+<li><code>step1</code> receives <code>('A', 'B', 'X', 'Y')</code>. It
+appends <code>'Z'</code> and invokes
+<code>baseFn('A', 'B', 'X', 'Y', 'Z')</code>.</li>
+</ol>
+<p>Because each outer wrapper appends its bound arguments before
+delegating to the wrapped function, the innermost applied argument
+(<code>'Z'</code>) is appended last. Consequently, the deeper a
+<code>_.partialRight</code> call is in the nesting hierarchy, the
+further to the right its arguments will sit in the final parameter list.
+The resulting execution array orders runtime arguments first, followed
+by outer partials, down to the deepest partials at the tail.</p>
+<h3 id="lodash-internal-wrapper-optimization">Lodash Internal Wrapper
+Optimization</h3>
+<p>Lodash does not actually maintain a deep stack of nested function
+closures when using its wrapper utilities repeatedly. Instead, it
+inspects wrapper metadata using internal bitwise flags and metadata
+arrays:</p>
+<ol type="1">
+<li><strong>Metadata Inspection:</strong> When
+<code>_.partialRight</code> wraps an existing Lodash wrapper function,
+it reads the function's internal metadata via <code>getData</code>.</li>
+<li><strong>Flag Detection:</strong> Lodash recognizes the
+<code>WRAP_PARTIAL_RIGHT_FLAG</code> (flag bit <code>64</code>).</li>
+<li><strong>Data Merging via <code>mergeData</code>:</strong> Rather
+than wrapping the function inside another closure, Lodash merges the new
+partial arguments directly into the existing wrapper’s metadata
+array.</li>
+<li><strong>Array Concatenation:</strong> For right-side partials, newly
+added partials from outer calls are prepended to the previously stored
+right-side partials:</li>
+</ol>
+<pre class="text"><code>[ ...runtimeArgs, ...outerPartials, ...innerPartials ]</code></pre>
+<p>By flattening the wrappers at definition time, Lodash converts deeply
+nested <code>_.partialRight</code> calls into a single unified
+wrapper.</p>
+<h3 id="argument-resolution-order-summary">Argument Resolution Order
+Summary</h3>
+<p>When invoking a deeply nested <code>_.partialRight</code>
+pipeline:</p>
+<ul>
+<li><strong>Index <code>0</code> to <code>N</code>:</strong> Runtime
+arguments supplied to the outermost call site.</li>
+<li><strong>Index <code>N + 1</code> to <code>M</code>:</strong>
+Arguments supplied by outer <code>_.partialRight</code> layers.</li>
+<li><strong>Index <code>M + 1</code> to End:</strong> Arguments supplied
+by inner <code>_.partialRight</code> layers, ending with the innermost
+wrapper's arguments.</li>
+</ul>
+<p>This design ensures linear argument resolution without stack overflow
+risks from nested execution chains, resulting in deterministic and
+predictable right-to-left positioning of pre-bound values.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

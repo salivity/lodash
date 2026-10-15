@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.toNumber Parses Complex Strings - lodash</title>
+    <meta name="description" content="The .toNumber method in Lodash is designed to safely convert arbitrary JavaScript values, particularly complex string representations, into standard numbers. Unlike native Number() or parseFloat(), Lodash standardizes cross-environment quirks by actively">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-to-number-parses-complex-strings">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.toNumber Parses Complex Strings - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-to-number-parses-complex-strings" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .toNumber method in Lodash is designed to safely convert arbitrary JavaScript values, particularly complex string representations, into standard numbers. Unlike native Number() or parseFloat(), Lodash standardizes cross-environment quirks by actively" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_tonumber-parses-complex-strings">How Lodash
+_.toNumber Parses Complex Strings</h1>
+<p>The <code>_.toNumber</code> method in Lodash is designed to safely
+convert arbitrary JavaScript values, particularly complex string
+representations, into standard numbers. Unlike native
+<code>Number()</code> or <code>parseFloat()</code>, Lodash standardizes
+cross-environment quirks by actively sanitizing strings, detecting
+non-decimal radices like binary and octal, rejecting signed hexadecimal
+patterns, and gracefully unwrapping objects. This guide explains the
+step-by-step logic Lodash uses under the hood to parse complex string
+formats into valid numeric values or <code>NaN</code>.</p>
+<h3 id="1-object-unwrapping-and-type-guarding">1. Object Unwrapping and
+Type Guarding</h3>
+<p>Before parsing strings, <code>_.toNumber</code> evaluates the
+incoming value's underlying type:</p>
+<ul>
+<li><strong>Direct Numbers:</strong> If the input is already a number
+primitive, it is returned immediately.</li>
+<li><strong>Symbols:</strong> JavaScript Symbols cannot be coerced to
+numbers; <code>_.toNumber</code> safely returns <code>NaN</code> instead
+of throwing a <code>TypeError</code>.</li>
+<li><strong>Objects:</strong> If the value is an object, Lodash checks
+if it has a custom <code>valueOf</code> method. If present, it unwraps
+the object (e.g., <code>new String("42")</code> becomes
+<code>"42"</code>). If <code>valueOf</code> returns another object, it
+falls back to calling <code>toString()</code>.</li>
+</ul>
+<h3 id="2-whitespace-stripping">2. Whitespace Stripping</h3>
+<p>Once the value is guaranteed to be a string primitive, Lodash removes
+all leading and trailing whitespace using a regular expression
+equivalent to <code>String.prototype.trim()</code>. This ensures that
+trailing spaces or tabs around complex numbers do not cause parsing
+failures downstream.</p>
+<h3 id="3-detection-of-non-decimal-notations-binary-and-octal">3.
+Detection of Non-Decimal Notations (Binary and Octal)</h3>
+<p>Lodash contains explicit regular expressions to test for ES6 binary
+and octal string literals:</p>
+<ul>
+<li><strong>Binary:</strong> Matches patterns starting with
+<code>0b</code> or <code>0B</code> followed by digits <code>0</code> and
+<code>1</code> (e.g., <code>"0b1010"</code>). Lodash extracts the slice
+after the prefix and uses <code>parseInt(value.slice(2), 2)</code> to
+calculate the decimal equivalent (<code>10</code>).</li>
+<li><strong>Octal:</strong> Matches patterns starting with
+<code>0o</code> or <code>0O</code> followed by digits <code>0</code>
+through <code>7</code> (e.g., <code>"0o755"</code>). Lodash slices the
+prefix and calls <code>parseInt(value.slice(2), 8)</code>.</li>
+</ul>
+<p>If either regex matches, Lodash parses the string with the
+corresponding base and returns the result, bypassing standard string
+conversion.</p>
+<h3 id="4-guarding-against-signed-hexadecimal">4. Guarding Against
+Signed Hexadecimal</h3>
+<p>A key divergence between Lodash and native JavaScript coercion
+involves signed hex strings. Lodash tests strings against a specific
+bad-hex pattern: <code>/^[-+]0x[0-9a-f]+$/i</code>.</p>
+<p>While standard hexadecimal literals like <code>"0x1a"</code> are
+accepted, signed hex representations such as <code>"+0x1a"</code> or
+<code>"-0x1a"</code> match the "bad hex" regular expression. When this
+pattern is detected, <code>_.toNumber</code> intentionally returns
+<code>NaN</code>. This behavior ensures cross-browser consistency with
+older ECMAScript specifications that treated signed hex literals as
+invalid.</p>
+<h3 id="5-standard-hexadecimal-and-decimal-fallback">5. Standard
+Hexadecimal and Decimal Fallback</h3>
+<p>If the string is not binary, not octal, and not an invalid signed
+hex, Lodash evaluates standard hex or decimal notations:</p>
+<ul>
+<li><strong>Unsigned Hexadecimal:</strong> If the string starts with
+<code>0x</code> or <code>0X</code> (e.g., <code>"0xff"</code>), Lodash
+parses it using <code>parseInt(value.slice(2), 16)</code> to return
+<code>255</code>.</li>
+<li><strong>Standard Floats and Scientific Notation:</strong> For all
+other values—including decimal numbers (<code>"3.14"</code>),
+exponential notation (<code>"1e5"</code>), and negative values
+(<code>"-42.5"</code>)—Lodash uses the native unary plus operator
+(<code>+value</code>).</li>
+</ul>
+<h3 id="summary-of-parsing-order">Summary of Parsing Order</h3>
+<ol type="1">
+<li>Return if primitive number; return <code>NaN</code> if
+<code>Symbol</code>.</li>
+<li>Extract primitive value from objects via <code>valueOf</code> or
+<code>toString</code>.</li>
+<li>Trim surrounding whitespace.</li>
+<li>If binary (<code>/^0b[01]+$/i</code>), parse with base 2.</li>
+<li>If octal (<code>/^0o[0-7]+$/i</code>), parse with base 8.</li>
+<li>If signed hex (<code>/^[-+]0x[0-9a-f]+$/i</code>), return
+<code>NaN</code>.</li>
+<li>If unsigned hex (<code>/^0x[0-9a-f]+$/i</code>), parse with base
+16.</li>
+<li>Coerce remaining formats via unary <code>+</code> (supporting
+standard decimals, scientific notation, and empty strings).</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

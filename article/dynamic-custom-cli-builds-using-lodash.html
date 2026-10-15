@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Custom CLI Builds Using Lodash - lodash</title>
+    <meta name="description" content="Building automated Command Line Interface (CLI) binaries driven by configuration files requires balancing dynamic flexibility with runtime safety. This article details how to use strictly mapped configuration files alongside Lodash to securely and dynamic">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/dynamic-custom-cli-builds-using-lodash">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Dynamic Custom CLI Builds Using Lodash - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/dynamic-custom-cli-builds-using-lodash" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Building automated Command Line Interface (CLI) binaries driven by configuration files requires balancing dynamic flexibility with runtime safety. This article details how to use strictly mapped configuration files alongside Lodash to securely and dynamic" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="dynamic-custom-cli-builds-using-lodash">Dynamic Custom CLI
+Builds Using Lodash</h1>
+<p>Building automated Command Line Interface (CLI) binaries driven by
+configuration files requires balancing dynamic flexibility with runtime
+safety. This article details how to use strictly mapped configuration
+files alongside Lodash to securely and dynamically generate custom CLI
+tools, outlining schema validation, safe deep-object manipulation,
+isolated template compilation, and the process of turning raw
+configuration data into a functional, modular command-line
+executable.</p>
+<h3 id="1-enforcing-strict-configuration-schemas">1. Enforcing Strict
+Configuration Schemas</h3>
+<p>Dynamic generation must start with strict mapping to prevent
+unexpected input injection. A configuration file (typically JSON or
+YAML) defines the commands, flags, descriptions, and executable actions
+for the target CLI.</p>
+<p>To ensure safety:</p>
+<ul>
+<li>Define a closed schema using tools like JSON Schema or Zod.</li>
+<li>Whitelist allowed keys such as <code>command</code>,
+<code>alias</code>, <code>options</code>, <code>actionType</code>, and
+<code>handlerPath</code>.</li>
+<li>Reject or strip unknown properties before processing.</li>
+</ul>
+<p>Using a defined schema ensures that downstream Lodash operations
+process only validated structures, eliminating arbitrary key
+lookups.</p>
+<h3 id="2-secure-object-manipulation-with-lodash">2. Secure Object
+Manipulation with Lodash</h3>
+<p>Lodash provides functional utilities for parsing, transforming, and
+merging configuration layers. However, dynamic property handling
+requires explicit security precautions:</p>
+<ul>
+<li><p><strong>Preventing Prototype Pollution:</strong> Avoid
+unconstrained calls to <code>_.merge</code> or <code>_.set</code>
+directly on raw user input. Filter out sensitive object properties such
+as <code>__proto__</code>, <code>constructor</code>, and
+<code>prototype</code> before deep operations:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> cleanConfig <span class="op">=</span> _<span class="op">.</span><span class="fu">omit</span>(rawConfig<span class="op">,</span> [<span class="st">&#39;__proto__&#39;</span><span class="op">,</span> <span class="st">&#39;constructor&#39;</span><span class="op">,</span> <span class="st">&#39;prototype&#39;</span>])<span class="op">;</span></span></code></pre></div></li>
+<li><p><strong>Controlled Value Retrieval:</strong> Use
+<code>_.get</code> with explicit fallback values to read nested
+configurations without risking runtime <code>TypeError</code>
+exceptions:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> commandName <span class="op">=</span> _<span class="op">.</span><span class="fu">get</span>(cleanConfig<span class="op">,</span> <span class="st">&#39;command.name&#39;</span><span class="op">,</span> <span class="st">&#39;default-cli&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> flags <span class="op">=</span> _<span class="op">.</span><span class="fu">get</span>(cleanConfig<span class="op">,</span> <span class="st">&#39;command.flags&#39;</span><span class="op">,</span> [])<span class="op">;</span></span></code></pre></div></li>
+<li><p><strong>Predictable Structure Assembly:</strong> Use
+<code>_.pick</code> and <code>_.map</code> to transform validated
+configurations into standardized definition arrays that your CLI
+framework (such as Commander, Yargs, or native Node.js
+<code>util.parseArgs</code>) accepts.</p></li>
+</ul>
+<h3 id="3-dynamic-code-generation-via-lodash-templating">3. Dynamic Code
+Generation via Lodash Templating</h3>
+<p>Generating the CLI code natively involves populating a boilerplate
+executable template with the transformed configuration data.</p>
+<ul>
+<li><p><strong>Safe Evaluation:</strong> When using
+<code>_.template</code>, ensure the template only reads data variables
+rather than executing arbitrary JavaScript. Set strict execution
+options:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> compiled <span class="op">=</span> _<span class="op">.</span><span class="fu">template</span>(cliBoilerplateSource<span class="op">,</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">variable</span><span class="op">:</span> <span class="st">&#39;config&#39;</span><span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">interpolate</span><span class="op">:</span> <span class="ss">/&lt;%=</span><span class="sc">([\s\S]+?)</span><span class="ss">%&gt;/g</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div></li>
+<li><p><strong>Modular Injection:</strong> Map commands and subcommands
+directly to validated local handler modules instead of embedding raw
+logic strings inside the configuration file:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> commandModules <span class="op">=</span> _<span class="op">.</span><span class="fu">map</span>(cleanConfig<span class="op">.</span><span class="at">commands</span><span class="op">,</span> cmd <span class="kw">=&gt;</span> ({</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">name</span><span class="op">:</span> cmd<span class="op">.</span><span class="at">name</span><span class="op">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">handler</span><span class="op">:</span> path<span class="op">.</span><span class="fu">resolve</span>(handlersDir<span class="op">,</span> <span class="vs">`</span><span class="sc">${</span>cmd<span class="op">.</span><span class="at">handlerName</span><span class="sc">}</span><span class="vs">.js`</span>)<span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">flags</span><span class="op">:</span> _<span class="op">.</span><span class="fu">map</span>(cmd<span class="op">.</span><span class="at">flags</span><span class="op">,</span> flag <span class="kw">=&gt;</span> <span class="vs">`--</span><span class="sc">${</span>flag<span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs">`</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>}))<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> generatedSource <span class="op">=</span> <span class="fu">compiled</span>({ <span class="dt">commands</span><span class="op">:</span> commandModules })<span class="op">;</span></span></code></pre></div></li>
+</ul>
+<h3 id="4-compiling-and-packaging-the-cli">4. Compiling and Packaging
+the CLI</h3>
+<p>Once Lodash outputs the finalized entry file:</p>
+<ol type="1">
+<li><p><strong>Write the Entry File:</strong> Save the generated source
+code with a proper hashbang:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fs<span class="op">.</span><span class="fu">writeFileSync</span>(entryFilePath<span class="op">,</span> <span class="vs">`#!/usr/bin/env node</span><span class="sc">\n${</span>generatedSource<span class="sc">}</span><span class="vs">`</span><span class="op">,</span> { <span class="dt">mode</span><span class="op">:</span> <span class="bn">0o755</span> })<span class="op">;</span></span></code></pre></div></li>
+<li><p><strong>Bundle Dependencies:</strong> Pass the generated entry
+file to a bundler (such as esbuild or Rollup) to resolve all static
+imports, validate syntax, and tree-shake unused functions.</p></li>
+<li><p><strong>Distribution:</strong> The resulting single-file bundle
+can be executed directly as a standalone CLI utility or distributed as
+an internal npm package.</p></li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

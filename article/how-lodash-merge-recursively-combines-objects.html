@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.merge Recursively Combines Objects - lodash</title>
+    <meta name="description" content="Lodash&#39;s .merge method is a utility designed to deeply combine properties from one or more source objects into a destination object. Unlike shallow merge utilities, .merge inspects the data types of matching keys, recursively traversing nested objects and">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-merge-recursively-combines-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.merge Recursively Combines Objects - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-merge-recursively-combines-objects" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .merge method is a utility designed to deeply combine properties from one or more source objects into a destination object. Unlike shallow merge utilities, .merge inspects the data types of matching keys, recursively traversing nested objects and" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_merge-recursively-combines-objects">How Lodash
+_.merge Recursively Combines Objects</h1>
+<p>Lodash's <code>_.merge</code> method is a utility designed to deeply
+combine properties from one or more source objects into a destination
+object. Unlike shallow merge utilities, <code>_.merge</code> inspects
+the data types of matching keys, recursively traversing nested objects
+and arrays rather than replacing entire child structures. This article
+breaks down the exact mechanics of how <code>_.merge</code> walks nested
+object trees, resolves conflicting data types, handles arrays, and
+mutates target data.</p>
+<h3 id="the-core-recursive-traversal-engine">The Core Recursive
+Traversal Engine</h3>
+<p>When <code>_.merge(target, ...sources)</code> is invoked, Lodash
+iterates over the enumerable own and inherited string/symbol keyed
+properties of each source object.</p>
+<p>For every key-value pair encountered, the method inspects the
+destination object's corresponding property:</p>
+<ol type="1">
+<li><strong>Both Values are Plain Objects:</strong> If both the target
+value and the source value are mergeable objects (such as plain
+JavaScript objects), <code>_.merge</code> does not overwrite the
+property. Instead, it recurses into both values, repeating the merge
+operation at the deeper hierarchy level.</li>
+<li><strong>Value Type Mismatches or Primitives:</strong> If either the
+source or target value is a primitive (such as a string, number, or
+boolean), or an object that is not safely mergeable (like DOM elements
+or functions), the source value completely overwrites the target
+value.</li>
+<li><strong>Missing Keys:</strong> If a key exists in the source but
+does not exist in the target, the property and its nested structure are
+copied directly over to the target.</li>
+</ol>
+<h3 id="array-handling-and-index-based-merging">Array Handling and
+Index-Based Merging</h3>
+<p>A common point of confusion is how <code>_.merge</code> handles
+arrays. Instead of concatenating arrays or replacing the target array
+with the source array, <code>_.merge</code> treats arrays like
+index-keyed objects.</p>
+<ul>
+<li>Elements at matching indices are recursively merged if they are
+objects.</li>
+<li>Primitive elements at matching indices in the source overwrite the
+corresponding elements in the target.</li>
+<li>If the source array has more elements than the target array, the
+extra elements are appended to the target array.</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> target <span class="op">=</span> { <span class="dt">items</span><span class="op">:</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Alpha&quot;</span> }<span class="op">,</span> <span class="st">&quot;two&quot;</span>] }<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> source <span class="op">=</span> { <span class="dt">items</span><span class="op">:</span> [{ <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Omega&quot;</span><span class="op">,</span> <span class="dt">status</span><span class="op">:</span> <span class="st">&quot;active&quot;</span> }<span class="op">,</span> <span class="st">&quot;replaced&quot;</span><span class="op">,</span> <span class="st">&quot;three&quot;</span>] }<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">merge</span>(target<span class="op">,</span> source)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Result:</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">// {</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">//   items: [</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">//     { id: 1, name: &quot;Omega&quot;, status: &quot;active&quot; },</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">//     &quot;replaced&quot;,</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">//     &quot;three&quot;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">//   ]</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">// }</span></span></code></pre></div>
+<h3 id="treatment-of-undefined-and-non-plain-objects">Treatment of
+<code>undefined</code> and Non-Plain Objects</h3>
+<p><code>_.merge</code> explicitly skips source properties that evaluate
+to <code>undefined</code>. If the target object has an existing value
+and the corresponding source property is <code>undefined</code>, the
+target's original value remains unchanged. However, explicit
+<code>null</code> values in the source <em>will</em> overwrite values in
+the target.</p>
+<p>Complex native objects such as <code>Date</code> and
+<code>RegExp</code> instances are copied by value rather than deeply
+merged. Custom class instances with non-standard prototypes are
+generally overwritten rather than recursively merged to prevent
+prototype pollution and unintended side effects.</p>
+<h3 id="target-mutation">Target Mutation</h3>
+<p><code>_.merge</code> operates by mutating the <code>target</code>
+object passed as the first argument, while also returning that mutated
+object as the final result. If an immutable operation is required, an
+empty object literal should be supplied as the initial target:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> finalObject <span class="op">=</span> _<span class="op">.</span><span class="fu">merge</span>({}<span class="op">,</span> originalObject<span class="op">,</span> updates)<span class="op">;</span></span></code></pre></div>
+<p>By leveraging this recursive algorithm, <code>_.merge</code> allows
+complex, deeply nested state configurations and data structures to be
+patched cleanly without manually maintaining or rebuilding intermediate
+object hierarchies.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

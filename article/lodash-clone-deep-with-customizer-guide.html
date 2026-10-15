@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash cloneDeepWith Customizer Guide - lodash</title>
+    <meta name="description" content="The .cloneDeepWith method in Lodash provides a way to recursively clone JavaScript values while selectively customizing how specific properties or types are copied. By passing a customizer callback function, you can intercept the recursive cloning algorit">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-clone-deep-with-customizer-guide">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash cloneDeepWith Customizer Guide - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-clone-deep-with-customizer-guide" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .cloneDeepWith method in Lodash provides a way to recursively clone JavaScript values while selectively customizing how specific properties or types are copied. By passing a customizer callback function, you can intercept the recursive cloning algorit" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-clonedeepwith-customizer-guide">Lodash cloneDeepWith
+Customizer Guide</h1>
+<p>The <code>_.cloneDeepWith</code> method in Lodash provides a way to
+recursively clone JavaScript values while selectively customizing how
+specific properties or types are copied. By passing a customizer
+callback function, you can intercept the recursive cloning algorithm to
+preserve instances, omit sensitive fields, or handle unsupported types
+like DOM nodes and custom classes. This article details the signature of
+the customizer function, its arguments, return rules, and practical
+implementation patterns.</p>
+<h3 id="the-customizer-function-signature">The Customizer Function
+Signature</h3>
+<p>The customizer function passed to
+<code>_.cloneDeepWith(value, [customizer])</code> is invoked for each
+value traversed during the cloning process. It accepts up to four
+arguments:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">customizer</span>(value<span class="op">,</span> key<span class="op">,</span> object<span class="op">,</span> stack)</span></code></pre></div>
+<ul>
+<li><strong><code>value</code></strong>: The current value being
+cloned.</li>
+<li><strong><code>key</code></strong>: The key or property name of the
+value within its parent object (or <code>undefined</code> for the root
+element).</li>
+<li><strong><code>object</code></strong>: The parent object containing
+the current value (or <code>undefined</code> for the root element).</li>
+<li><strong><code>stack</code></strong>: An internal Lodash structure
+used to track traversed objects and prevent circular reference
+loops.</li>
+</ul>
+<h3 id="return-values-and-fallback-behavior">Return Values and Fallback
+Behavior</h3>
+<p>The behavior of <code>_.cloneDeepWith</code> depends strictly on what
+the customizer returns:</p>
+<ul>
+<li><strong>Returning <code>undefined</code></strong>: Instructs Lodash
+to ignore the customizer for this node and proceed with standard
+deep-cloning logic. If you do not explicitly return a value, JavaScript
+functions implicitly return <code>undefined</code>, letting Lodash
+handle the rest of the object tree automatically.</li>
+<li><strong>Returning any other value</strong>: Instructs Lodash to use
+that exact returned value as the clone for that node, stopping further
+recursive traversal down that particular property branch.</li>
+</ul>
+<h3 id="common-implementation-patterns">Common Implementation
+Patterns</h3>
+<h4 id="1-preserving-instances-or-special-types">1. Preserving Instances
+or Special Types</h4>
+<p>By default, <code>_.cloneDeep</code> converts custom class instances
+into plain objects. A customizer can retain references to specific
+instances or handle them using native cloning mechanisms:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">preserveInstances</span>(value) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Preserve DOM nodes by reference or clone via native cloneNode</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (_<span class="op">.</span><span class="fu">isElement</span>(value)) {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value<span class="op">.</span><span class="fu">cloneNode</span>(<span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Preserve instances of a specific custom class</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (value <span class="kw">instanceof</span> CustomHandler) {</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">new</span> <span class="fu">CustomHandler</span>(value<span class="op">.</span><span class="at">settings</span>)<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Fall back to default deep-cloning</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> cloned <span class="op">=</span> _<span class="op">.</span><span class="fu">cloneDeepWith</span>(data<span class="op">,</span> preserveInstances)<span class="op">;</span></span></code></pre></div>
+<h4 id="2-modifying-values-based-on-keys">2. Modifying Values Based on
+Keys</h4>
+<p>The customizer can inspect the <code>key</code> argument to
+selectively mutate, mask, or omit specific fields:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">maskSensitiveData</span>(value<span class="op">,</span> key) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (key <span class="op">===</span> <span class="st">&#39;password&#39;</span> <span class="op">||</span> key <span class="op">===</span> <span class="st">&#39;token&#39;</span>) {</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&#39;[REDACTED]&#39;</span><span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> {</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">id</span><span class="op">:</span> <span class="dv">101</span><span class="op">,</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">profile</span><span class="op">:</span> {</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">username</span><span class="op">:</span> <span class="st">&#39;jdoe&#39;</span><span class="op">,</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">password</span><span class="op">:</span> <span class="st">&#39;supersecretpassword&#39;</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sanitizedUser <span class="op">=</span> _<span class="op">.</span><span class="fu">cloneDeepWith</span>(user<span class="op">,</span> maskSensitiveData)<span class="op">;</span></span></code></pre></div>
+<h4 id="3-handling-custom-data-types-eg-regex-or-bigint">3. Handling
+Custom Data Types (e.g., RegEx or BigInt)</h4>
+<p>While modern versions of Lodash handle many built-in types,
+customizers can enforce specific copy logic for distinct primitives or
+data structures:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">handleCustomTypes</span>(value) {</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="kw">typeof</span> value <span class="op">===</span> <span class="st">&#39;bigint&#39;</span>) {</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">BigInt</span>(value<span class="op">.</span><span class="fu">toString</span>())<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> payload <span class="op">=</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span>n<span class="op">,</span> <span class="dt">nested</span><span class="op">:</span> { <span class="dt">count</span><span class="op">:</span> <span class="dv">42</span>n } }<span class="op">;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> clonedPayload <span class="op">=</span> _<span class="op">.</span><span class="fu">cloneDeepWith</span>(payload<span class="op">,</span> handleCustomTypes)<span class="op">;</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

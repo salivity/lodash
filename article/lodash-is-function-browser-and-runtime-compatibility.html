@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash isFunction Browser and Runtime Compatibility - lodash</title>
+    <meta name="description" content="This article evaluates the reliability and environmental support of Lodash&#39;s .isFunction method across various JavaScript runtimes. It covers modern browsers, legacy environments, server-side platforms, and multi-realm execution contexts like iframes. By">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-is-function-browser-and-runtime-compatibility">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash isFunction Browser and Runtime Compatibility - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-is-function-browser-and-runtime-compatibility" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article evaluates the reliability and environmental support of Lodash&#39;s .isFunction method across various JavaScript runtimes. It covers modern browsers, legacy environments, server-side platforms, and multi-realm execution contexts like iframes. By" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-isfunction-browser-and-runtime-compatibility">Lodash
+isFunction Browser and Runtime Compatibility</h1>
+<p>This article evaluates the reliability and environmental support of
+Lodash's <code>_.isFunction</code> method across various JavaScript
+runtimes. It covers modern browsers, legacy environments, server-side
+platforms, and multi-realm execution contexts like iframes. By examining
+how Lodash handles type-checking internally, this guide clarifies where
+developers can depend on this utility without encountering typical edge
+cases associated with standard JavaScript evaluation.</p>
+<h2 id="how-lodash-implements-_isfunction">How Lodash Implements
+<code>_.isFunction</code></h2>
+<p>In vanilla JavaScript, using <code>typeof value === 'function'</code>
+or <code>value instanceof Function</code> can lead to false positives,
+false negatives, or runtime crashes in specific environments. For
+example, <code>instanceof Function</code> fails across different
+execution realms (such as iframes) because each realm possesses its own
+prototype chain and global <code>Function</code> constructor.</p>
+<p>Lodash implements <code>_.isFunction</code> to normalize these
+discrepancies. Under the hood, it primarily verifies that the target
+value is an object and checks its internal <code>[[Class]]</code> tag
+via
+<code>Object.prototype.toString.call(value) === '[object Function]'</code>
+(along with checks for <code>[object AsyncFunction]</code>,
+<code>[object GeneratorFunction]</code>, and
+<code>[object Proxy]</code>). This ensures that the detection mechanism
+remains robust regardless of where the function was instantiated.</p>
+<h2 id="supported-environments-and-reliability">Supported Environments
+and Reliability</h2>
+<h3 id="modern-web-browsers">Modern Web Browsers</h3>
+<p><code>_.isFunction</code> is completely reliable across all modern
+web browser engines:</p>
+<ul>
+<li><strong>Chromium-based browsers</strong> (Google Chrome, Microsoft
+Edge, Brave, Opera)</li>
+<li><strong>Gecko</strong> (Mozilla Firefox)</li>
+<li><strong>WebKit</strong> (Apple Safari for macOS and iOS)</li>
+</ul>
+<p>In these environments, <code>_.isFunction</code> accurately
+identifies standard function declarations, function expressions, ES6
+arrow functions, async functions, and generator functions without any
+inconsistencies.</p>
+<h3 id="multi-realm-contexts-iframes-and-popups">Multi-Realm Contexts
+(iframes and Popups)</h3>
+<p>One of the primary benefits of <code>_.isFunction</code> is its
+complete reliability within multi-window and iframe architectures. In
+these setups, passing a callback function from a child iframe to a
+parent window will cause standard <code>instanceof Function</code>
+evaluations to return <code>false</code>. Because Lodash inspects the
+object's internal string tag rather than constructor inheritance,
+<code>_.isFunction</code> correctly identifies functions passed across
+different windows and frames.</p>
+<h3 id="server-side-runtimes">Server-Side Runtimes</h3>
+<p>Lodash fully supports all mainstream JavaScript server
+environments:</p>
+<ul>
+<li><strong>Node.js</strong>: Reliably supported across all active and
+legacy releases (including versions as old as Node 0.10 through modern
+versions).</li>
+<li><strong>Deno</strong>: Fully supported when importing Lodash via npm
+specifiers or compatible ES module CDNs.</li>
+<li><strong>Bun</strong>: Supported out of the box with zero
+compatibility issues.</li>
+</ul>
+<p>Server-side execution avoids DOM-related type quirks, making the
+check fast and deterministic.</p>
+<h3 id="web-workers-and-service-workers">Web Workers and Service
+Workers</h3>
+<p><code>_.isFunction</code> is reliable inside Web Workers, Shared
+Workers, and Service Workers. Since workers operate within isolated
+threads without a DOM, functions created in these scopes behave
+identically to standard ECMAScript functions and are correctly
+detected.</p>
+<h3 id="legacy-environments">Legacy Environments</h3>
+<p>Lodash was heavily optimized to overcome quirks found in historical
+and legacy platforms:</p>
+<ul>
+<li><strong>Internet Explorer 9–11</strong>: Reliably supported. Lodash
+resolves historic bugs where certain DOM methods, host objects, or
+ActiveX objects reported unusual types.</li>
+<li><strong>Older JavaScript Engines</strong>: In early versions of V8
+or Rhino, regular expressions sometimes returned <code>'function'</code>
+under a naive <code>typeof</code> check. Lodash specifically handles
+this edge case to prevent regular expressions from being incorrectly
+classified as functions.</li>
+</ul>
+<h2 id="summary-of-function-types-handled">Summary of Function Types
+Handled</h2>
+<p>Across all supported environments, <code>_.isFunction</code> reliably
+returns <code>true</code> for:</p>
+<ul>
+<li>Standard functions (<code>function () {}</code>)</li>
+<li>Arrow functions (<code>() =&gt; {}</code>)</li>
+<li>Async functions (<code>async function () {}</code>)</li>
+<li>Generator functions (<code>function* () {}</code>)</li>
+<li>Built-in native methods (e.g., <code>Math.round</code>,
+<code>Array.prototype.push</code>)</li>
+<li>Functions instantiated via <code>new Function()</code></li>
+</ul>
+<p>It consistently returns <code>false</code> for objects, arrays,
+regular expressions, primitives, null, and undefined across every
+runtime.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

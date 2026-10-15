@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash replace Handles Regex Iteration - lodash</title>
+    <meta name="description" content="Lodash’s .replace provides a functional wrapper around JavaScript’s native string replacement algorithm, delegating iterative matching to ECMAScript regex execution protocols. This article examines the evaluation techniques governing these iterative loops">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-replace-handles-regex-iteration">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash replace Handles Regex Iteration - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-replace-handles-regex-iteration" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .replace provides a functional wrapper around JavaScript’s native string replacement algorithm, delegating iterative matching to ECMAScript regex execution protocols. This article examines the evaluation techniques governing these iterative loops" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-replace-handles-regex-iteration">How Lodash replace
+Handles Regex Iteration</h1>
+<p>Lodash’s <code>_.replace</code> provides a functional wrapper around
+JavaScript’s native string replacement algorithm, delegating iterative
+matching to ECMAScript regex execution protocols. This article examines
+the evaluation techniques governing these iterative loops, detailing how
+Lodash normalizes inputs, how the engine traverses the target string
+using the <code>RegExp.prototype[Symbol.replace]</code> protocol, and
+how internal descriptors and state registers process match
+iterations.</p>
+<h3 id="lodash-wrapper-and-spec-delegation">Lodash Wrapper and Spec
+Delegation</h3>
+<p>In Lodash, <code>_.replace(string, pattern, replacement)</code>
+functions as a thin coercion and delegation boundary. The library
+normalizes the target input using an internal <code>toString</code>
+method, then natively invokes <code>String.prototype.replace</code>.
+Because Lodash delegates evaluation directly to the host environment,
+regex iterative mechanics are governed by the ECMAScript specification
+for <code>RegExp.prototype[Symbol.replace]</code>.</p>
+<p>If <code>pattern</code> is a standard string, the operation performs
+a single literal search and terminates. When <code>pattern</code> is a
+<code>RegExp</code> object, evaluation transfers entirely to the
+engine's native regular expression engine (such as V8's Irregexp in
+Node.js and Chromium).</p>
+<h3 id="the-global-iteration-loop-and-lastindex-mechanics">The Global
+Iteration Loop and <code>lastIndex</code> Mechanics</h3>
+<p>Iterative evaluation is triggered exclusively when the regex pattern
+includes the global (<code>g</code>) or sticky (<code>y</code>) flags.
+Without these flags, no iteration occurs; the engine identifies the
+first match and immediately resolves the replacement.</p>
+<p>When the <code>g</code> flag is enabled, the execution enters an
+internal looping descriptor governed by the following sequence:</p>
+<ol type="1">
+<li><strong>State Reset</strong>: The engine initializes the search
+index, setting the regex instance's <code>lastIndex</code> property to
+<code>0</code>.</li>
+<li><strong>Sequential <code>RegExpExec</code> Invocation</strong>:
+Inside a continuous loop, the engine repeatedly invokes the abstract
+specification operation <code>RegExpExec(R, S)</code> on the
+string.</li>
+<li><strong>Array Match Construction</strong>: Each successful match
+yields a result array containing the matched string, any parenthesized
+capture groups, the starting index of the match, and the input
+string.</li>
+<li><strong>Pointer Mutation</strong>: The <code>lastIndex</code>
+pointer automatically updates to the position immediately following the
+end of the last matched substring.</li>
+</ol>
+<h3 id="zero-width-match-handling-and-loop-advancement">Zero-Width Match
+Handling and Loop Advancement</h3>
+<p>A critical edge case in iterative evaluation occurs when a regular
+expression matches an empty string (e.g., <code>/^/g</code>,
+<code>/(?:)/g</code>, or <code>/a*/g</code> on non-matching characters).
+If <code>lastIndex</code> does not advance, an infinite loop ensues.</p>
+<p>To prevent infinite loops during iterative replacement, the engine
+implements the specification's <code>AdvanceStringIndex</code>
+routine:</p>
+<ul>
+<li>If a match returns an empty string
+(<code>matchStr.length === 0</code>), the engine checks whether
+<code>lastIndex</code> equals the current search position.</li>
+<li>If identical, the engine forcibly increments <code>lastIndex</code>
+by 1 code point (or 2 if navigating a surrogate pair in Unicode
+<code>/u</code> mode).</li>
+<li>The engine continues iterations until <code>RegExpExec</code>
+returns <code>null</code>, indicating that the end of the subject string
+has been reached.</li>
+</ul>
+<h3 id="parameter-mapping-and-replacer-descriptors">Parameter Mapping
+and Replacer Descriptors</h3>
+<p>Once the iterative loop resolves the matched spans, it binds match
+metadata to iterative descriptor arguments, depending on whether
+<code>replacement</code> is a function or a replacement pattern
+string.</p>
+<h4 id="functional-descriptors">Functional Descriptors</h4>
+<p>When <code>replacement</code> is provided as an invocable function,
+the engine dynamically unpacks match tokens per iteration into the
+function's arguments:</p>
+<ul>
+<li><strong>Argument 0</strong>: The full matched substring
+(<code>match</code>).</li>
+<li><strong>Arguments 1 through <span
+class="math inline">\(n\)</span></strong>: Any captured groups
+corresponding to capturing parentheses.</li>
+<li><strong>Argument <span class="math inline">\(n+1\)</span></strong>:
+The zero-based numerical offset inside the source string where the match
+occurred.</li>
+<li><strong>Argument <span class="math inline">\(n+2\)</span></strong>:
+The original source string being traversed.</li>
+<li><strong>Argument <span class="math inline">\(n+3\)</span>
+(Optional)</strong>: A named capture groups object, generated if the
+regular expression employs ES2018 named capture syntax
+(<code>(?&lt;name&gt;...)</code>).</li>
+</ul>
+<p>The return value of this descriptor replaces the slice defined from
+the match's start index to its end index.</p>
+<h4 id="substitution-tokens">Substitution Tokens</h4>
+<p>When <code>replacement</code> is a string, the evaluation loop scans
+the string for <code>$</code> substitution tokens:</p>
+<ul>
+<li><code>$$</code>: Inserts a literal <code>$</code>.</li>
+<li><code>$&amp;</code>: Inserts the matched substring.</li>
+<li><code>$`</code>: Inserts the portion of the string preceding the
+match.</li>
+<li><code>$'</code>: Inserts the portion of the string following the
+match.</li>
+<li><code>$n</code>: Inserts the <span
+class="math inline">\(n\)</span>-th captured parenthetical match.</li>
+</ul>
+<h3 id="memory-optimization-and-chunked-concatenation">Memory
+Optimization and Chunked Concatenation</h3>
+<p>During the iterative loop, modern JavaScript engines do not mutate
+the original string in place. Instead, the evaluation loop maintains an
+internal list of string segments:</p>
+<ol type="1">
+<li>The preceding un-matched slice of the input string.</li>
+<li>The evaluated replacement descriptor result.</li>
+<li>Subsequent unmodified slices between matched offsets.</li>
+</ol>
+<p>When the iteration loop finishes upon receiving a <code>null</code>
+match descriptor, the engine computes the total required allocation and
+joins the accumulated segments into a new immutable string primitive,
+which Lodash returns to the caller.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

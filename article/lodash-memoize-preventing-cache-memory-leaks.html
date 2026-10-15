@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Memoize: Preventing Cache Memory Leaks - lodash</title>
+    <meta name="description" content="By default, the Lodash .memoize function provides no built-in automatic eviction mechanisms—such as Time-to-Live (TTL) expiration or Least Recently Used (LRU) clearing—to prevent memory leaks. Because its internal cache retains arguments and return values">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-memoize-preventing-cache-memory-leaks">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Memoize: Preventing Cache Memory Leaks - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-memoize-preventing-cache-memory-leaks" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="By default, the Lodash .memoize function provides no built-in automatic eviction mechanisms—such as Time-to-Live (TTL) expiration or Least Recently Used (LRU) clearing—to prevent memory leaks. Because its internal cache retains arguments and return values" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-memoize-preventing-cache-memory-leaks">Lodash Memoize:
+Preventing Cache Memory Leaks</h1>
+<p>By default, the Lodash <code>_.memoize</code> function provides no
+built-in automatic eviction mechanisms—such as Time-to-Live (TTL)
+expiration or Least Recently Used (LRU) clearing—to prevent memory
+leaks. Because its internal cache retains arguments and return values
+indefinitely, developers must rely on built-in extension points to
+manage memory. This article explains how the Lodash caching system
+operates and outlines the specific mechanisms available to prevent
+unbounded memory growth, including manual cache invalidation, custom
+cache constructors, and <code>WeakMap</code> implementations.</p>
+<h3 id="the-default-cache-behavior">The Default Cache Behavior</h3>
+<p>When a function is wrapped with <code>_.memoize</code>, Lodash
+creates an internal cache store using <code>_.memoize.Cache</code>,
+which defaults to JavaScript’s native <code>Map</code> (falling back to
+a polyfilled object map in older environments). Every unique computed
+key adds an entry to this map.</p>
+<p>Because standard <code>Map</code> instances hold strong references to
+both keys and values, the garbage collector cannot reclaim cached data,
+even if the application no longer requires it. Without intervention,
+long-running processes or high-cardinality inputs will cause the memory
+footprint to expand continually.</p>
+<h3 id="manual-cache-invalidation">Manual Cache Invalidation</h3>
+<p>Lodash explicitly attaches the underlying storage instance to the
+memoized function via the <code>cache</code> property. This mechanism
+allows developers to inspect, modify, or completely clear stored entries
+manually:</p>
+<ul>
+<li><strong>Clearing the entire cache:</strong> Calling
+<code>memoizedFunction.cache.clear()</code> invokes the underlying
+<code>Map.prototype.clear()</code> method, wiping out all stored results
+and freeing associated memory.</li>
+<li><strong>Deleting specific entries:</strong> Individual keys can be
+removed using <code>memoizedFunction.cache.delete(key)</code> when
+certain data becomes stale.</li>
+</ul>
+<p>While manual invalidation allows programmatic control, it requires
+external triggers (such as timers, events, or lifecycle hooks) to manage
+memory cleanup actively.</p>
+<h3 id="custom-cache-constructors">Custom Cache Constructors</h3>
+<p>The primary architectural mechanism Lodash provides to avert memory
+leaks is the ability to override the default cache constructor. The
+<code>_.memoize.Cache</code> property can be replaced globally, or a
+custom instance can be attached to a specific memoized function.</p>
+<p>To implement bounded caching, developers can substitute an LRU cache
+or a fixed-size cache library that adheres to the <code>Map</code>
+interface (implementing <code>has</code>, <code>get</code>,
+<code>set</code>, and <code>delete</code>):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> LRU <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lru-cache&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Configure a bounded cache implementation</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="at">memoize</span><span class="op">.</span><span class="at">Cache</span> <span class="op">=</span> <span class="kw">class</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">constructor</span>() {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">cache</span> <span class="op">=</span> <span class="kw">new</span> <span class="fu">LRU</span>({ <span class="dt">max</span><span class="op">:</span> <span class="dv">500</span> })<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">has</span>(key) { <span class="cf">return</span> <span class="kw">this</span><span class="op">.</span><span class="at">cache</span><span class="op">.</span><span class="fu">has</span>(key)<span class="op">;</span> }</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">get</span>(key) { <span class="cf">return</span> <span class="kw">this</span><span class="op">.</span><span class="at">cache</span><span class="op">.</span><span class="fu">get</span>(key)<span class="op">;</span> }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">set</span>(key<span class="op">,</span> val) { <span class="kw">this</span><span class="op">.</span><span class="at">cache</span><span class="op">.</span><span class="fu">set</span>(key<span class="op">,</span> val)<span class="op">;</span> <span class="cf">return</span> <span class="kw">this</span><span class="op">;</span> }</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">delete</span>(key) { <span class="cf">return</span> <span class="kw">this</span><span class="op">.</span><span class="at">cache</span><span class="op">.</span><span class="fu">delete</span>(key)<span class="op">;</span> }</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clear</span>() { <span class="kw">this</span><span class="op">.</span><span class="at">cache</span><span class="op">.</span><span class="fu">clear</span>()<span class="op">;</span> }</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<p>Using a bounded cache limits the maximum number of items in memory,
+automatically evicting older entries when new ones arrive.</p>
+<h3 id="weakmap-for-object-keys">WeakMap for Object Keys</h3>
+<p>If the memoized function exclusively accepts objects as cache keys,
+the cache constructor can be replaced with native <code>WeakMap</code>.
+A <code>WeakMap</code> maintains "weak" references to its keys, meaning
+that if an object key has no other references remaining elsewhere in the
+application, the garbage collector will automatically collect both the
+key and the cached value. This approach entirely eliminates memory leaks
+for object-based lookups without requiring manual cache management.</p>
+<h3 id="key-resolution-control">Key Resolution Control</h3>
+<p>By default, Lodash only uses the first argument passed to the
+memoized function as the cache key. Lodash allows a custom
+<code>resolver</code> function as a second parameter to
+<code>_.memoize</code>. A poorly written resolver can generate an
+excessive number of unique string keys, accelerating memory exhaustion.
+By defining strict, controlled resolver functions, developers can limit
+the creation of redundant entries and keep the overall cache footprint
+predictable.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

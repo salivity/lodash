@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.ary and Bound Class Method Context - lodash</title>
+    <meta name="description" content="When Lodash&#39;s .ary restricts a deeply bound class method, the execution context (this) remains firmly anchored to the target object to which it was originally bound. Although .ary creates an intermediate wrapper function to truncate incoming arguments, it">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-ary-and-bound-class-method-context">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.ary and Bound Class Method Context - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-ary-and-bound-class-method-context" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When Lodash&#39;s .ary restricts a deeply bound class method, the execution context (this) remains firmly anchored to the target object to which it was originally bound. Although .ary creates an intermediate wrapper function to truncate incoming arguments, it" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_ary-and-bound-class-method-context">Lodash _.ary and
+Bound Class Method Context</h1>
+<p>When Lodash's <code>_.ary</code> restricts a deeply bound class
+method, the execution context (<code>this</code>) remains firmly
+anchored to the target object to which it was originally bound. Although
+<code>_.ary</code> creates an intermediate wrapper function to truncate
+incoming arguments, it forwards the call using <code>apply</code> or
+<code>call</code>, which cannot override the immutable internal
+<code>[[BoundThis]]</code> reference established by native binding.
+Consequently, the method's context remains entirely intact, while only
+the received argument list is modified.</p>
+<h3 id="how-_ary-handles-execution-context">How <code>_.ary</code>
+Handles Execution Context</h3>
+<p>The <code>_.ary(func, [n=func.length])</code> utility is designed to
+cap the number of arguments provided to a given function. Internally,
+Lodash wraps the target function with a wrapper created through its
+internal metadata systems (often utilizing <code>createWrap</code>).</p>
+<p>When this wrapper is invoked, it intercepts the incoming arguments,
+slices them to length <code>n</code>, and delegates execution to the
+underlying function. The invocation is performed dynamically,
+effectively executing:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>func<span class="op">.</span><span class="fu">apply</span>(<span class="kw">this</span><span class="op">,</span> args<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> n))<span class="op">;</span></span></code></pre></div>
+<p>Because <code>_.ary</code> forwards <code>this</code> directly from
+the call site to the target function, it does not explicitly overwrite
+or set a new context of its own accord.</p>
+<h3 id="the-mechanics-of-deeply-bound-methods">The Mechanics of Deeply
+Bound Methods</h3>
+<p>In modern JavaScript, a deeply bound class method typically achieves
+binding through <code>Function.prototype.bind</code>, Lodash's
+<code>_.bind</code>, or by assigning an arrow function as a class field
+constructor assignment.</p>
+<p>When native binding occurs via <code>bind()</code>:</p>
+<ol type="1">
+<li>A specialized Exotic Bound Function object is created.</li>
+<li>The provided context is assigned directly to the internal
+<code>[[BoundThis]]</code> slot.</li>
+<li>According to the ECMAScript specification, any subsequent invocation
+via <code>.call()</code>, <code>.apply()</code>, or standard invocation
+completely disregards any newly supplied <code>thisArg</code>.</li>
+</ol>
+<p>Even if <code>_.bind</code> was chained multiple times (deeply
+bound), JavaScript semantics dictate that the first bound context takes
+absolute precedence and remains immutable for the lifetime of that
+function reference.</p>
+<h3 id="what-occurs-during-combined-execution">What Occurs During
+Combined Execution</h3>
+<p>When passing a deeply bound class method into <code>_.ary</code>:</p>
+<ol type="1">
+<li><strong>Wrapper Invocation:</strong> The consumer calls the function
+produced by <code>_.ary</code>. The current call-site context is
+captured by the wrapper.</li>
+<li><strong>Context Delegation:</strong> Lodash forwards this call-site
+context alongside the sliced parameter array to the wrapped bound
+function using <code>.apply(this, truncatedArgs)</code>.</li>
+<li><strong>Internal Resolution:</strong> The bound function intercepts
+the invocation. Because its internal <code>[[BoundThis]]</code> slot is
+already set, it discards the <code>this</code> passed by Lodash's
+<code>.apply()</code> and executes the original class method body using
+its original bound context.</li>
+</ol>
+<h3 id="edge-cases-unbound-class-methods-vs-arrow-functions">Edge Cases:
+Unbound Class Methods vs. Arrow Functions</h3>
+<p>The behavior diverges if a class method is not explicitly bound prior
+to being wrapped:</p>
+<ul>
+<li><strong>Unbound Prototype Methods:</strong> If a prototype method
+(<code>MyClass.prototype.myMethod</code>) is passed to
+<code>_.ary</code> without prior binding, its execution context is
+determined entirely by how the <code>_.ary</code> wrapper itself is
+invoked. If invoked as a standalone function, <code>this</code> will
+default to <code>undefined</code> (in strict mode) or the global object,
+leading to potential runtime errors if the method accesses instance
+properties.</li>
+<li><strong>Arrow Functions as Class Fields:</strong> Arrow functions
+resolve <code>this</code> lexically at instantiation time. Similar to
+native bound functions, an arrow function's context cannot be rebound or
+altered by <code>_.ary</code> or <code>.apply()</code>.</li>
+</ul>
+<p>Wrapping a deeply bound class method with <code>_.ary</code> safely
+alters argument arity without degrading, altering, or resetting the
+established class instance context.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

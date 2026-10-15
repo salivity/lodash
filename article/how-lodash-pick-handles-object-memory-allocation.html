@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.pick Handles Object Memory Allocation - lodash</title>
+    <meta name="description" content="When invoking .pick in the Lodash JavaScript library, the engine creates a brand-new object on the heap while copying selected property descriptors and references from the source object. This article examines the internal structural memory mapping generat">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-pick-handles-object-memory-allocation">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.pick Handles Object Memory Allocation - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-pick-handles-object-memory-allocation" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When invoking .pick in the Lodash JavaScript library, the engine creates a brand-new object on the heap while copying selected property descriptors and references from the source object. This article examines the internal structural memory mapping generat" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_pick-handles-object-memory-allocation">How Lodash
+_.pick Handles Object Memory Allocation</h1>
+<p>When invoking <code>_.pick</code> in the Lodash JavaScript library,
+the engine creates a brand-new object on the heap while copying selected
+property descriptors and references from the source object. This article
+examines the internal structural memory mapping generated during this
+process, focusing on heap allocation, V8 Hidden Classes (Shapes),
+reference graph mutations, and memory retention dynamics.</p>
+<h3 id="fresh-heap-allocation-and-root-identification">Fresh Heap
+Allocation and Root Identification</h3>
+<p>Calling <code>_.pick(source, [paths])</code> instructs Lodash to
+evaluate the specified paths and construct a completely new container
+object. Under the hood—typically routing through internal utilities like
+<code>basePick</code> or <code>basePickBy</code>—the method allocates an
+empty plain object (<code>{}</code>) in the JavaScript runtime’s nursery
+space (young generation heap).</p>
+<p>This newly generated object receives:</p>
+<ul>
+<li>A unique memory address distinct from the original source.</li>
+<li>Its own identity pointer (<code>===</code> equality against the
+source evaluates to <code>false</code>).</li>
+<li>A standard prototype reference pointing to
+<code>Object.prototype</code>.</li>
+</ul>
+<h3 id="hidden-classes-and-transition-trees">Hidden Classes and
+Transition Trees</h3>
+<p>In engines like V8, objects rely on Hidden Classes (also known as
+"Shapes" or "Maps") to optimize property access via Inline Caches
+(ICs).</p>
+<ol type="1">
+<li><strong>Initial Shape:</strong> The fresh target object begins with
+the root empty object shape (<code>Map0</code>).</li>
+<li><strong>Dynamic Transitions:</strong> As <code>_.pick</code>
+iterates over the allowed properties and writes them onto the new
+object, the engine moves along a transition tree:
+<ul>
+<li>Adding Property A transitions the object from <code>Map0</code> to
+<code>Map1</code>.</li>
+<li>Adding Property B transitions it from <code>Map1</code> to
+<code>Map2</code>.</li>
+</ul></li>
+<li><strong>Shape Divergence:</strong> Because <code>_.pick</code>
+dynamically assigns properties at runtime based on the array order of
+the keys provided, the resulting object may not share the same Hidden
+Class as an object instantiated with an object literal containing the
+same keys in a different order. If a large number of dynamic keys are
+picked inconsistently across invocations, V8 may bypass the transition
+tree entirely and downgrade the object to "dictionary mode" (slow mode),
+storing properties in a hash table rather than fixed offset slots.</li>
+</ol>
+<h3 id="pointer-mapping-shallow-copy-architecture">Pointer Mapping:
+Shallow Copy Architecture</h3>
+<p>The structural memory mapping created by <code>_.pick</code> is
+strictly shallow. It isolates the top-level container while preserving
+internal reference links:</p>
+<ul>
+<li><strong>Primitives:</strong> Value types (integers, booleans, small
+strings) are stored directly in the object’s in-object property slots or
+as tagged pointers.</li>
+<li><strong>Reference Types:</strong> When the picked property is an
+object, array, or function, the runtime does not duplicate the
+downstream heap structure. Instead, it copies the 64-bit pointer
+pointing directly to the preexisting heap address of that nested
+entity.</li>
+</ul>
+<pre><code>Source Object [Address: 0x001]
+ ├── primitive: 42 (Value copy)
+ └── nestedRef: ──┐
+                  │
+Picked Object [Address: 0x002]
+ └── nestedRef: ──┴──&gt; [Heap Allocation: 0x0A9] (Shared Reference)</code></pre>
+<p>As a result, a split reference topology is formed. Mutating a nested
+reference via the picked object directly mutates the source object's
+underlying structural data, as both pointers resolve to the exact same
+offset in memory.</p>
+<h3 id="property-storage-in-object-vs-backing-store">Property Storage:
+In-Object vs. Backing Store</h3>
+<p>When <code>_.pick</code> assigns the target properties, V8 determines
+where these values physically live relative to the object header:</p>
+<ul>
+<li><strong>In-Object Slots:</strong> Allocated directly within the
+fixed-size contiguous block reserved for the <code>JSObject</code>.
+These offer the fastest access times.</li>
+<li><strong>Out-of-Object Properties Array:</strong> If the number of
+picked properties exceeds the pre-allocated in-object capacity, the
+runtime allocates a secondary heap array (the property backing store)
+and points the base object toward it.</li>
+</ul>
+<h3 id="garbage-collection-and-retainment-implications">Garbage
+Collection and Retainment Implications</h3>
+<p>The structural memory mapping produced by <code>_.pick</code>
+directly impacts Garbage Collection (GC) reachability graphs.</p>
+<p>Because references to nested objects are retained within the newly
+allocated root, selecting a single deeply nested object or property via
+<code>_.pick</code> keeps that entire referenced sub-tree reachable from
+the root. If the source object is subsequently set to <code>null</code>
+to free memory, any sub-objects referenced by the picked object cannot
+be swept by the Mark-and-Sweep garbage collector, preserving their
+residency in the heap.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

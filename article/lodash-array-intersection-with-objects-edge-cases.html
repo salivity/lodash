@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Array Intersection with Objects Edge Cases - lodash</title>
+    <meta name="description" content="Intersecting arrays of objects in Lodash is a common operation that frequently introduces subtle bugs if developers rely on default behaviors. While Lodash provides methods like .intersection, .intersectionBy, and .intersectionWith, comparing non-primitiv">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-array-intersection-with-objects-edge-cases">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Array Intersection with Objects Edge Cases - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-array-intersection-with-objects-edge-cases" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Intersecting arrays of objects in Lodash is a common operation that frequently introduces subtle bugs if developers rely on default behaviors. While Lodash provides methods like .intersection, .intersectionBy, and .intersectionWith, comparing non-primitiv" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-array-intersection-with-objects-edge-cases">Lodash Array
+Intersection with Objects Edge Cases</h1>
+<p>Intersecting arrays of objects in Lodash is a common operation that
+frequently introduces subtle bugs if developers rely on default
+behaviors. While Lodash provides methods like
+<code>_.intersection</code>, <code>_.intersectionBy</code>, and
+<code>_.intersectionWith</code>, comparing non-primitive types
+introduces complexities surrounding reference equality, deep structural
+equivalence, property path collisions, duplicate retention, and
+performance trade-offs. This article covers the specific edge cases
+encountered when performing object array intersections using Lodash and
+how to handle them correctly.</p>
+<h3 id="reference-equality-failures-in-_intersection">Reference Equality
+Failures in <code>_.intersection</code></h3>
+<p>The default <code>_.intersection</code> method uses the
+<code>SameValueZero</code> comparison algorithm. Because JavaScript
+objects are compared by reference rather than by value, two distinct
+objects with identical structures and properties are not considered
+equal.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> array1 <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }]<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> array2 <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }]<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">intersection</span>(array1<span class="op">,</span> array2)<span class="op">;</span> </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns: []</span></span></code></pre></div>
+<p>The method only matches elements if they point to the exact same
+memory reference. To compare objects by structural value, developers
+must use <code>_.intersectionWith</code> alongside a comparator like
+<code>_.isEqual</code>.</p>
+<h3
+id="unintended-merging-from-missing-keys-in-_intersectionby">Unintended
+Merging from Missing Keys in <code>_.intersectionBy</code></h3>
+<p>When using <code>_.intersectionBy</code> with an iteratee shorthand
+(such as a string property path), objects lacking that property evaluate
+to <code>undefined</code>. If multiple objects in either array lack the
+target property, Lodash treats their keys as identical.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> listA <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }<span class="op">,</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alpha&#39;</span> }]<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> listB <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span> }<span class="op">,</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Beta&#39;</span> }]<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">intersectionBy</span>(listA<span class="op">,</span> listB<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns: [{ name: &#39;Alpha&#39; }]</span></span></code></pre></div>
+<p>In this scenario, both <code>{ name: 'Alpha' }</code> and
+<code>{ name: 'Beta' }</code> yield <code>undefined</code> for the
+<code>'id'</code> property. Because
+<code>undefined === undefined</code>, Lodash treats them as matching
+elements and retains the item from the first array.</p>
+<h3 id="first-occurrence-bias-and-property-discarding">First-Occurrence
+Bias and Property Discarding</h3>
+<p>When intersections match objects based on a subset of properties
+(such as using <code>_.intersectionBy</code> with an <code>id</code>),
+the resulting array only includes the instance found in the first array.
+Any unique metadata stored exclusively on the matching object in the
+second array is omitted.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> currentUsers <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">10</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> <span class="st">&#39;admin&#39;</span> }]<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> incomingUsers <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">10</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> <span class="st">&#39;editor&#39;</span><span class="op">,</span> <span class="dt">lastLogin</span><span class="op">:</span> <span class="st">&#39;2025-01-01&#39;</span> }]<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">intersectionBy</span>(currentUsers<span class="op">,</span> incomingUsers<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns: [{ id: 10, role: &#39;admin&#39; }]</span></span></code></pre></div>
+<p>If the intention is to merge matching objects rather than merely
+filter the first array, <code>_.intersection</code> variants are
+insufficient on their own and require a subsequent merge strategy.</p>
+<h3 id="automatic-deduplication">Automatic Deduplication</h3>
+<p>Lodash intersection methods inherently produce unique arrays. If the
+first array contains duplicate objects that match criteria in subsequent
+arrays, only the first occurrence is kept in the output.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> primary <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }<span class="op">,</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }]<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> secondary <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }]<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">intersectionBy</span>(primary<span class="op">,</span> secondary<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns: [{ id: 1 }] (length of 1, not 2)</span></span></code></pre></div>
+<p>If the business logic requires preserving duplicate instances from
+the source collection, standard array filtering via
+<code>Array.prototype.filter</code> should be used instead of Lodash
+intersection utilities.</p>
+<h3 id="mutation-of-shared-references">Mutation of Shared
+References</h3>
+<p>Lodash returns a new array containing references to the original
+objects; it does not clone matched objects. Modifying an object in the
+intersected output directly mutates the object in the source
+collections.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> original <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">status</span><span class="op">:</span> <span class="st">&#39;pending&#39;</span> }]<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> filterList <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }]<span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> matched <span class="op">=</span> _<span class="op">.</span><span class="fu">intersectionBy</span>(original<span class="op">,</span> filterList<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>matched[<span class="dv">0</span>]<span class="op">.</span><span class="at">status</span> <span class="op">=</span> <span class="st">&#39;complete&#39;</span><span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(original[<span class="dv">0</span>]<span class="op">.</span><span class="at">status</span>)<span class="op">;</span> </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Outputs: &#39;complete&#39;</span></span></code></pre></div>
+<p>Deep cloning must be implemented explicitly if the intersected
+results need to be manipulated independently from the source data.</p>
+<h3 id="performance-degradation-with-_intersectionwith">Performance
+Degradation with <code>_.intersectionWith</code></h3>
+<p>While <code>_.intersectionBy</code> typically maps elements to a
+Set-like lookup for linear <span class="math inline">\(O(n + m)\)</span>
+complexity, <code>_.intersectionWith</code> compares each element across
+arrays using the custom comparator function. Using expensive comparators
+like <code>_.isEqual</code> across large arrays leads to <span
+class="math inline">\(O(n \times m)\)</span> computational complexity,
+which can cause significant performance bottlenecks when processing
+large datasets or deeply nested object structures.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

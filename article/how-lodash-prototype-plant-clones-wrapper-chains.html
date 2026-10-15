@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash prototype.plant Clones Wrapper Chains - lodash</title>
+    <meta name="description" content="This article provides an overview of how the prototype.plant method in Lodash enables developers to clone explicit chaining wrappers and re-execute accumulated mapping sequences on new input data. By decoupling the wrapped value from the transformation pi">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-prototype-plant-clones-wrapper-chains">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash prototype.plant Clones Wrapper Chains - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-prototype-plant-clones-wrapper-chains" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how the prototype.plant method in Lodash enables developers to clone explicit chaining wrappers and re-execute accumulated mapping sequences on new input data. By decoupling the wrapped value from the transformation pi" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-prototypeplant-clones-wrapper-chains">How Lodash
+prototype.plant Clones Wrapper Chains</h1>
+<p>This article provides an overview of how the
+<code>prototype.plant</code> method in Lodash enables developers to
+clone explicit chaining wrappers and re-execute accumulated mapping
+sequences on new input data. By decoupling the wrapped value from the
+transformation pipeline, Lodash allows developers to reuse complex lazy
+execution stacks recursively and deterministically without mutating the
+original wrapper state.</p>
+<h3 id="the-mechanics-of-chaining-and-wrapper-architecture">The
+Mechanics of Chaining and Wrapper Architecture</h3>
+<p>In Lodash, explicit chaining created via <code>_(value)</code> or
+<code>lodash(value)</code> produces an internal
+<code>LodashWrapper</code> or <code>LazyWrapper</code> instance. Rather
+than computing results eagerly, intermediate operations such as
+<code>map</code>, <code>filter</code>, and <code>reduce</code> are
+queued into an internal actions array (<code>__actions__</code>) or
+stored inside nested <code>LazyWrapper</code> pipelines.</p>
+<p>This architecture defers execution until an unwrapping method such as
+<code>.value()</code> is called, allowing Lodash to take advantage of
+shortcut fusion—an optimization technique that batches multiple array
+iterations into a single traversal.</p>
+<h3 id="the-role-of-prototypeplant">The Role of prototype.plant</h3>
+<p>The <code>lodash.prototype.plant</code> method operates as an
+explicit cloning mechanism for these chained wrappers. When invoked,
+<code>plant</code> creates a shallow clone of the wrapper instance along
+with its entire queued transformation pipeline, but substitutes the
+original <code>__wrapped__</code> reference with a newly provided data
+argument.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> pipeline <span class="op">=</span> <span class="fu">_</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span>])<span class="op">.</span><span class="fu">map</span>(n <span class="kw">=&gt;</span> n <span class="op">*</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> newChain <span class="op">=</span> pipeline<span class="op">.</span><span class="fu">plant</span>([<span class="dv">10</span><span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="dv">30</span>])<span class="op">;</span></span></code></pre></div>
+<p>Internally, <code>plant</code> achieves isolation by calling the
+constructor of the wrapper (<code>LodashWrapper</code> or
+<code>LazyWrapper</code>) with the new target value, then copying over
+the existing pipeline:</p>
+<ol type="1">
+<li><strong>Instantiation:</strong> A new wrapper is created containing
+the new data variable.</li>
+<li><strong>Action Transfer:</strong> The queued
+<code>__actions__</code> array, iteratees, and configuration flags (such
+as iteration direction and take limits) are replicated.</li>
+<li><strong>Pipeline Reset:</strong> Internal state pointers, such as
+the current iteration index and cached intermediate arrays, are
+initialized to their zero-state.</li>
+</ol>
+<h3 id="recursive-evaluation-of-mapping-variables">Recursive Evaluation
+of Mapping Variables</h3>
+<p>When applying a planted wrapper recursively—such as processing nested
+tree structures or re-applying pipelines across dynamic
+streams—<code>prototype.plant</code> avoids the overhead of re-declaring
+mapping closures.</p>
+<p>Because each call to <code>.plant()</code> returns an entirely
+distinct wrapper instance:</p>
+<ul>
+<li><strong>State Isolation:</strong> Scoped iteration counters, slice
+indexes, and memoized values inside lazy transforms remain sandboxed
+within their respective clone.</li>
+<li><strong>Pure Evaluation:</strong> Evaluating the chain via
+<code>.value()</code> does not modify the prototype or the blueprint
+chain, enabling safe reuse inside recursive traversal functions.</li>
+<li><strong>Closure Preservation:</strong> Mapping functions that
+reference lexical variables retain their original scope, while the data
+flowing through the iteratee dynamically binds to the new elements
+supplied to <code>.plant()</code>.</li>
+</ul>
+<p>During final evaluation via <code>.value()</code>, Lodash traverses
+the copied action stack against the newly planted dataset, recursively
+unwrapping each transformation step uniquely for that specific dataset
+before yielding the final mapped result.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

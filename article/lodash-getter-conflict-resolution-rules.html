@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Getter Conflict Resolution Rules - lodash</title>
+    <meta name="description" content="This article provides an overview of how the Lodash library handles property conflicts when merging objects containing identically named getters. In JavaScript, accessor properties behave differently than standard data properties during object manipulatio">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-getter-conflict-resolution-rules">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Getter Conflict Resolution Rules - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-getter-conflict-resolution-rules" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how the Lodash library handles property conflicts when merging objects containing identically named getters. In JavaScript, accessor properties behave differently than standard data properties during object manipulatio" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-getter-conflict-resolution-rules">Lodash Getter Conflict
+Resolution Rules</h1>
+<p>This article provides an overview of how the Lodash library handles
+property conflicts when merging objects containing identically named
+getters. In JavaScript, accessor properties behave differently than
+standard data properties during object manipulation. Understanding
+Lodash's internal mechanics—specifically how functions like
+<code>_.merge</code> evaluate getters, prioritize source values, and
+assign data—is essential for avoiding silent assignment failures,
+runtime errors, and unexpected mutations.</p>
+<h2 id="getter-evaluation-over-descriptor-copying">Getter Evaluation
+Over Descriptor Copying</h2>
+<p>Lodash does not copy property descriptors when merging objects.
+Functions like <code>_.merge</code> and <code>_.assign</code> iterate
+through properties using standard property access
+(<code>source[key]</code>). Consequently, when Lodash encounters a
+getter on a source object, it immediately invokes the getter function
+and retrieves the returned value. The merge operation proceeds using
+this evaluated value rather than transferring the getter's accessor
+definition to the target object.</p>
+<h2 id="the-rightmost-source-precedence-rule">The Rightmost Source
+Precedence Rule</h2>
+<p>When multiple source objects define identically named getters, Lodash
+applies a strict "last-write-wins" resolution sequence from left to
+right:</p>
+<ol type="1">
+<li>Lodash evaluates the getter on the first source object.</li>
+<li>It then evaluates the identically named getter on the subsequent
+source object.</li>
+<li>The value retrieved from the rightmost source supersedes any
+evaluated values from earlier sources.</li>
+</ol>
+<p>The intermediate getter values are evaluated in order, but only the
+final evaluated value participates in the assignment to the target
+object.</p>
+<h2 id="assignment-semantics-and-target-setter-invocation">Assignment
+Semantics and Target Setter Invocation</h2>
+<p>Lodash uses standard property assignment
+(<code>object[key] = value</code>) rather than
+<code>Object.defineProperty()</code> when writing merged values to the
+target object. This creates specific conflict behaviors depending on the
+target's existing structure:</p>
+<ul>
+<li><strong>Target Has a Getter and Setter:</strong> If the target
+object possesses an existing accessor with both a getter and a setter,
+assigning the evaluated source value triggers the target's setter
+method. The setter dictates how the incoming value is applied.</li>
+<li><strong>Target Has a Getter-Only (Read-Only Accessor):</strong> If
+the target contains an identically named getter without a corresponding
+setter, standard assignment fails. In strict mode
+(<code>"use strict"</code>), this throws a
+<code>TypeError: Cannot set property ... which has only a getter</code>.
+In non-strict environments, the operation fails silently without
+updating the target.</li>
+</ul>
+<h2 id="type-based-merge-vs-replacement-rules">Type-Based Merge vs.
+Replacement Rules</h2>
+<p>Once a getter's return value is extracted, conflict resolution
+follows Lodash’s standard merge rules against the existing target
+value:</p>
+<ul>
+<li><strong>Plain Objects and Arrays:</strong> If the getter resolves to
+a plain object or array, and the target property is also an object or
+array, Lodash recursively merges the nested properties rather than
+replacing the target outright.</li>
+<li><strong>Primitives and Other Types:</strong> If the getter resolves
+to a primitive value, function, or non-plain object (such as a
+<code>Date</code> or <code>RegExp</code>), it replaces the target value
+completely.</li>
+<li><strong><code>undefined</code> Values:</strong> If a getter
+explicitly returns <code>undefined</code>, Lodash does not overwrite an
+existing target value. An explicit <code>undefined</code> from a source
+getter leaves the target's current value intact unless specified
+otherwise via custom customizers like <code>_.mergeWith</code>.</li>
+</ul>
+<h2 id="customizing-resolution-with-_mergewith">Customizing Resolution
+with <code>_.mergeWith</code></h2>
+<p>Because standard Lodash operations discard accessor descriptors,
+projects requiring the preservation of getters or custom override
+strategies must use <code>_.mergeWith</code>. By providing a customizer
+function, developers can inspect
+<code>Object.getOwnPropertyDescriptor()</code> on source objects and
+selectively redefine descriptors using
+<code>Object.defineProperty()</code> rather than relying on default
+getter invocation and assignment.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

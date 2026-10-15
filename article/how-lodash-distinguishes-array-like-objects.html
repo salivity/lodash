@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash Distinguishes Array-Like Objects - lodash</title>
+    <meta name="description" content="In the Lodash JavaScript library, .forEach determines how to iterate over an item by evaluating structural characteristics rather than inspecting constructor names or class prototypes. Through an internal duck-typing check called isArrayLike, Lodash check">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-distinguishes-array-like-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash Distinguishes Array-Like Objects - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-distinguishes-array-like-objects" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the Lodash JavaScript library, .forEach determines how to iterate over an item by evaluating structural characteristics rather than inspecting constructor names or class prototypes. Through an internal duck-typing check called isArrayLike, Lodash check" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-distinguishes-array-like-objects">How Lodash
+Distinguishes Array-Like Objects</h1>
+<p>In the Lodash JavaScript library, <code>_.forEach</code> determines
+how to iterate over an item by evaluating structural characteristics
+rather than inspecting constructor names or class prototypes. Through an
+internal duck-typing check called <code>isArrayLike</code>, Lodash
+checks for the existence of a valid numeric <code>length</code>
+property; if present and valid, it runs an index-based loop
+(<code>0</code> to <code>length - 1</code>), and if absent, it falls
+back to iterating over the object's enumerable keys.</p>
+<h3 id="the-internal-mechanism-isarraylike">The Internal Mechanism:
+<code>isArrayLike</code></h3>
+<p>When <code>_.forEach</code> (or its internal implementation
+<code>baseEach</code>) receives a collection, it branches execution
+based on the <code>isArrayLike</code> utility function. The check
+follows this logic:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isArrayLike</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> value <span class="op">!==</span> <span class="st">&#39;function&#39;</span> <span class="op">&amp;&amp;</span> <span class="fu">isLength</span>(value<span class="op">.</span><span class="at">length</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This single evaluation distinguishes standard arrays, strings, DOM
+<code>NodeList</code>s, and the <code>arguments</code> object from
+standard objects and class instances.</p>
+<h3 id="the-role-of-islength">The Role of <code>isLength</code></h3>
+<p>For an object to qualify as array-like, its <code>length</code>
+property must pass the <code>isLength</code> validator:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <span class="cn">MAX_SAFE_INTEGER</span> <span class="op">=</span> <span class="dv">9007199254740991</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isLength</span>(value) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">typeof</span> value <span class="op">===</span> <span class="st">&#39;number&#39;</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    value <span class="op">&gt;</span> <span class="op">-</span><span class="dv">1</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    value <span class="op">%</span> <span class="dv">1</span> <span class="op">===</span> <span class="dv">0</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    value <span class="op">&lt;=</span> <span class="cn">MAX_SAFE_INTEGER</span><span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The property must be a non-negative, safe integer.</p>
+<h3 id="handling-standard-class-instances">Handling Standard Class
+Instances</h3>
+<p>A standard class instance or object in JavaScript typically does not
+define a <code>length</code> property. When passed to
+<code>_.forEach</code>:</p>
+<ol type="1">
+<li><code>value.length</code> evaluates to <code>undefined</code>.</li>
+<li><code>isLength(undefined)</code> returns <code>false</code>.</li>
+<li><code>isArrayLike(instance)</code> resolves to
+<code>false</code>.</li>
+</ol>
+<p>Because the class instance fails the array-like check, Lodash treats
+it as a standard key-value dictionary. It routes the instance to
+<code>baseForOwn</code>, which retrieves all own enumerable string and
+symbol keys via <code>Object.keys</code> (or Lodash’s internal
+<code>keys</code> utility) and invokes the iteratee for each
+property.</p>
+<h3 id="prototype-and-function-guards">Prototype and Function
+Guards</h3>
+<p>Lodash includes explicit guards to prevent false positives:</p>
+<ul>
+<li><strong>Functions:</strong> Functions have a built-in
+<code>length</code> property representing their parameter count. The
+<code>typeof value !== 'function'</code> check prevents functions and
+class constructors from accidentally being treated as array-like
+collections.</li>
+<li><strong>Structural Duck Typing:</strong> Lodash avoids using
+<code>instanceof</code> or checking
+<code>Object.prototype.toString</code>. As a consequence, if a custom
+class instance explicitly defines a numeric <code>length</code> property
+(such as a custom collection class), <code>isArrayLike</code> evaluates
+to <code>true</code>. In that scenario, <code>_.forEach</code> bypasses
+named properties and iterates through integer indices from
+<code>0</code> to <code>length - 1</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Lodash isObject Returns False for Null - lodash</title>
+    <meta name="description" content="JavaScript famously evaluates typeof null as &quot;object&quot;, a historical design flaw that frequently causes runtime exceptions when accessing properties on non-existent data. The Lodash library resolves this problem with .isObject, a utility function that stri">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/why-lodash-is-object-returns-false-for-null">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Lodash isObject Returns False for Null - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/why-lodash-is-object-returns-false-for-null" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="JavaScript famously evaluates typeof null as &quot;object&quot;, a historical design flaw that frequently causes runtime exceptions when accessing properties on non-existent data. The Lodash library resolves this problem with .isObject, a utility function that stri" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-lodash-isobject-returns-false-for-null">Why Lodash isObject
+Returns False for Null</h1>
+<p>JavaScript famously evaluates <code>typeof null</code> as
+<code>"object"</code>, a historical design flaw that frequently causes
+runtime exceptions when accessing properties on non-existent data. The
+Lodash library resolves this problem with <code>_.isObject</code>, a
+utility function that strictly categorizes <code>null</code> as
+<code>false</code>. This article explains the JavaScript language quirk
+behind <code>null</code>, demonstrates the internal logic Lodash uses to
+filter it out, and breaks down why this implementation provides safer
+object verification.</p>
+<h3 id="the-javascript-typeof-null-bug">The JavaScript
+<code>typeof null</code> Bug</h3>
+<p>In native JavaScript, executing <code>typeof null</code> returns
+<code>"object"</code>. This behavior dates back to the initial 1995
+implementation of the language. In the original JavaScript engine,
+values were represented with a type tag stored in the lower bits of the
+memory unit. The type tag for an object reference was <code>000</code>.
+Because <code>null</code> was represented as a null pointer
+(<code>0x00</code> across all bits), its type tag was also read as
+<code>000</code>, causing <code>typeof</code> to report it as an
+object.</p>
+<p>Because changing this behavior would break backward compatibility
+across legacy web applications, ECMAScript has retained the bug.
+Consequently, relying strictly on <code>typeof value === 'object'</code>
+in standard JavaScript is unsafe because attempting to access keys or
+methods on <code>null</code> triggers a <code>TypeError</code>.</p>
+<h3 id="how-lodash-implements-_isobject">How Lodash Implements
+<code>_.isObject</code></h3>
+<p>Lodash avoids this pitfall by pairing a type check with an explicit
+nullish check. In Lodash's source code, <code>_.isObject</code> is
+implemented essentially as follows:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isObject</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> type <span class="op">=</span> <span class="kw">typeof</span> value<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> (type <span class="op">===</span> <span class="st">&#39;object&#39;</span> <span class="op">||</span> type <span class="op">===</span> <span class="st">&#39;function&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The function executes two distinct evaluations connected by a logical
+AND (<code>&amp;&amp;</code>) operator:</p>
+<ol type="1">
+<li><strong><code>value != null</code></strong>: This uses loose
+inequality (<code>!=</code>) rather than strict inequality
+(<code>!==</code>). In JavaScript, <code>value != null</code> checks
+against both <code>null</code> and <code>undefined</code> simultaneously
+due to type coercion rules. If the input is either <code>null</code> or
+<code>undefined</code>, this condition immediately short-circuits and
+evaluates to <code>false</code>.</li>
+<li><strong><code>type === 'object' || type === 'function'</code></strong>:
+If the value is neither <code>null</code> nor <code>undefined</code>,
+Lodash inspects the output of native <code>typeof</code>. Per the
+ECMAScript specification, functions are technically callable objects, so
+Lodash treats them as objects under <code>_.isObject</code>. Plain
+objects, arrays, regular expressions, and class instances all pass this
+check.</li>
+</ol>
+<h3 id="evaluation-breakdown-by-type">Evaluation Breakdown by Type</h3>
+<p>To see how <code>_.isObject</code> categorizes common JavaScript data
+types:</p>
+<ul>
+<li><strong><code>null</code></strong>: Fails
+<code>value != null</code>, returns <code>false</code>.</li>
+<li><strong><code>undefined</code></strong>: Fails
+<code>value != null</code>, returns <code>false</code>.</li>
+<li><strong><code>{}</code> (Plain Object)</strong>: Passes
+<code>value != null</code> and matches <code>type === 'object'</code>,
+returns <code>true</code>.</li>
+<li><strong><code>[]</code> (Array)</strong>: Passes
+<code>value != null</code> and matches <code>type === 'object'</code>,
+returns <code>true</code>.</li>
+<li><strong><code>() =&gt; {}</code> (Function)</strong>: Passes
+<code>value != null</code> and matches <code>type === 'function'</code>,
+returns <code>true</code>.</li>
+<li><strong><code>42</code> or <code>"text"</code>
+(Primitives)</strong>: Passes <code>value != null</code>, but fails the
+type check, returning <code>false</code>.</li>
+</ul>
+<h3 id="safe-object-checking-in-practice">Safe Object Checking in
+Practice</h3>
+<p>By pairing loose inequality checking with native type inspection,
+<code>_.isObject</code> ensures that any value returning
+<code>true</code> can be safely treated as an object in memory without
+immediately throwing a
+<code>TypeError: Cannot read properties of null</code>. For scenarios
+where arrays or functions should also be excluded, Lodash provides
+<code>_.isPlainObject</code>, which inspects the prototype chain, but
+<code>_.isObject</code> serves as the foundational safeguard against
+JavaScript's native <code>null</code> misclassification.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash toSafeInteger Overflow and Infinity Handling - lodash</title>
+    <meta name="description" content="Lodash&#39;s .toSafeInteger method converts any input value into an integer that can be safely represented in JavaScript without precision loss. When dealing with extreme numeric values—such as those exceeding standard integer limits or approaching Infinity—t">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-to-safe-integer-overflow-and-infinity-handling">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash toSafeInteger Overflow and Infinity Handling - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-to-safe-integer-overflow-and-infinity-handling" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .toSafeInteger method converts any input value into an integer that can be safely represented in JavaScript without precision loss. When dealing with extreme numeric values—such as those exceeding standard integer limits or approaching Infinity—t" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-tosafeinteger-overflow-and-infinity-handling">Lodash
+toSafeInteger Overflow and Infinity Handling</h1>
+<p>Lodash's <code>_.toSafeInteger</code> method converts any input value
+into an integer that can be safely represented in JavaScript without
+precision loss. When dealing with extreme numeric values—such as those
+exceeding standard integer limits or approaching
+<code>Infinity</code>—the function avoids throwing runtime errors and
+prevents floating-point inaccuracies by strictly clamping the result
+within the bounds of <code>Number.MIN_SAFE_INTEGER</code> and
+<code>Number.MAX_SAFE_INTEGER</code>.</p>
+<h3 id="javascript-safe-integer-boundaries">JavaScript Safe Integer
+Boundaries</h3>
+<p>JavaScript represents numbers using IEEE-754 double-precision
+floating-point format. In this format, integers can only be represented
+accurately within a specific range:</p>
+<ul>
+<li><strong>Upper bound:</strong> <code>Number.MAX_SAFE_INTEGER</code>
+(<span class="math inline">\(2^{53} - 1\)</span>, or
+<code>9007199254740991</code>)</li>
+<li><strong>Lower bound:</strong> <code>Number.MIN_SAFE_INTEGER</code>
+(<span class="math inline">\(-(2^{53} - 1)\)</span>, or
+<code>-9007199254740991</code>)</li>
+</ul>
+<p>Any calculation beyond these boundaries suffers from rounding errors
+where distinct mathematical integers map to the same binary
+floating-point representation.</p>
+<h3 id="how-_tosafeinteger-handles-extremes">How
+<code>_.toSafeInteger</code> Handles Extremes</h3>
+<p>The implementation of <code>_.toSafeInteger</code> follows a
+predictable conversion pipeline designed to normalize edge cases:</p>
+<ol type="1">
+<li><strong>Type Coercion:</strong> The input is converted to a
+primitive numeric representation via Lodash's internal
+<code>toInteger</code> utility. Non-numeric or invalid representations
+(such as <code>NaN</code> or <code>undefined</code>) resolve to
+<code>0</code>.</li>
+<li><strong>Boundary Clamping:</strong> Once a number is obtained,
+Lodash checks it against the safe boundary constants. If the number
+exceeds <code>Number.MAX_SAFE_INTEGER</code>, it is capped at
+<code>9007199254740991</code>. If it is less than
+<code>Number.MIN_SAFE_INTEGER</code>, it is capped at
+<code>-9007199254740991</code>.</li>
+<li><strong>Truncation:</strong> Any fractional portion is discarded to
+ensure the return value is an integer.</li>
+</ol>
+<h3 id="processing-infinity-and-numeric-overflow">Processing Infinity
+and Numeric Overflow</h3>
+<p>When parameters approach or equal positive or negative infinity, the
+clamping logic prevents the values from propagating as
+<code>Infinity</code>:</p>
+<ul>
+<li><strong>Positive Infinity (<code>Infinity</code>):</strong> Lodash
+intercepts <code>Infinity</code> and clamps it directly to
+<code>Number.MAX_SAFE_INTEGER</code>.</li>
+<li><strong>Negative Infinity (<code>-Infinity</code>):</strong> Lodash
+clamps <code>-Infinity</code> directly to
+<code>Number.MIN_SAFE_INTEGER</code>.</li>
+<li><strong>Large Exponentials (e.g., <code>1e308</code>):</strong> Any
+number larger than <span class="math inline">\(2^{53} - 1\)</span>, even
+if finite, is treated equivalently to positive infinity and is clamped
+to <code>Number.MAX_SAFE_INTEGER</code>.</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">toSafeInteger</span>(<span class="kw">Infinity</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; 9007199254740991</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">toSafeInteger</span>(<span class="op">-</span><span class="kw">Infinity</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; -9007199254740991</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">toSafeInteger</span>(<span class="bu">Number</span><span class="op">.</span><span class="cn">MAX_VALUE</span>)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; 9007199254740991</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">toSafeInteger</span>(<span class="op">-</span><span class="fl">1e50</span>)<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; -9007199254740991</span></span></code></pre></div>
+<h3 id="why-graceful-clamping-matters">Why Graceful Clamping
+Matters</h3>
+<p>Native JavaScript methods such as <code>Math.floor()</code> or
+bitwise operations (<code>| 0</code>) behave unpredictably with large
+values. Bitwise operations clamp numbers to 32-bit signed integers,
+causing drastic sign flips and data corruption on numbers greater than
+<span class="math inline">\(2^{31} - 1\)</span>.
+<code>Math.floor(Infinity)</code> simply returns <code>Infinity</code>,
+failing to produce a safe computational integer.</p>
+<p>By clamping extreme inputs to the safe integer envelope,
+<code>_.toSafeInteger</code> ensures predictable output ranges, prevents
+silent precision errors, and maintains stability across mathematical
+operations that require strict integer indices.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

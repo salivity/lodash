@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Implement Lazy Evaluation with Lodash Chains - lodash</title>
+    <meta name="description" content="This article provides a practical guide on implementing lazy evaluation using chaining in the Lodash JavaScript library. You will learn how Lodash optimizes performance on large collections through shortcut fusion, how to construct an explicit chain using">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-to-implement-lazy-evaluation-with-lodash-chains">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Implement Lazy Evaluation with Lodash Chains - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-to-implement-lazy-evaluation-with-lodash-chains" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on implementing lazy evaluation using chaining in the Lodash JavaScript library. You will learn how Lodash optimizes performance on large collections through shortcut fusion, how to construct an explicit chain using" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-implement-lazy-evaluation-with-lodash-chains">How to
+Implement Lazy Evaluation with Lodash Chains</h1>
+<p>This article provides a practical guide on implementing lazy
+evaluation using chaining in the Lodash JavaScript library. You will
+learn how Lodash optimizes performance on large collections through
+shortcut fusion, how to construct an explicit chain using the Lodash
+wrapper, which methods support deferred execution, and how to retrieve
+the final result using the <code>.value()</code> method.</p>
+<h2 id="understanding-lazy-evaluation-in-lodash">Understanding Lazy
+Evaluation in Lodash</h2>
+<p>By default, standard array methods and basic Lodash utility functions
+operate eagerly. This means each operation processes the entire
+collection and creates an intermediate array in memory before passing it
+to the next method.</p>
+<p>Lazy evaluation alters this behavior by postponing execution until
+the final result is explicitly requested. Instead of iterating through
+the entire collection for each step, Lodash uses an optimization
+technique called <strong>shortcut fusion</strong>. Shortcut fusion
+merges multiple operations (such as <code>.map()</code> and
+<code>.filter()</code>) into a single pass per element and stops
+processing as soon as the criteria (such as a <code>.take()</code>
+limit) are met.</p>
+<h2 id="step-by-step-implementation">Step-by-Step Implementation</h2>
+<p>To enable lazy evaluation in Lodash, you wrap your target collection
+in the <code>_()</code> wrapper, chain your pipeline operations, and
+conclude the chain with <code>.value()</code>.</p>
+<h3 id="1-wrap-the-collection">1. Wrap the Collection</h3>
+<p>Pass your collection directly into the <code>_()</code> function.
+This creates an explicit Lodash wrapper that allows method chaining and
+activates lazy evaluation where applicable:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">7</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="dv">9</span><span class="op">,</span> <span class="dv">10</span>]<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> lazyChain <span class="op">=</span> <span class="fu">_</span>(numbers)<span class="op">;</span></span></code></pre></div>
+<h3 id="2-define-the-sequence-of-operations">2. Define the Sequence of
+Operations</h3>
+<p>Append standard collection transformation methods to the wrapper. At
+this stage, Lodash records the operations instead of executing them
+immediately:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> pipeline <span class="op">=</span> <span class="fu">_</span>(numbers)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">filter</span>(n <span class="kw">=&gt;</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Filtering: </span><span class="sc">${</span>n<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> n <span class="op">%</span> <span class="dv">2</span> <span class="op">===</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">map</span>(n <span class="kw">=&gt;</span> {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Mapping: </span><span class="sc">${</span>n<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> n <span class="op">*</span> <span class="dv">10</span><span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">take</span>(<span class="dv">2</span>)<span class="op">;</span></span></code></pre></div>
+<p>If you run the code above without requesting the final output, no
+logs will appear in the console. The operations remain completely
+deferred.</p>
+<h3 id="3-trigger-execution-with-value">3. Trigger Execution with
+<code>.value()</code></h3>
+<p>To run the pipeline and compute the final output, invoke the
+<code>.value()</code> method:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> pipeline<span class="op">.</span><span class="fu">value</span>()<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result)<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [20, 40]</span></span></code></pre></div>
+<h3 id="execution-breakdown">Execution Breakdown</h3>
+<p>When <code>.value()</code> is called in the example above, the
+console output illustrates how shortcut fusion works:</p>
+<pre class="text"><code>Filtering: 1
+Filtering: 2
+Mapping: 2
+Filtering: 3
+Filtering: 4
+Mapping: 4</code></pre>
+<p>Instead of filtering all ten numbers, Lodash processes items one by
+one. Once it finds two items that satisfy the filter condition to
+fulfill the <code>.take(2)</code> requirement, execution halts
+immediately. Elements 5 through 10 are never processed.</p>
+<h2 id="methods-supporting-lazy-evaluation">Methods Supporting Lazy
+Evaluation</h2>
+<p>Not every Lodash method supports lazy evaluation. Lazy evaluation
+works primarily on collections and relies on methods that can be fused,
+including:</p>
+<ul>
+<li><strong>Filtering &amp; Slicing:</strong> <code>filter</code>,
+<code>reject</code>, <code>take</code>, <code>takeWhile</code>,
+<code>drop</code>, <code>dropWhile</code>, <code>compact</code>,
+<code>slice</code></li>
+<li><strong>Transformation:</strong> <code>map</code></li>
+<li><strong>Inspection:</strong> <code>first</code>, <code>head</code>,
+<code>last</code>, <code>initial</code>, <code>tail</code></li>
+</ul>
+<p>Methods that require scanning the entire collection to calculate an
+aggregate state—such as <code>sortBy</code>, <code>reduce</code>,
+<code>groupBy</code>, or <code>shuffle</code>—will break the lazy
+pipeline and force eager evaluation of preceding steps.</p>
+<h2 id="when-to-use-lazy-chains">When to Use Lazy Chains</h2>
+<p>Implementing lazy evaluation is most effective when:</p>
+<ol type="1">
+<li><strong>Working with large datasets:</strong> Avoiding the
+allocation of intermediate arrays prevents excessive memory usage and
+garbage collection pauses.</li>
+<li><strong>Using pagination or sampling:</strong> Pairing operations
+like <code>.filter()</code> with <code>.take()</code> allows the
+pipeline to terminate early rather than processing the entire
+collection.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

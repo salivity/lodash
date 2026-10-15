@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash stubTrue Works Across Invocations - lodash</title>
+    <meta name="description" content="Lodash’s .stubTrue is a utility method designed to act as a predictable predicate function that returns true whenever it is called. This article examines the internal design of .stubTrue, explaining how its underlying implementation ensures identical retu">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-stub-true-works-across-invocations">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash stubTrue Works Across Invocations - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-stub-true-works-across-invocations" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .stubTrue is a utility method designed to act as a predictable predicate function that returns true whenever it is called. This article examines the internal design of .stubTrue, explaining how its underlying implementation ensures identical retu" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-stubtrue-works-across-invocations">How Lodash
+stubTrue Works Across Invocations</h1>
+<p>Lodash’s <code>_.stubTrue</code> is a utility method designed to act
+as a predictable predicate function that returns <code>true</code>
+whenever it is called. This article examines the internal design of
+<code>_.stubTrue</code>, explaining how its underlying implementation
+ensures identical return values across invocations, how it handles
+arguments and execution contexts, and why its behavior remains immutable
+in JavaScript environments.</p>
+<h3 id="the-source-implementation">The Source Implementation</h3>
+<p>At its core, <code>_.stubTrue</code> is defined with minimal
+complexity. The source code in Lodash can be represented essentially
+as:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">stubTrue</span>() {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because the function body contains only the literal return statement
+<code>return true;</code>, it executes no computational logic, reads no
+external state, and binds no closures to mutable data.</p>
+<h3 id="agnostic-to-arguments">Agnostic to Arguments</h3>
+<p>JavaScript functions allow any number of arguments to be passed,
+regardless of the declared parameter list. In the case of
+<code>_.stubTrue</code>, no parameters are defined, and the internal
+<code>arguments</code> object is never inspected.</p>
+<p>Whether called as <code>_.stubTrue()</code>,
+<code>_.stubTrue(false)</code>, or
+<code>_.stubTrue(null, 123, {})</code>, the function disregards all
+passed inputs. Because no inputs affect the execution path, the
+resulting output remains identical across every invocation.</p>
+<h3 id="agnostic-to-execution-context-this">Agnostic to Execution
+Context (<code>this</code>)</h3>
+<p>Functions in JavaScript can have their execution context altered
+through methods like <code>.call()</code>, <code>.apply()</code>, or
+<code>.bind()</code>. However, <code>_.stubTrue</code> does not
+reference the <code>this</code> keyword anywhere in its definition.</p>
+<p>Binding <code>_.stubTrue</code> to different contexts or invoking it
+as a method on different objects has no impact on its return value:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> objA <span class="op">=</span> { <span class="dt">method</span><span class="op">:</span> _<span class="op">.</span><span class="at">stubTrue</span> }<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> objB <span class="op">=</span> { <span class="dt">method</span><span class="op">:</span> _<span class="op">.</span><span class="at">stubTrue</span> }<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>objA<span class="op">.</span><span class="fu">method</span>()<span class="op">;</span> <span class="co">// true</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>objB<span class="op">.</span><span class="at">method</span><span class="op">.</span><span class="fu">call</span>(<span class="kw">null</span>)<span class="op">;</span> <span class="co">// true</span></span></code></pre></div>
+<h3 id="primitive-value-and-strict-equality">Primitive Value and Strict
+Equality</h3>
+<p>In JavaScript, <code>true</code> is a primitive boolean value rather
+than an object. Primitive types are compared by value rather than by
+reference.</p>
+<p>When <code>_.stubTrue</code> executes, it returns the primitive value
+<code>true</code>. Consequently, any invocation of
+<code>_.stubTrue()</code> evaluates to strict equality against any other
+invocation:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">stubTrue</span>() <span class="op">===</span> _<span class="op">.</span><span class="fu">stubTrue</span>()<span class="op">;</span> <span class="co">// true</span></span></code></pre></div>
+<p>Because primitive booleans are immutable and represent a fixed value
+in the JavaScript memory model, there is no possibility of state
+divergence between invocations.</p>
+<h3 id="practical-applications">Practical Applications</h3>
+<p>Because of this guaranteed invariance, <code>_.stubTrue</code> is
+typically employed as:</p>
+<ul>
+<li><strong>A default fallback predicate:</strong> Used in conditional
+branch utilities like <code>_.cond</code> to represent an
+<code>else</code> or "always match" branch.</li>
+<li><strong>A standard callback:</strong> Passed into functional
+pipelines (e.g., <code>_.filter</code> or <code>_.takeWhile</code>) to
+bypass filtering without redefining inline arrow functions.</li>
+<li><strong>A mock or placeholder:</strong> Implemented in testing
+suites where a function must successfully satisfy a truthy condition
+without side effects.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

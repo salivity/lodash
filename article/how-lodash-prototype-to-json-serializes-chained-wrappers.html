@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash prototype.toJSON Serializes Chained Wrappers - lodash</title>
+    <meta name="description" content="This article explains how the prototype.toJSON method operates within the Lodash JavaScript library to serialize chained wrapper instances. It explores how Lodash integrates with the native JSON.stringify specification, resolves lazy evaluation pipelines,">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-prototype-to-json-serializes-chained-wrappers">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash prototype.toJSON Serializes Chained Wrappers - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-prototype-to-json-serializes-chained-wrappers" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the prototype.toJSON method operates within the Lodash JavaScript library to serialize chained wrapper instances. It explores how Lodash integrates with the native JSON.stringify specification, resolves lazy evaluation pipelines," />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-prototypetojson-serializes-chained-wrappers">How
+Lodash prototype.toJSON Serializes Chained Wrappers</h1>
+<p>This article explains how the <code>prototype.toJSON</code> method
+operates within the Lodash JavaScript library to serialize chained
+wrapper instances. It explores how Lodash integrates with the native
+<code>JSON.stringify</code> specification, resolves lazy evaluation
+pipelines, and exposes its wrapped contents by aliasing
+<code>prototype.value</code>, allowing developers to serialize chained
+sequences seamlessly without manual unwrapping.</p>
+<h2 id="the-role-of-prototypetojson-in-lodash">The Role of
+prototype.toJSON in Lodash</h2>
+<p>In Lodash, wrapping a value using <code>_(value)</code> or
+<code>lodash(value)</code> creates a wrapper instance that enables
+method chaining. Normally, accessing the evaluated result of a chain
+requires an explicit call to <code>.value()</code>.</p>
+<p>To support native JSON serialization, Lodash defines
+<code>lodash.prototype.toJSON</code> directly on the wrapper's
+prototype. Internally, Lodash defines this method as an alias to
+<code>lodash.prototype.value</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>lodash<span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">toJSON</span> <span class="op">=</span> lodash<span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">valueOf</span> <span class="op">=</span> lodash<span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">value</span><span class="op">;</span></span></code></pre></div>
+<p>Because it points directly to <code>.value</code>, invoking
+<code>toJSON</code> triggers the resolution of the entire chaining
+pipeline.</p>
+<h2 id="integration-with-native-jsonstringify">Integration with Native
+JSON.stringify</h2>
+<p>The JavaScript standard specifies that when an object is passed to
+<code>JSON.stringify()</code>, the serializer checks whether the object
+possesses a <code>toJSON</code> method. If present,
+<code>JSON.stringify</code> calls this method and serializes the
+returned value instead of serializing the wrapper object's internal
+properties (such as <code>__wrapped__</code>, <code>__actions__</code>,
+or <code>__chain__</code>).</p>
+<p>When a chained Lodash wrapper is passed to
+<code>JSON.stringify</code>:</p>
+<ol type="1">
+<li><code>JSON.stringify</code> detects the <code>toJSON</code> method
+on the Lodash wrapper prototype.</li>
+<li>It executes <code>wrapper.toJSON()</code>.</li>
+<li>Because <code>toJSON</code> is an alias for <code>value()</code>,
+Lodash executes all queued operations in the chain, resolves any lazy
+evaluation, and extracts the underlying data.</li>
+<li>The resolved, native JavaScript data structure (such as an array,
+object, or primitive) is returned to <code>JSON.stringify</code>.</li>
+<li><code>JSON.stringify</code> converts that resolved structure into a
+standard JSON string.</li>
+</ol>
+<h2 id="example-behavior">Example Behavior</h2>
+<p>Consider the following chained transformation:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> users <span class="op">=</span> [</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Bob&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">false</span> }<span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Charlie&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> }</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> chainedWrapper <span class="op">=</span> <span class="fu">_</span>(users)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">filter</span>(<span class="st">&#39;active&#39;</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">map</span>(<span class="st">&#39;name&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Direct JSON serialization</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> jsonOutput <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>(chainedWrapper)<span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(jsonOutput)<span class="op">;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;[&quot;Alice&quot;,&quot;Charlie&quot;]&#39;</span></span></code></pre></div>
+<p>In this example, calling <code>JSON.stringify(chainedWrapper)</code>
+automatically triggers <code>.toJSON()</code>. Lodash evaluates the
+<code>.filter()</code> and <code>.map()</code> steps, extracts the plain
+array <code>['Alice', 'Charlie']</code>, and returns it to the
+serializer.</p>
+<h2 id="benefits-for-explicit-chaining">Benefits for Explicit
+Chaining</h2>
+<p>This mechanism applies to both implicit chaining and explicit chains
+initiated with <code>_.chain(...)</code>. Without
+<code>prototype.toJSON</code>, serializing an explicitly chained object
+with <code>JSON.stringify(_.chain(data)...)</code> would serialize the
+internal structure of the wrapper object itself rather than the
+transformed data.</p>
+<p>By aliasing <code>.value()</code>, Lodash ensures that wrapper
+instances behave as transparent value holders during JSON serialization
+operations across Node.js and browser environments.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

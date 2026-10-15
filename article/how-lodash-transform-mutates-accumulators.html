@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.transform Mutates Accumulators - lodash</title>
+    <meta name="description" content="Lodash’s .transform method provides an ergonomic alternative to .reduce by giving developers direct, mutable access to an internal accumulator across each iteration step. While standard reduction patterns require returning the updated accumulator at the e">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-transform-mutates-accumulators">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.transform Mutates Accumulators - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-transform-mutates-accumulators" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .transform method provides an ergonomic alternative to .reduce by giving developers direct, mutable access to an internal accumulator across each iteration step. While standard reduction patterns require returning the updated accumulator at the e" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_transform-mutates-accumulators">How Lodash
+_.transform Mutates Accumulators</h1>
+<p>Lodash’s <code>_.transform</code> method provides an ergonomic
+alternative to <code>_.reduce</code> by giving developers direct,
+mutable access to an internal accumulator across each iteration step.
+While standard reduction patterns require returning the updated
+accumulator at the end of every callback execution,
+<code>_.transform</code> automatically manages the accumulator’s
+reference lifecycle. This article explores how <code>_.transform</code>
+handles accumulator initialization, eliminates the need for explicit
+callback returns, and supports early iteration exit.</p>
+<h3 id="the-mechanism-of-direct-mutation">The Mechanism of Direct
+Mutation</h3>
+<p>In standard JavaScript reductions—such as
+<code>Array.prototype.reduce</code> or Lodash’s
+<code>_.reduce</code>—the callback function must explicitly return the
+accumulator value to pass it to the next step:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Using _.reduce: requires an explicit return statement</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> evensSquared <span class="op">=</span> _<span class="op">.</span><span class="fu">reduce</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span>]<span class="op">,</span> (result<span class="op">,</span> num) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (num <span class="op">%</span> <span class="dv">2</span> <span class="op">===</span> <span class="dv">0</span>) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    result<span class="op">.</span><span class="fu">push</span>(num <span class="op">*</span> num)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result<span class="op">;</span> <span class="co">// Mandatory return</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> [])<span class="op">;</span></span></code></pre></div>
+<p>If a developer forgets to return <code>result</code>, the accumulator
+becomes <code>undefined</code> on the subsequent iteration.</p>
+<p><code>_.transform</code> bypasses this requirement. It invokes the
+iteratee with four arguments:
+<code>(accumulator, value, key, collection)</code>. Instead of capturing
+the return value of the iteratee to reassign the accumulator for the
+next cycle, Lodash retains the original accumulator reference and passes
+it directly into each iteration.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Using _.transform: mutates accumulator directly with no return required</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> evensSquared <span class="op">=</span> _<span class="op">.</span><span class="fu">transform</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span>]<span class="op">,</span> (result<span class="op">,</span> num) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (num <span class="op">%</span> <span class="dv">2</span> <span class="op">===</span> <span class="dv">0</span>) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    result<span class="op">.</span><span class="fu">push</span>(num <span class="op">*</span> num)<span class="op">;</span> <span class="co">// Direct mutation</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Because Lodash maintains reference stability throughout the loop,
+developers can mutate objects or arrays directly in place using methods
+like <code>.push()</code>, property assignment
+(<code>result[key] = value</code>), or <code>delete</code>.</p>
+<h3 id="automatic-accumulator-initialization">Automatic Accumulator
+Initialization</h3>
+<p>Another distinction of <code>_.transform</code> is its ability to
+infer the accumulator type automatically. If no initial accumulator is
+supplied as the third argument:</p>
+<ol type="1">
+<li>Lodash inspects the source collection.</li>
+<li>It initializes the accumulator with the same prototype as the
+iterated collection (e.g., a new array for arrays, or a new plain object
+for objects).</li>
+<li>If an object inherits from a custom prototype,
+<code>_.transform</code> uses <code>Object.create()</code> with that
+prototype.</li>
+</ol>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sourceObject <span class="op">=</span> { <span class="dt">a</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">b</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">c</span><span class="op">:</span> <span class="dv">3</span> }<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> inverted <span class="op">=</span> _<span class="op">.</span><span class="fu">transform</span>(sourceObject<span class="op">,</span> (result<span class="op">,</span> value<span class="op">,</span> key) <span class="kw">=&gt;</span> {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  result[value] <span class="op">=</span> key<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span> </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">// result automatically initializes as {}</span></span></code></pre></div>
+<h3 id="early-termination-via-boolean-flags">Early Termination via
+Boolean Flags</h3>
+<p>Because the iteratee’s return value is not consumed as the
+accumulator state, <code>_.transform</code> repurposes the return value
+for flow control. Returning <code>false</code> from the callback
+immediately terminates the iteration, matching the behavior of
+<code>_.forEach</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> firstTwoEvens <span class="op">=</span> _<span class="op">.</span><span class="fu">transform</span>([<span class="dv">2</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">8</span>]<span class="op">,</span> (result<span class="op">,</span> num) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  result<span class="op">.</span><span class="fu">push</span>(num)<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result<span class="op">.</span><span class="at">length</span> <span class="op">&lt;</span> <span class="dv">2</span><span class="op">;</span> <span class="co">// Returns false when length reaches 2, breaking the loop</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> [])<span class="op">;</span></span></code></pre></div>
+<p>This short-circuiting capability is not natively possible in
+<code>_.reduce</code>, which requires iterating through the entire
+collection unless an exception is thrown.</p>
+<h3 id="summary-of-differences">Summary of Differences</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;"><code>_.reduce</code></th>
+<th style="text-align: left;"><code>_.transform</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Accumulator Passing</strong></td>
+<td style="text-align: left;">Reassigned by iteratee return value</td>
+<td style="text-align: left;">Maintained by reference internally</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Return Requirement</strong></td>
+<td style="text-align: left;">Must explicitly return accumulator</td>
+<td style="text-align: left;">No return needed for mutation</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Default Accumulator</strong></td>
+<td style="text-align: left;">First element of collection</td>
+<td style="text-align: left;">New empty instance of same prototype</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Iteration Control</strong></td>
+<td style="text-align: left;">Cannot be broken early</td>
+<td style="text-align: left;">Breaks early by returning
+<code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>By treating the accumulator as a persistent, mutable target rather
+than a carried return value, <code>_.transform</code> eliminates
+boilerplate code and minimizes reference bugs during complex collection
+transformations.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

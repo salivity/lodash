@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use Lodash isEqualWith Custom Comparator - lodash</title>
+    <meta name="description" content="Lodash&#39;s .isEqualWith method extends the library&#39;s standard deep-comparison algorithm by accepting a custom comparator function known as a customizer. This article provides a focused guide on how .isEqualWith handles complex object evaluation, explains th">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-to-use-lodash-is-equal-with-custom-comparator">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use Lodash isEqualWith Custom Comparator - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-to-use-lodash-is-equal-with-custom-comparator" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .isEqualWith method extends the library&#39;s standard deep-comparison algorithm by accepting a custom comparator function known as a customizer. This article provides a focused guide on how .isEqualWith handles complex object evaluation, explains th" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-lodash-isequalwith-custom-comparator">How to Use
+Lodash isEqualWith Custom Comparator</h1>
+<p>Lodash's <code>_.isEqualWith</code> method extends the library's
+standard deep-comparison algorithm by accepting a custom comparator
+function known as a <code>customizer</code>. This article provides a
+focused guide on how <code>_.isEqualWith</code> handles complex object
+evaluation, explains the parameters available within the customizer
+callback, and demonstrates how to implement specialized equality rules
+while delegating standard comparisons back to Lodash's internal
+engine.</p>
+<h2 id="understanding-the-customizer-signature">Understanding the
+Customizer Signature</h2>
+<p>The <code>_.isEqualWith</code> function takes three primary
+arguments: the base value (<code>value</code>), the comparison target
+(<code>other</code>), and the custom comparison callback
+(<code>customizer</code>):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isEqualWith</span>(value<span class="op">,</span> other<span class="op">,</span> [customizer])<span class="op">;</span></span></code></pre></div>
+<p>When evaluating values, Lodash invokes the <code>customizer</code>
+function with up to six arguments depending on the context of the
+comparison:</p>
+<ul>
+<li><code>objValue</code>: The current property value or element from
+the source object.</li>
+<li><code>othValue</code>: The corresponding property value or element
+from the target object.</li>
+<li><code>index|key</code>: The property name (for objects) or index
+(for arrays) currently being evaluated.</li>
+<li><code>object</code>: The parent object containing
+<code>objValue</code>.</li>
+<li><code>other</code>: The parent object containing
+<code>othValue</code>.</li>
+<li><code>stack</code>: An internal Lodash structure used to track
+circular references and recursion state.</li>
+</ul>
+<h2 id="the-role-of-the-undefined-return-value">The Role of the
+<code>undefined</code> Return Value</h2>
+<p>The most crucial aspect of evaluating complex objects with
+<code>_.isEqualWith</code> is the return value of the
+<code>customizer</code>.</p>
+<ul>
+<li><strong>Explicit Booleans (<code>true</code> /
+<code>false</code>)</strong>: If the function returns a boolean value,
+Lodash treats the result as definitive for that specific property
+comparison. Returning <code>true</code> flags the values as identical,
+bypassing further recursive checks for that branch. Returning
+<code>false</code> immediately fails the equality test for those
+values.</li>
+<li><strong>Returning <code>undefined</code></strong>: If the
+<code>customizer</code> returns <code>undefined</code>, Lodash falls
+back to its built-in deep-comparison algorithm (<code>_.isEqual</code>).
+This allows developers to intercept only the specific properties or
+types that require custom evaluation rules while leaving the rest of a
+complex, nested data structure to standard processing.</li>
+</ul>
+<h2 id="practical-implementation-complex-object-evaluation">Practical
+Implementation: Complex Object Evaluation</h2>
+<p>Consider a scenario where two complex user entities must be compared.
+The comparison needs to ignore unique transaction IDs, perform
+case-insensitive string checks on email addresses, and rely on standard
+recursive comparison for all other deeply nested properties (such as
+profile details and permission lists).</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> userA <span class="op">=</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">id</span><span class="op">:</span> <span class="st">&#39;usr_101&#39;</span><span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">email</span><span class="op">:</span> <span class="st">&#39;Developer@Example.com&#39;</span><span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">metadata</span><span class="op">:</span> {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">lastLogin</span><span class="op">:</span> <span class="kw">new</span> <span class="bu">Date</span>(<span class="st">&#39;2023-01-01T10:00:00Z&#39;</span>)<span class="op">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">roles</span><span class="op">:</span> [<span class="st">&#39;admin&#39;</span><span class="op">,</span> <span class="st">&#39;editor&#39;</span>]</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> userB <span class="op">=</span> {</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">id</span><span class="op">:</span> <span class="st">&#39;usr_999&#39;</span><span class="op">,</span> <span class="co">// Different ID</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">email</span><span class="op">:</span> <span class="st">&#39;developer@example.com&#39;</span><span class="op">,</span> <span class="co">// Different casing</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="dt">metadata</span><span class="op">:</span> {</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">lastLogin</span><span class="op">:</span> <span class="kw">new</span> <span class="bu">Date</span>(<span class="st">&#39;2023-01-01T10:00:00Z&#39;</span>)<span class="op">,</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="dt">roles</span><span class="op">:</span> [<span class="st">&#39;admin&#39;</span><span class="op">,</span> <span class="st">&#39;editor&#39;</span>]</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">userComparator</span>(objValue<span class="op">,</span> othValue<span class="op">,</span> key) {</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Ignore specific property differences</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (key <span class="op">===</span> <span class="st">&#39;id&#39;</span>) {</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Custom evaluation for email strings (case-insensitive)</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (key <span class="op">===</span> <span class="st">&#39;email&#39;</span> <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> objValue <span class="op">===</span> <span class="st">&#39;string&#39;</span> <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> othValue <span class="op">===</span> <span class="st">&#39;string&#39;</span>) {</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> objValue<span class="op">.</span><span class="fu">toLowerCase</span>() <span class="op">===</span> othValue<span class="op">.</span><span class="fu">toLowerCase</span>()<span class="op">;</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Return undefined to let Lodash handle nested objects, arrays, and dates</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> areEqual <span class="op">=</span> _<span class="op">.</span><span class="fu">isEqualWith</span>(userA<span class="op">,</span> userB<span class="op">,</span> userComparator)<span class="op">;</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(areEqual)<span class="op">;</span> <span class="co">// Output: true</span></span></code></pre></div>
+<h2 id="traversing-deep-structures">Traversing Deep Structures</h2>
+<p>When executing on nested objects, <code>_.isEqualWith</code> calls
+the customizer at every step of traversal. The root objects are passed
+first, followed by each descending key-value pair.</p>
+<p>Because the customizer returns <code>undefined</code> at the root
+object level, Lodash traverses downward into <code>userA.metadata</code>
+and <code>userB.metadata</code>, invoking the customizer again for the
+<code>metadata</code> object, followed by <code>lastLogin</code> and
+<code>roles</code>. This mechanism gives you granular control over
+evaluation logic at any depth without needing to rewrite recursive
+tree-traversal logic manually.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

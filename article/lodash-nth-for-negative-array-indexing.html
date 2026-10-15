@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.nth for Negative Array Indexing - lodash</title>
+    <meta name="description" content="The .nth method in Lodash is a utility function designed to retrieve elements from an array at a specified index, with standout utility in its seamless handling of negative integers. This article explores how .nth simplifies negative indexing, eliminates">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-nth-for-negative-array-indexing">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.nth for Negative Array Indexing - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-nth-for-negative-array-indexing" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .nth method in Lodash is a utility function designed to retrieve elements from an array at a specified index, with standout utility in its seamless handling of negative integers. This article explores how .nth simplifies negative indexing, eliminates" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_nth-for-negative-array-indexing">Lodash _.nth for
+Negative Array Indexing</h1>
+<p>The <code>_.nth</code> method in Lodash is a utility function
+designed to retrieve elements from an array at a specified index, with
+standout utility in its seamless handling of negative integers. This
+article explores how <code>_.nth</code> simplifies negative indexing,
+eliminates the boilerplate of traditional JavaScript index calculations,
+provides robust safety checks for empty or undefined collections, and
+improves overall code readability.</p>
+<h3 id="the-limitation-of-standard-javascript-indexing">The Limitation
+of Standard JavaScript Indexing</h3>
+<p>In standard JavaScript, array elements are accessed using bracket
+notation (e.g., <code>array[0]</code>). However, brackets do not support
+negative indexing. Passing a negative number, such as
+<code>array[-1]</code>, attempts to read a property with the string key
+<code>"-1"</code>, which returns <code>undefined</code> rather than the
+last element of the array.</p>
+<p>To retrieve items from the end of an array using native bracket
+syntax, developers traditionally rely on computing the offset relative
+to the array length:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [<span class="st">&#39;apple&#39;</span><span class="op">,</span> <span class="st">&#39;banana&#39;</span><span class="op">,</span> <span class="st">&#39;orange&#39;</span><span class="op">,</span> <span class="st">&#39;mango&#39;</span>]<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> lastItem <span class="op">=</span> items[items<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>]<span class="op">;</span> <span class="co">// &#39;mango&#39;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> secondToLast <span class="op">=</span> items[items<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">2</span>]<span class="op">;</span> <span class="co">// &#39;orange&#39;</span></span></code></pre></div>
+<p>This approach becomes verbose and repetitive, especially when working
+with long variable names or deeply nested object properties.</p>
+<h3 id="how-_nth-simplifies-negative-indexing">How <code>_.nth</code>
+Simplifies Negative Indexing</h3>
+<p>The <code>_.nth</code> function takes two arguments: the array to
+query and the target index (defaulting to <code>0</code>). When passed a
+negative index, it automatically resolves the offset from the end of the
+array.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [<span class="st">&#39;apple&#39;</span><span class="op">,</span> <span class="st">&#39;banana&#39;</span><span class="op">,</span> <span class="st">&#39;orange&#39;</span><span class="op">,</span> <span class="st">&#39;mango&#39;</span>]<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">nth</span>(items<span class="op">,</span> <span class="op">-</span><span class="dv">1</span>)<span class="op">;</span> <span class="co">// Returns &#39;mango&#39;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">nth</span>(items<span class="op">,</span> <span class="op">-</span><span class="dv">2</span>)<span class="op">;</span> <span class="co">// Returns &#39;orange&#39;</span></span></code></pre></div>
+<p>Passing <code>-1</code> references the last element, <code>-2</code>
+targets the second to last, and so on. This eliminates the need to
+explicitly reference <code>array.length</code>.</p>
+<h3 id="key-advantages-of-_nth">Key Advantages of
+<code>_.nth</code></h3>
+<h4 id="1-concise-and-readable-syntax">1. Concise and Readable
+Syntax</h4>
+<p>Using <code>_.nth(array, -1)</code> is significantly cleaner than
+writing <code>array[array.length - 1]</code>. It makes the developer's
+intent clear at a glance, reducing cognitive load when parsing code.</p>
+<h4 id="2-safe-fallbacks-and-null-safety">2. Safe Fallbacks and Null
+Safety</h4>
+<p>Native array access throws a <code>TypeError</code> if the target
+object is <code>null</code> or <code>undefined</code>. In contrast,
+<code>_.nth</code> handles non-array and empty inputs gracefully without
+crashing:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">nth</span>(<span class="kw">null</span><span class="op">,</span> <span class="op">-</span><span class="dv">1</span>)<span class="op">;</span> <span class="co">// Returns undefined</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">nth</span>([]<span class="op">,</span> <span class="op">-</span><span class="dv">1</span>)<span class="op">;</span>   <span class="co">// Returns undefined</span></span></code></pre></div>
+<p>If the negative index is out of bounds (such as <code>-10</code> on
+an array of three elements), the method safely returns
+<code>undefined</code>.</p>
+<h4 id="3-functional-and-pipeline-integration">3. Functional and
+Pipeline Integration</h4>
+<p>Because <code>_.nth</code> is a standard utility function, it
+integrates cleanly with functional programming patterns, function
+currying, and Lodash processing pipelines where passing a retrieval
+method as a callback is required.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash sortedUniqBy with Different Object Shapes - lodash</title>
+    <meta name="description" content="Lodash&#39;s .sortedUniqBy processes sorted arrays by running an iteratee function over each element and discarding adjacent duplicates based on the returned values. When dealing with objects of differing shapes where the iteratee yields the exact same value,">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-sorted-uniq-by-with-different-object-shapes">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash sortedUniqBy with Different Object Shapes - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-sorted-uniq-by-with-different-object-shapes" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .sortedUniqBy processes sorted arrays by running an iteratee function over each element and discarding adjacent duplicates based on the returned values. When dealing with objects of differing shapes where the iteratee yields the exact same value," />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-sorteduniqby-with-different-object-shapes">Lodash
+sortedUniqBy with Different Object Shapes</h1>
+<p>Lodash's <code>_.sortedUniqBy</code> processes sorted arrays by
+running an iteratee function over each element and discarding adjacent
+duplicates based on the returned values. When dealing with objects of
+differing shapes where the iteratee yields the exact same value, the
+method strictly adheres to a "first seen, first kept" policy. It
+completely ignores structural, type, or property differences outside of
+the iteratee's output, preserving only the first occurrence among
+consecutive duplicates and omitting the rest.</p>
+<h2 id="the-comparison-mechanism">The Comparison Mechanism</h2>
+<p><code>_.sortedUniqBy</code> is optimized specifically for arrays that
+are already sorted according to the criteria defined by the iteratee.
+Unlike <code>_.uniqBy</code>, which typically checks every item against
+a set of all previously seen values, <code>_.sortedUniqBy</code> only
+compares the iteratee result of the current item to the iteratee result
+of the immediately preceding retained item.</p>
+<p>The algorithm uses the <code>SameValueZero</code> comparison on the
+values produced by the iteratee:</p>
+<ol type="1">
+<li>The iteratee function executes on the first element, and this
+element is automatically added to the result array.</li>
+<li>The iteratee executes on the next element.</li>
+<li>If the computed value matches the computed value of the previously
+kept element, the current element is discarded.</li>
+<li>If the computed value differs, the current element is retained, and
+its computed value becomes the new baseline for subsequent
+comparisons.</li>
+</ol>
+<h2 id="processing-differing-object-shapes">Processing Differing Object
+Shapes</h2>
+<p>JavaScript objects can have entirely different schemas, keys, or
+prototype chains. However, <code>_.sortedUniqBy</code> is structurally
+agnostic. It does not perform a deep comparison, nor does it attempt to
+merge properties across differing shapes.</p>
+<p>Consider an example where the iteratee extracts an <code>id</code>
+property:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">10</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alpha&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">10</span><span class="op">,</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Beta&#39;</span><span class="op">,</span> <span class="dt">metadata</span><span class="op">:</span> { <span class="dt">role</span><span class="op">:</span> <span class="st">&#39;admin&#39;</span> } }<span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">20</span><span class="op">,</span> <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;Gamma&#39;</span> }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">sortedUniqBy</span>(items<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<p>The resulting array will be:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>[</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">10</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alpha&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">20</span><span class="op">,</span> <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;Gamma&#39;</span> }</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>]</span></code></pre></div>
+<p>Even though the second object contains keys (<code>title</code>,
+<code>metadata</code>) that the first object lacks,
+<code>_.sortedUniqBy</code> only evaluates the property
+<code>'id'</code>. Because both return <code>10</code>, the second
+object is deemed a duplicate and discarded.</p>
+<h2 id="critical-considerations">Critical Considerations</h2>
+<ul>
+<li><strong>First-In Priority</strong>: The retained object is always
+the earliest one encountered in the consecutive sequence. If critical
+data exists in the subsequent shapes, it will be lost unless the array
+is pre-processed or merged.</li>
+<li><strong>Sorted Order Requirement</strong>: Because the method checks
+adjacent results, differing shapes with matching iteratee outputs must
+be contiguous. If identical iteratee values are separated by different
+values, both will appear in the output.</li>
+<li><strong>Undefined Iteratee Results</strong>: If an object shape does
+not contain the property specified by a shorthand iteratee string, the
+iteratee yields <code>undefined</code>. Consecutive objects missing the
+target property will also be collapsed down to the first object in the
+sequence, regardless of how their other properties differ.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

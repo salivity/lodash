@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.ceil Negative Precision Logic Explained - lodash</title>
+    <meta name="description" content="Lodash’s .ceil method handles rounding to specified decimal places or tens places by manipulating numbers through exponential string notation rather than arithmetic multiplication and division. When configured with a heavily negative precision—rounding to">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-ceil-negative-precision-logic-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.ceil Negative Precision Logic Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-ceil-negative-precision-logic-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .ceil method handles rounding to specified decimal places or tens places by manipulating numbers through exponential string notation rather than arithmetic multiplication and division. When configured with a heavily negative precision—rounding to" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_ceil-negative-precision-logic-explained">Lodash _.ceil
+Negative Precision Logic Explained</h1>
+<p>Lodash’s <code>_.ceil</code> method handles rounding to specified
+decimal places or tens places by manipulating numbers through
+exponential string notation rather than arithmetic multiplication and
+division. When configured with a heavily negative precision—rounding to
+large powers of ten such as hundreds, thousands, or far beyond—it
+bypasses standard binary floating-point representation drift before
+delegating the final integer rounding to JavaScript’s native
+<code>Math.ceil</code>. This article breaks down the exact algorithmic
+steps, IEEE 754 precision dynamics, and edge cases that occur when
+rounding with large negative precisions in Lodash.</p>
+<h3 id="the-underlying-mechanism-exponential-string-shifting">The
+Underlying Mechanism: Exponential String Shifting</h3>
+<p>In standard JavaScript, rounding to multiples of ten using
+multiplication or division often introduces floating-point errors due to
+IEEE 754 binary fractions (for example, <code>6040 / 100</code> might
+result in tiny inaccuracies in certain intermediate steps). To prevent
+this, Lodash generates <code>_.ceil</code> via an internal
+<code>createRound</code> factory function that uses exponential
+notation:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">createRound</span>(methodName) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> func <span class="op">=</span> <span class="bu">Math</span>[methodName]<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (number<span class="op">,</span> precision) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    precision <span class="op">=</span> precision <span class="op">==</span> <span class="kw">null</span> <span class="op">?</span> <span class="dv">0</span> <span class="op">:</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(<span class="fu">toInteger</span>(precision)<span class="op">,</span> <span class="dv">292</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (precision) {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> pair <span class="op">=</span> <span class="vs">`</span><span class="sc">${</span>number<span class="sc">}</span><span class="vs">e`</span><span class="op">.</span><span class="fu">split</span>(<span class="st">&#39;e&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">const</span> value <span class="op">=</span> <span class="fu">func</span>(<span class="vs">`</span><span class="sc">${</span>pair[<span class="dv">0</span>]<span class="sc">}</span><span class="vs">e</span><span class="sc">${</span><span class="op">+</span>pair[<span class="dv">1</span>] <span class="op">+</span> precision<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      pair <span class="op">=</span> <span class="vs">`</span><span class="sc">${</span>value<span class="sc">}</span><span class="vs">e`</span><span class="op">.</span><span class="fu">split</span>(<span class="st">&#39;e&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="op">+</span><span class="vs">`</span><span class="sc">${</span>pair[<span class="dv">0</span>]<span class="sc">}</span><span class="vs">e</span><span class="sc">${</span><span class="op">+</span>pair[<span class="dv">1</span>] <span class="op">-</span> precision<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fu">func</span>(number)<span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Instead of performing mathematical shifts like
+<code>number * Math.pow(10, precision)</code>, Lodash converts the
+number into a string and splits it by the exponent marker
+<code>'e'</code>.</p>
+<h3 id="execution-flow-for-negative-precision">Execution Flow for
+Negative Precision</h3>
+<p>When a negative precision is provided (e.g.,
+<code>_.ceil(6040, -2)</code>):</p>
+<ol type="1">
+<li><strong>String Conversion and Splitting</strong>: Lodash appends
+<code>'e'</code> to the input number and splits it. For
+<code>6040</code>, <code>${6040}e</code>.split('e') yields
+<code>['6040', '']</code>.</li>
+<li><strong>Forward Decimal Shift</strong>: The precision is added to
+the existing exponent. Here, <code>+pair[1] + precision</code> computes
+<code>0 + (-2) = -2</code>. The string passed to <code>Math.ceil</code>
+is <code>'6040e-2'</code>, which JavaScript converts directly into
+<code>60.4</code>.</li>
+<li><strong>Integer Rounding</strong>: <code>Math.ceil(60.4)</code>
+executes natively, returning <code>61</code>.</li>
+<li><strong>Reverse Shift</strong>: The integer result is split again
+(<code>['61', '']</code>) and the exponent is reversed:
+<code>+pair[1] - precision</code> evaluates to
+<code>0 - (-2) = 2</code>.</li>
+<li><strong>Final Type Coercion</strong>: The unary plus coerces the
+string <code>'61e2'</code> back into a numeric value:
+<code>6100</code>.</li>
+</ol>
+<h3 id="behavior-under-heavily-negative-precision">Behavior Under
+Heavily Negative Precision</h3>
+<p>Lodash includes an upper clamp for positive precision
+(<code>Math.min(toInteger(precision), 292)</code>) to avoid exceeding
+JavaScript's maximum safe double-precision exponent of <code>308</code>.
+However, Lodash does not apply a corresponding lower clamp (such as
+<code>Math.max(precision, -292)</code>). Consequently, supplying heavily
+negative precisions triggers the lower-end boundary limits of IEEE 754
+floating-point arithmetic.</p>
+<h4 id="1-underflow-to-zero">1. Underflow to Zero</h4>
+<p>In 64-bit floating-point numbers, subnormal numbers terminate near
+<code>5e-324</code>. If the negative precision forces the shifted
+exponential string below this threshold (for instance,
+<code>precision = -350</code> on a standard integer):</p>
+<ul>
+<li>The shifted string <code>'100e-350'</code> evaluates to
+<code>0</code> during numeric parsing.</li>
+<li><code>Math.ceil(0)</code> yields <code>0</code>.</li>
+<li>The reverse shift calculates <code>0 - (-350) = 350</code>,
+producing <code>'0e350'</code>.</li>
+<li>Parsing <code>+'0e350'</code> results in <code>0</code>.</li>
+</ul>
+<h4 id="2-upward-rounding-and-exponent-overflow">2. Upward Rounding and
+Exponent Overflow</h4>
+<p>If the number is small but positive, and shifted such that it does
+not completely underflow to <code>0</code> (evaluating instead as a
+subnormal float like <code>1e-320</code>):</p>
+<ul>
+<li><code>Math.ceil('1e-320')</code> rounds any positive value strictly
+greater than <code>0</code> up to <code>1</code>.</li>
+<li>The reverse shift calculates <code>1e - (-precision)</code>, such as
+<code>+'1e350'</code>.</li>
+<li>Because double-precision floats overflow to infinity beyond
+approximately <code>1.7976931348623157e+308</code>, the expression
+evaluates to <code>Infinity</code>.</li>
+</ul>
+<h3 id="summary">Summary</h3>
+<p>Lodash's <code>_.ceil</code> avoids floating-point calculation error
+by transforming numbers into exponential strings, applying native
+<code>Math.ceil</code> to the shifted value, and reversing the exponent.
+When subjected to heavily negative precisions, the absence of a minimum
+boundary clamp means the output is dictated entirely by IEEE 754
+underflow (collapsing to <code>0</code>) or post-rounding exponent
+overflow (escalating to <code>Infinity</code>).</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

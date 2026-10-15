@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.once Memory Management and Garbage Collection - lodash</title>
+    <meta name="description" content="The Lodash .once utility optimizes memory usage and enables timely JavaScript garbage collection by explicitly nullifying references within its closure scope. When wrapping an expensive initialization routine or event handler, .once ensures the original f">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-once-memory-management-and-garbage-collection">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.once Memory Management and Garbage Collection - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-once-memory-management-and-garbage-collection" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .once utility optimizes memory usage and enables timely JavaScript garbage collection by explicitly nullifying references within its closure scope. When wrapping an expensive initialization routine or event handler, .once ensures the original f" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_once-memory-management-and-garbage-collection">Lodash
+_.once Memory Management and Garbage Collection</h1>
+<p>The Lodash <code>_.once</code> utility optimizes memory usage and
+enables timely JavaScript garbage collection by explicitly nullifying
+references within its closure scope. When wrapping an expensive
+initialization routine or event handler, <code>_.once</code> ensures the
+original function is invoked only once, caches the result, and breaks
+the reference link to the underlying function. This dereferencing
+fundamentally enables the JavaScript engine's mark-and-sweep garbage
+collector to reclaim the memory allocated to the original function and
+any associated lexical closures that are no longer needed.</p>
+<h3 id="internal-implementation-via-_before">Internal Implementation via
+<code>_.before</code></h3>
+<p>Under the hood, Lodash implements <code>_.once(func)</code> by
+delegating directly to <code>_.before(2, func)</code>. The core logic of
+<code>_.before</code> manages the execution lifecycle of the target
+function and its cached output using a counter:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">before</span>(n<span class="op">,</span> func) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> result<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="kw">typeof</span> func <span class="op">!==</span> <span class="st">&#39;function&#39;</span>) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">TypeError</span>(<span class="st">&#39;Expected a function&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">function</span>(<span class="op">...</span>args) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">--</span>n <span class="op">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      result <span class="op">=</span> func<span class="op">.</span><span class="fu">apply</span>(<span class="kw">this</span><span class="op">,</span> args)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (n <span class="op">&lt;=</span> <span class="dv">1</span>) {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      func <span class="op">=</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When wrapped with <code>_.once</code>, the threshold <code>n</code>
+is set to <code>2</code>. On the first invocation, the counter
+decrements to <code>1</code>, triggering execution via
+<code>func.apply(this, args)</code> and storing the returned value in
+<code>result</code>. Immediately following this execution, the condition
+<code>n &lt;= 1</code> evaluates to true, executing the critical
+statement: <code>func = undefined</code>.</p>
+<h3
+id="dereferencing-and-mark-and-sweep-garbage-collection">Dereferencing
+and Mark-and-Sweep Garbage Collection</h3>
+<p>Modern JavaScript engines (such as V8 in Node.js and Chromium, or
+SpiderMonkey in Firefox) utilize a mark-and-sweep garbage collection
+algorithm. This process builds a graph of reachable objects starting
+from root references (e.g., the global scope, currently executing stack
+frames).</p>
+<p>When a closure is created, it retains a reference to its lexical
+environment. If the wrapper returned by <code>_.once</code> persists in
+memory—such as when bound to a long-lived DOM element, singleton
+service, or global event bus—it inherently keeps its internal variables
+alive.</p>
+<p>Without explicit cleanup, the <code>func</code> parameter would
+remain reachable through the closure chain indefinitely. By explicitly
+executing <code>func = undefined</code>, Lodash severs the retaining
+path between the long-lived wrapper closure and the original function
+instance. During the next garbage collection cycle:</p>
+<ol type="1">
+<li><strong>Root Traversal:</strong> The collector traverses from active
+roots and reaches the wrapper function.</li>
+<li><strong>Closure Inspection:</strong> The wrapper's closure
+environment is inspected, revealing that <code>result</code> is
+referenced, but <code>func</code> points to the primitive value
+<code>undefined</code>.</li>
+<li><strong>Reachability Failure:</strong> The original function object,
+along with any scope variables uniquely closed over by that function, is
+determined to have no incoming retaining paths.</li>
+<li><strong>Sweeping:</strong> The engine marks the memory occupied by
+the original function and its scope as free, allowing it to be reclaimed
+during the sweep phase.</li>
+</ol>
+<h3 id="severing-contextual-leaks-in-generational-gc">Severing
+Contextual Leaks in Generational GC</h3>
+<p>Engines like V8 employ Generational Garbage Collection, separating
+memory into the "Young Generation" (Nursery and Intermediate spaces) and
+the "Old Generation." Short-lived objects are rapidly collected via
+minor GC cycles (Scavenging), while persistent objects survive long
+enough to be promoted to the Old Generation, where major GC cycles are
+far more expensive.</p>
+<p>Initializers wrapped in <code>_.once</code> often capture significant
+transient context during application startup—such as temporary
+configuration objects, large payload buffers, or heavy setup
+dependencies. If <code>func</code> were preserved inside the wrapper,
+both the function and its captured startup contexts would survive into
+the Old Generation.</p>
+<p>By setting <code>func = undefined</code> immediately upon first
+execution:</p>
+<ul>
+<li>The transient memory held within <code>func</code>’s scope can be
+collected immediately during a minor GC scavenge rather than being
+promoted.</li>
+<li>The wrapper function transitions into a lightweight container that
+retains only the primitive or object reference stored in
+<code>result</code>.</li>
+</ul>
+<h3 id="isolation-of-the-execution-scope">Isolation of the Execution
+Scope</h3>
+<p>The garbage collection benefit extends beyond the function object
+itself. In JavaScript, functions maintain an internal
+<code>[[Scopes]]</code> reference to their definition environment. If an
+initialization routine references a large scope chain:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">initializeApp</span>() {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> largeSetupData <span class="op">=</span> <span class="kw">new</span> <span class="bu">ArrayBuffer</span>(<span class="dv">1024</span> <span class="op">*</span> <span class="dv">1024</span> <span class="op">*</span> <span class="dv">50</span>)<span class="op">;</span> <span class="co">// 50 MB</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> _<span class="op">.</span><span class="fu">once</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fu">processBuffer</span>(largeSetupData)<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The returned wrapper holds a closure where <code>func</code> captures
+<code>largeSetupData</code>. Because Lodash resets
+<code>func = undefined</code> directly after invocation, the
+intermediate anonymous arrow function loses its reference. Consequently,
+the reference to <code>largeSetupData</code> drops to zero (assuming no
+other references exist), allowing the 50 MB buffer to be reclaimed
+immediately, while only the processed return value remains in
+memory.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

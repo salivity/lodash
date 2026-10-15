@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash upperFirst Offset Indexing and Limits - lodash</title>
+    <meta name="description" content="This article provides an overview of how Lodash’s .upperFirst method handles offset indexing and character constraints during string capitalization. It covers the exact index boundaries modified by the function, internal Unicode character segmentation, an">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-upper-first-offset-indexing-and-limits">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash upperFirst Offset Indexing and Limits - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-upper-first-offset-indexing-and-limits" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how Lodash’s .upperFirst method handles offset indexing and character constraints during string capitalization. It covers the exact index boundaries modified by the function, internal Unicode character segmentation, an" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-upperfirst-offset-indexing-and-limits">Lodash upperFirst
+Offset Indexing and Limits</h1>
+<p>This article provides an overview of how Lodash’s
+<code>_.upperFirst</code> method handles offset indexing and character
+constraints during string capitalization. It covers the exact index
+boundaries modified by the function, internal Unicode character
+segmentation, and the technical limits imposed by JavaScript string
+specifications.</p>
+<h3 id="the-target-capitalization-offset">The Target Capitalization
+Offset</h3>
+<p>In Lodash, <code>_.upperFirst</code> strictly targets index offset
+<code>0</code> of the input sequence. Unlike generalized case-formatting
+utilities that accept dynamic index ranges or slice boundaries,
+<code>_.upperFirst</code> relies on an internal function named
+<code>createCaseFirst('toUpperCase')</code>.</p>
+<p>The method splits the input into two distinct parts:</p>
+<ol type="1">
+<li><strong>The Lead Unit (Offset 0):</strong> Only the very first
+symbol at offset <code>0</code> is transformed using JavaScript's native
+<code>toUpperCase()</code> method.</li>
+<li><strong>The Trailing Unit (Offset 1 to Length - 1):</strong> The
+remainder of the string starting at index offset <code>1</code> is
+sliced and concatenated back without modification.</li>
+</ol>
+<h3 id="unicode-boundaries-and-code-point-limits">Unicode Boundaries and
+Code Point Limits</h3>
+<p>Because standard JavaScript index access (<code>string[0]</code> or
+<code>string.charAt(0)</code>) operates on 16-bit UTF-16 code units,
+characters outside the Basic Multilingual Plane (code points exceeding
+<code>U+FFFF</code>, such as emojis or specific mathematical symbols)
+occupy two code units as a surrogate pair.</p>
+<p>To prevent splitting surrogate pairs, <code>_.upperFirst</code>
+implements a Unicode check via <code>hasUnicode</code>:</p>
+<ul>
+<li><strong>ASCII / BMP Characters:</strong> If no complex Unicode
+sequences are detected, the target limit is strictly the single UTF-16
+code unit at index <code>0</code> (<code>string.charAt(0)</code>),
+spanning an offset length of exactly 1 code unit.</li>
+<li><strong>Complex Unicode / Astral Symbols:</strong> If complex
+Unicode characters are present, Lodash parses the string into an array
+of symbols via <code>stringToArray</code>. The target limit expands from
+a raw byte/unit boundary to the entire first Unicode code point or
+grapheme cluster at array index <code>0</code>, preserving surrogate
+pairs before applying the uppercase transform.</li>
+</ul>
+<h3 id="upper-and-lower-string-length-boundaries">Upper and Lower String
+Length Boundaries</h3>
+<p><code>_.upperFirst</code> does not define an internal numeric
+character ceiling, but it adheres to specific input and output
+constraints:</p>
+<ul>
+<li><strong>Lower Bound (Zero Length):</strong> If the input string has
+a length of <code>0</code> (empty string) or resolves to an empty string
+via <code>toString()</code>, the capitalization offset is unreachable.
+The function immediately returns an empty string without throwing an
+out-of-bounds error.</li>
+<li><strong>Target Capitalization Limit:</strong> The uppercase
+transformation limit is strictly fixed to <span
+class="math inline">\(1\)</span> logical character unit (either 1 UTF-16
+code unit or 1 surrogate pair / grapheme symbol). It cannot be
+configured to capitalize multiple sequential offset positions.</li>
+<li><strong>Upper Engine Limit:</strong> The maximum input length is
+dictated entirely by the host JavaScript engine's maximum string limit
+(such as <span class="math inline">\(2^{28} - 16\)</span> characters in
+32-bit systems or <span class="math inline">\(2^{29} - 24\)</span>
+characters in modern 64-bit V8 engines). Lodash will process any string
+up to this environment-specific memory limit.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

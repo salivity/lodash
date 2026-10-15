@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash Shuffle Handles Array Mutation - lodash</title>
+    <meta name="description" content="Lodash’s .shuffle method uses the Fisher-Yates shuffle algorithm while strictly preserving data immutability for the input collection. To prevent modifying the original array, Lodash first creates an internal shallow copy of the source elements and execut">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-shuffle-handles-array-mutation">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash Shuffle Handles Array Mutation - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-shuffle-handles-array-mutation" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .shuffle method uses the Fisher-Yates shuffle algorithm while strictly preserving data immutability for the input collection. To prevent modifying the original array, Lodash first creates an internal shallow copy of the source elements and execut" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-shuffle-handles-array-mutation">How Lodash Shuffle
+Handles Array Mutation</h1>
+<p>Lodash’s <code>_.shuffle</code> method uses the Fisher-Yates shuffle
+algorithm while strictly preserving data immutability for the input
+collection. To prevent modifying the original array, Lodash first
+creates an internal shallow copy of the source elements and executes the
+element-swapping routine entirely within that isolated copy. This
+approach combines the performance advantages of an in-place Fisher-Yates
+permutation with the safety of a non-destructive functional API.</p>
+<h3 id="the-defensive-copy">The Defensive Copy</h3>
+<p>When <code>_.shuffle</code> receives an array or collection, it does
+not apply mutations directly to the target reference. Instead, the
+method invokes an internal utility—historically <code>copyArray</code>
+or <code>toArray</code> depending on whether the input is a native array
+or an iterable object.</p>
+<p>By allocating a new array populated with shallow references to the
+original elements, Lodash establishes a disposable memory buffer. The
+original array remains untouched in its original memory location,
+ensuring that callers do not experience side effects.</p>
+<h3 id="internal-fisher-yates-mechanics">Internal Fisher-Yates
+Mechanics</h3>
+<p>Once the cloned array is established, control passes to Lodash’s
+internal shuffling mechanism (often structured as
+<code>baseShuffle</code>). Lodash employs the modern version of the
+Fisher-Yates algorithm (also known as the Knuth or Durstenfeld
+shuffle).</p>
+<p>The algorithm operates linearly over the copied array:</p>
+<ol type="1">
+<li>It tracks the current iteration index and determines the bounds for
+random selection.</li>
+<li>For each element at index <code>i</code>, it calculates a
+pseudorandom index <code>rand</code> within the valid range using
+<code>Math.random()</code>. Depending on whether the loop moves forward
+or backward, <code>rand</code> falls between <code>0</code> and
+<code>i</code>, or between <code>i</code> and
+<code>length - 1</code>.</li>
+<li>It performs a classic swap: the value currently occupying the target
+index is stored temporarily, the randomly chosen element replaces it,
+and the stored value is written to the random index.</li>
+</ol>
+<h3 id="local-mutation-for-performance">Local Mutation for
+Performance</h3>
+<p>While the public-facing API behaves immutably, the internal
+implementation intentionally uses mutable assignment operators on the
+local buffer. Instead of creating new arrays on each swap (such as using
+<code>.slice()</code> or spread syntax), Lodash writes directly to array
+indices (<code>result[index] = result[rand]</code>).</p>
+<p>Performing direct indexed writes on the cloned array maintains an
+optimal time complexity of <span class="math inline">\(O(n)\)</span> and
+minimizes garbage collection overhead. Once the iteration completes and
+every element has had an equal probability of landing in any position,
+Lodash returns the mutated local copy as the final result.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

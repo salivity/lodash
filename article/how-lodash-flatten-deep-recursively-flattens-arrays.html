@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash flattenDeep Recursively Flattens Arrays - lodash</title>
+    <meta name="description" content="Lodash’s .flattenDeep is a popular utility function designed to recursively unpack arbitrarily nested arrays into a single, one-dimensional array. This article explores the internal mechanics of .flattenDeep, focusing on how it leverages Lodash&#39;s internal">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-flatten-deep-recursively-flattens-arrays">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash flattenDeep Recursively Flattens Arrays - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-flatten-deep-recursively-flattens-arrays" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .flattenDeep is a popular utility function designed to recursively unpack arbitrarily nested arrays into a single, one-dimensional array. This article explores the internal mechanics of .flattenDeep, focusing on how it leverages Lodash&#39;s internal" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-flattendeep-recursively-flattens-arrays">How Lodash
+flattenDeep Recursively Flattens Arrays</h1>
+<p>Lodash’s <code>_.flattenDeep</code> is a popular utility function
+designed to recursively unpack arbitrarily nested arrays into a single,
+one-dimensional array. This article explores the internal mechanics of
+<code>_.flattenDeep</code>, focusing on how it leverages Lodash's
+internal <code>baseFlatten</code> helper, manages recursive call paths,
+verifies flattenable elements, and ensures complete array flattening
+with optimal execution.</p>
+<h3 id="the-entry-point-flattendeep">The Entry Point:
+<code>flattenDeep</code></h3>
+<p>In the Lodash source code, <code>_.flattenDeep</code> acts as a
+specialized wrapper. It does not implement the traversal logic directly;
+instead, it delegates the heavy lifting to an internal utility function
+called <code>baseFlatten</code>.</p>
+<p>The function signature for <code>flattenDeep</code> is defined
+as:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">flattenDeep</span>(array) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> length <span class="op">=</span> array <span class="op">==</span> <span class="kw">null</span> <span class="op">?</span> <span class="dv">0</span> <span class="op">:</span> array<span class="op">.</span><span class="at">length</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> length <span class="op">?</span> <span class="fu">baseFlatten</span>(array<span class="op">,</span> INFINITY) <span class="op">:</span> []<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Here, <code>INFINITY</code> is defined as <code>1 / 0</code> (or
+JavaScript's <code>Infinity</code>). Passing infinite depth indicates to
+the core engine that nesting should be resolved completely, regardless
+of how many layers deep the arrays are nested.</p>
+<h3 id="the-core-engine-baseflatten">The Core Engine:
+<code>baseFlatten</code></h3>
+<p>The recursive mechanism lives inside <code>baseFlatten</code>. This
+internal function accepts several parameters:</p>
+<ol type="1">
+<li><strong><code>array</code></strong>: The array currently being
+processed.</li>
+<li><strong><code>depth</code></strong>: The maximum recursion level
+allowed (which is <code>Infinity</code> for
+<code>flattenDeep</code>).</li>
+<li><strong><code>predicate</code></strong>: A function determining if
+an item should be flattened (defaults to an internal
+<code>isFlattenable</code> check).</li>
+<li><strong><code>isStrict</code></strong>: A boolean flag restricting
+non-flattenable elements from being preserved (used by other Lodash
+functions).</li>
+<li><strong><code>result</code></strong>: The accumulator array where
+flattened values are stored.</li>
+</ol>
+<p>When <code>baseFlatten</code> runs, it allocates an accumulator array
+(<code>result</code>) if one is not passed. It then iterates
+sequentially through the input array using a standard
+<code>for...of</code> or index-based <code>while</code> loop.</p>
+<h3 id="the-recursive-branch-vs-base-values">The Recursive Branch vs.
+Base Values</h3>
+<p>During iteration, each element of the array is evaluated against the
+predicate function <code>isFlattenable</code>. In Lodash, an element is
+considered flattenable if it is a standard array, an
+<code>arguments</code> object, or an object with a
+<code>Symbol.isConcatSpreadable</code> property set to
+<code>true</code>.</p>
+<p>The recursive branching logic functions as follows:</p>
+<ol type="1">
+<li><p><strong>Depth Check and Type Evaluation</strong>: If
+<code>depth &gt; 0</code> and the current value passes
+<code>isFlattenable</code>, the function branches into
+recursion.</p></li>
+<li><p><strong>Recursive Execution</strong>: <code>baseFlatten</code>
+calls itself recursively, passing the nested array, a decremented depth
+(<code>depth - 1</code>), the predicate, and the shared
+<code>result</code> accumulator:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">baseFlatten</span>(value<span class="op">,</span> depth <span class="op">-</span> <span class="dv">1</span><span class="op">,</span> predicate<span class="op">,</span> isStrict<span class="op">,</span> result)<span class="op">;</span></span></code></pre></div>
+<p>Because <code>Infinity - 1</code> is still <code>Infinity</code>, the
+depth constraint never restricts <code>flattenDeep</code> until no
+nested arrays remain.</p></li>
+<li><p><strong>Accumulation (Base Case)</strong>: If an element is not
+flattenable or the depth has reached <code>0</code>, the element is
+appended to the <code>result</code> array:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>result[result<span class="op">.</span><span class="at">length</span>] <span class="op">=</span> value<span class="op">;</span></span></code></pre></div></li>
+</ol>
+<p>By passing the same mutable <code>result</code> array through every
+recursive frame, Lodash avoids the performance penalties associated with
+creating intermediate arrays and concatenating them (such as using
+<code>Array.prototype.concat</code>).</p>
+<h3 id="conceptual-vanilla-javascript-implementation">Conceptual Vanilla
+JavaScript Implementation</h3>
+<p>To illustrate how <code>_.flattenDeep</code> achieves this, the
+following conceptual implementation mirrors Lodash’s internal recursion
+model:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isFlattenable</span>(value) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="bu">Array</span><span class="op">.</span><span class="fu">isArray</span>(value) <span class="op">||</span> <span class="bu">Boolean</span>(value <span class="op">&amp;&amp;</span> value[<span class="bu">Symbol</span><span class="op">.</span><span class="at">isConcatSpreadable</span>])<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseFlatten</span>(array<span class="op">,</span> depth<span class="op">,</span> result <span class="op">=</span> []) {</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> array<span class="op">.</span><span class="at">length</span><span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> value <span class="op">=</span> array[i]<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (depth <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">&amp;&amp;</span> <span class="fu">isFlattenable</span>(value)) {</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Recurse into the nested array while passing the accumulated result</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">baseFlatten</span>(value<span class="op">,</span> depth <span class="op">-</span> <span class="dv">1</span><span class="op">,</span> result)<span class="op">;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Base case: push non-array value directly to the result</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>      result<span class="op">.</span><span class="fu">push</span>(value)<span class="op">;</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">customFlattenDeep</span>(array) {</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> array <span class="op">&amp;&amp;</span> array<span class="op">.</span><span class="at">length</span> <span class="op">?</span> <span class="fu">baseFlatten</span>(array<span class="op">,</span> <span class="kw">Infinity</span><span class="op">,</span> []) <span class="op">:</span> []<span class="op">;</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="call-stack-and-recursion-limits">Call Stack and Recursion
+Limits</h3>
+<p>Because <code>_.flattenDeep</code> relies on recursive function
+calls, the depth of the nesting directly correlates to the call stack
+depth in the JavaScript engine. If an array is nested deeper than the
+engine's maximum call stack size (typically between 10,000 and 25,000
+recursive frames depending on the browser or runtime), the function will
+throw a <code>RangeError: Maximum call stack size exceeded</code>. For
+typical web development use cases, nested depths rarely exceed double
+digits, making Lodash's combined loop-and-recursion pattern both fast
+and memory-efficient.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

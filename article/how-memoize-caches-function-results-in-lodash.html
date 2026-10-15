@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How _.memoize Caches Function Results in Lodash - lodash</title>
+    <meta name="description" content="This article explains how the .memoize method in the Lodash JavaScript library stores and retrieves the results of computationally expensive functions. You will learn the mechanics behind its internal caching system, how it generates cache keys from funct">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-memoize-caches-function-results-in-lodash">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How _.memoize Caches Function Results in Lodash - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-memoize-caches-function-results-in-lodash" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the .memoize method in the Lodash JavaScript library stores and retrieves the results of computationally expensive functions. You will learn the mechanics behind its internal caching system, how it generates cache keys from funct" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-_memoize-caches-function-results-in-lodash">How _.memoize
+Caches Function Results in Lodash</h1>
+<p>This article explains how the <code>_.memoize</code> method in the
+Lodash JavaScript library stores and retrieves the results of
+computationally expensive functions. You will learn the mechanics behind
+its internal caching system, how it generates cache keys from function
+arguments, how to handle multiple parameters using custom resolvers, and
+how to inspect or clear the underlying cache to optimize application
+performance.</p>
+<h2 id="what-is-_memoize">What is <code>_.memoize</code>?</h2>
+<p>In JavaScript, memoization is an optimization technique used to speed
+up programs by storing the results of expensive function calls and
+returning the cached result when the same inputs occur again. Lodash
+provides this capability out of the box through
+<code>_.memoize(func, [resolver])</code>.</p>
+<p>When you wrap a function with <code>_.memoize</code>, it returns a
+new memoized version of that function. This wrapper intercepts calls,
+checks an internal storage map for existing results, and avoids
+re-running the original computation whenever possible.</p>
+<h2 id="the-internal-cache-mechanism">The Internal Cache Mechanism</h2>
+<p>Under the hood, <code>_.memoize</code> maintains a cache instance
+directly on the returned function as a property called
+<code>.cache</code>.</p>
+<p>By default, Lodash creates this cache using a constructor compatible
+with the JavaScript <code>Map</code> interface. It relies on standard
+key-value operations:</p>
+<ul>
+<li><strong>Lookup:</strong> Before invoking the wrapped function,
+Lodash checks if the computed key exists using
+<code>.has(key)</code>.</li>
+<li><strong>Retrieval:</strong> If the key exists (a cache hit), it
+retrieves the stored result using <code>.get(key)</code> and returns it
+immediately.</li>
+<li><strong>Storage:</strong> If the key does not exist (a cache miss),
+it invokes the original function with the supplied arguments, saves the
+output using <code>.set(key, value)</code>, and returns the newly
+computed value.</li>
+</ul>
+<p>By default, the cache is an instance of <code>_.memoize.Cache</code>,
+which defaults to the internal <code>MapCache</code> (or the native
+<code>Map</code> in modern environments).</p>
+<h2 id="default-key-resolution">Default Key Resolution</h2>
+<p>By default, <code>_.memoize</code> determines the cache key using
+only the <strong>first argument</strong> passed to the function:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> computeSquare <span class="op">=</span> _<span class="op">.</span><span class="fu">memoize</span>((n) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Expensive calculation</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> n <span class="op">*</span> n<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">computeSquare</span>(<span class="dv">4</span>)<span class="op">;</span> <span class="co">// Computes and stores with key: 4</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">computeSquare</span>(<span class="dv">4</span>)<span class="op">;</span> <span class="co">// Cache hit, returns stored result: 16</span></span></code></pre></div>
+<p>Because Lodash uses the first argument as the key, calls with
+multiple arguments can lead to unexpected behavior if not configured
+properly:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> add <span class="op">=</span> _<span class="op">.</span><span class="fu">memoize</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> a <span class="op">+</span> b)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">add</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span> <span class="co">// Computes 5 (cached under key: 2)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">add</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span> <span class="co">// Returns 5! (Cache hit because key &#39;2&#39; already exists)</span></span></code></pre></div>
+<h2 id="using-a-custom-resolver-for-multiple-arguments">Using a Custom
+Resolver for Multiple Arguments</h2>
+<p>To cache results based on multiple arguments or complex object
+properties, <code>_.memoize</code> accepts an optional second parameter:
+a <code>resolver</code> function. The resolver receives the same
+arguments as the memoized function and must return a value to be used as
+the cache key.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> add <span class="op">=</span> _<span class="op">.</span><span class="fu">memoize</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  (a<span class="op">,</span> b) <span class="kw">=&gt;</span> a <span class="op">+</span> b<span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  (a<span class="op">,</span> b) <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>a<span class="sc">}</span><span class="vs">_</span><span class="sc">${</span>b<span class="sc">}</span><span class="vs">`</span> <span class="co">// Custom key resolver</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">add</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span>  <span class="co">// Computes 5 (cached under key: &quot;2_3&quot;)</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">add</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span> <span class="co">// Computes 12 (cached under key: &quot;2_10&quot;)</span></span></code></pre></div>
+<p>For objects or arrays, you can use serialization (like
+<code>JSON.stringify</code>) within the resolver, although this adds
+slight overhead:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> processData <span class="op">=</span> _<span class="op">.</span><span class="fu">memoize</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  (config) <span class="kw">=&gt;</span> <span class="fu">runHeavyTask</span>(config)<span class="op">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  (config) <span class="kw">=&gt;</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>(config)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span></code></pre></div>
+<h2 id="inspecting-and-manipulating-the-cache">Inspecting and
+Manipulating the Cache</h2>
+<p>Because the cache is exposed on the function itself, you can directly
+inspect, modify, or clear stored computations:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> memoized <span class="op">=</span> _<span class="op">.</span><span class="fu">memoize</span>(expensiveOperation)<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">// View cache size or keys</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(memoized<span class="op">.</span><span class="at">cache</span><span class="op">.</span><span class="at">size</span>)<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Check if a result is cached</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (memoized<span class="op">.</span><span class="at">cache</span><span class="op">.</span><span class="fu">has</span>(key)) {</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&quot;Cached result:&quot;</span><span class="op">,</span> memoized<span class="op">.</span><span class="at">cache</span><span class="op">.</span><span class="fu">get</span>(key))<span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Clear a specific entry</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>memoized<span class="op">.</span><span class="at">cache</span><span class="op">.</span><span class="fu">delete</span>(key)<span class="op">;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Clear the entire cache</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>memoized<span class="op">.</span><span class="at">cache</span><span class="op">.</span><span class="fu">clear</span>()<span class="op">;</span></span></code></pre></div>
+<p>You can also replace <code>_.memoize.Cache</code> globally or on an
+individual function instance if your application requires a custom
+storage engine, such as an LRU (Least Recently Used) cache to prevent
+memory leaks from unbounded growth.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

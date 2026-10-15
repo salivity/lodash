@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Modular vs Monolithic Build Differences - lodash</title>
+    <meta name="description" content="Lodash provides two primary ways to consume its utilities: monolithic builds and modular builds. The core difference lies in how the library is packaged and imported, which directly affects bundle size, application load times, and dependency management. W">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-modular-vs-monolithic-build-differences">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Modular vs Monolithic Build Differences - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-modular-vs-monolithic-build-differences" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash provides two primary ways to consume its utilities: monolithic builds and modular builds. The core difference lies in how the library is packaged and imported, which directly affects bundle size, application load times, and dependency management. W" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-modular-vs-monolithic-build-differences">Lodash Modular
+vs Monolithic Build Differences</h1>
+<p>Lodash provides two primary ways to consume its utilities: monolithic
+builds and modular builds. The core difference lies in how the library
+is packaged and imported, which directly affects bundle size,
+application load times, and dependency management. While a monolithic
+build includes the entire utility suite in a single distribution, a
+modular build allows developers to import only the specific functions
+required by their application.</p>
+<h2 id="monolithic-build">Monolithic Build</h2>
+<p>A monolithic build delivers the entire Lodash library as a single,
+comprehensive package. When you import the monolithic build, you gain
+access to the complete set of Lodash utilities through a single global
+object or namespace.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Monolithic import</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> _ <span class="im">from</span> <span class="st">&#39;lodash&#39;</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">chunk</span>([<span class="st">&#39;a&#39;</span><span class="op">,</span> <span class="st">&#39;b&#39;</span><span class="op">,</span> <span class="st">&#39;c&#39;</span><span class="op">,</span> <span class="st">&#39;d&#39;</span>]<span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span></code></pre></div>
+<h3 id="characteristics-of-monolithic-builds">Characteristics of
+Monolithic Builds</h3>
+<ul>
+<li><strong>Complete Suite:</strong> Contains hundreds of utility
+functions in one file.</li>
+<li><strong>Simple Integration:</strong> Ideal for rapid prototyping or
+environments where import simplicity is preferred over size
+optimization.</li>
+<li><strong>Bundle Bloat:</strong> Traditional bundlers often struggle
+to tree-shake unused utilities from CommonJS-based monolithic imports,
+resulting in significant overhead in frontend client bundles.</li>
+<li><strong>Server-Side Suitability:</strong> Often used in Node.js
+backend applications where disk space and memory are less constrained
+compared to browser bandwidth limits.</li>
+</ul>
+<h2 id="modular-build">Modular Build</h2>
+<p>A modular build separates Lodash into individual, standalone files or
+distinct modules. Instead of pulling in the entire library, developers
+import only the specific functions their application actively uses.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Method-specific import</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> chunk <span class="im">from</span> <span class="st">&#39;lodash/chunk&#39;</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> <span class="fu">chunk</span>([<span class="st">&#39;a&#39;</span><span class="op">,</span> <span class="st">&#39;b&#39;</span><span class="op">,</span> <span class="st">&#39;c&#39;</span><span class="op">,</span> <span class="st">&#39;d&#39;</span>]<span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span></code></pre></div>
+<p>Another modern variant is <code>lodash-es</code>, which ships Lodash
+as native ECMAScript Modules (ESM), enabling modern bundlers like
+Webpack, Rollup, or Vite to perform tree-shaking automatically:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// ESM tree-shaken import</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { chunk } <span class="im">from</span> <span class="st">&#39;lodash-es&#39;</span><span class="op">;</span></span></code></pre></div>
+<h3 id="characteristics-of-modular-builds">Characteristics of Modular
+Builds</h3>
+<ul>
+<li><strong>Reduced Bundle Size:</strong> Only the imported function and
+its internal dependencies are included in the final production
+bundle.</li>
+<li><strong>Optimized Performance:</strong> Smaller bundle sizes
+translate to faster download times, quicker parsing, and improved user
+experience on the web.</li>
+<li><strong>Explicit Imports:</strong> Requires developers to import
+utilities individually, making dependencies clear within each file.</li>
+</ul>
+<h2 id="key-differences">Key Differences</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Monolithic Build</th>
+<th style="text-align: left;">Modular Build</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Package Size</strong></td>
+<td style="text-align: left;">Heavy (entire library bundled)</td>
+<td style="text-align: left;">Lightweight (only imported methods
+bundled)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Import Syntax</strong></td>
+<td style="text-align: left;"><code>import _ from 'lodash'</code></td>
+<td style="text-align: left;"><code>import map from 'lodash/map'</code>
+or <code>import { map } from 'lodash-es'</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Tree-Shaking</strong></td>
+<td style="text-align: left;">Poor with standard CommonJS
+configurations</td>
+<td style="text-align: left;">Highly effective, especially with
+<code>lodash-es</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Best Use Case</strong></td>
+<td style="text-align: left;">Node.js backends, scripts, or quick
+prototypes</td>
+<td style="text-align: left;">Modern client-side web applications</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusion">Conclusion</h2>
+<p>The choice between a monolithic and a modular build depends on your
+deployment target. For Node.js services or server-side scripts where
+network payload is not a factor, a monolithic build offers convenience
+and rapid development. For modern web applications where performance and
+bandwidth are critical, a modular build (either via direct path imports
+or <code>lodash-es</code>) is the recommended standard to keep
+production bundles as lean as possible.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

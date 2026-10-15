@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash Optimizes Path String Parsing in _.property - lodash</title>
+    <meta name="description" content="Lodash accelerates nested object property access through utilities like .property and .get by eliminating redundant string-to-path parsing overhead. Instead of naively decomposing string paths on every invocation, the library employs a multi-tiered strate">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-optimizes-path-string-parsing-in-property">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash Optimizes Path String Parsing in _.property - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-optimizes-path-string-parsing-in-property" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash accelerates nested object property access through utilities like .property and .get by eliminating redundant string-to-path parsing overhead. Instead of naively decomposing string paths on every invocation, the library employs a multi-tiered strate" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-optimizes-path-string-parsing-in-_property">How
+Lodash Optimizes Path String Parsing in _.property</h1>
+<p>Lodash accelerates nested object property access through utilities
+like <code>_.property</code> and <code>_.get</code> by eliminating
+redundant string-to-path parsing overhead. Instead of naively
+decomposing string paths on every invocation, the library employs a
+multi-tiered strategy involving direct key detection, precompiled
+regular expression tokenization, and an internal capped memoization
+cache. This architecture ensures that deep path resolution remains fast
+and memory-safe even when evaluating thousands of repetitive
+lookups.</p>
+<h3 id="the-fast-path-check-with-iskey">The Fast-Path Check with
+<code>isKey</code></h3>
+<p>Before initiating any parsing logic, Lodash determines whether
+parsing is necessary at all. The internal <code>castPath</code> helper
+checks if the supplied value is already an array. If it is a string, it
+delegates to the <code>isKey</code> utility.</p>
+<p>The <code>isKey</code> function checks if the target string can be
+treated as a direct property name on the target object. It evaluates
+whether the string contains deep path characters—specifically dots
+(<code>.</code>), opening brackets (<code>[</code>), or closing brackets
+(<code>]</code>)—or if the property already exists directly on the
+object. If the string contains none of these structural characters,
+Lodash skips path parsing entirely and treats the string as a single,
+direct property lookup.</p>
+<h3 id="tokenization-via-precompiled-regular-expressions">Tokenization
+via Precompiled Regular Expressions</h3>
+<p>When a string contains deep path notation, Lodash passes it to
+<code>stringToPath</code>. Parsing structured accessors like
+<code>'a.b[0].c'</code> into discrete segments
+(<code>['a', 'b', '0', 'c']</code>) is handled via precompiled regular
+expressions rather than dynamic string splitting.</p>
+<p>Lodash defines specific regex patterns ahead of time, primarily
+<code>rePropName</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> rePropName <span class="op">=</span> <span class="ss">/</span><span class="sc">[^.[\]]+|\[(?</span><span class="ss">:</span><span class="sc">([^&quot;&#39;][^[]*)|([&quot;&#39;])((?</span><span class="ss">:</span><span class="sc">(?</span><span class="ss">!</span><span class="sc">\2)[^\\]|\\</span><span class="ss">.</span><span class="sc">)*?)\2)\]|(?</span><span class="ss">=</span><span class="sc">(?</span><span class="ss">:</span><span class="sc">\.|\[\])(?</span><span class="ss">:</span><span class="sc">\.|\[\]|</span><span class="ss">$</span><span class="sc">))</span><span class="ss">/g</span><span class="op">;</span></span></code></pre></div>
+<p>This regular expression matches:</p>
+<ol type="1">
+<li>Standard property names separated by dots
+(<code>[^.[\]]+</code>).</li>
+<li>Numeric or unquoted bracket indices
+(<code>\[([^"'][^[]*)\]</code>).</li>
+<li>Single- or double-quoted bracket keys, properly handling escaped
+characters (<code>\[(["'])...\]</code>).</li>
+</ol>
+<p>Lodash executes this pattern using
+<code>String.prototype.replace</code> to iterate through matches,
+stripping away leading dots and unescaping quoted keys before pushing
+each token into a clean segment array.</p>
+<h3 id="capped-memoization-cache">Capped Memoization Cache</h3>
+<p>Because tokenizing strings with regular expressions is
+computationally expensive, Lodash wraps <code>stringToPath</code> with
+an internal memoization wrapper called <code>memoizeCapped</code>.</p>
+<p>Under this mechanism:</p>
+<ul>
+<li>The first time a path string (e.g.,
+<code>'user.profile.name'</code>) is encountered, the regex parser runs
+and the resulting array of property keys is stored in an internal
+cache.</li>
+<li>Subsequent calls passing identical path strings retrieve the
+pre-computed array in <span class="math inline">\(O(1)\)</span> time,
+completely bypassing regex execution.</li>
+<li>To prevent unbounded memory growth in long-running Node.js processes
+or single-page applications, the cache is restricted by
+<code>MAX_MEMOIZE_SIZE</code> (set to 500 entries). When the cache
+exceeds this limit, it is cleared, preventing memory leaks while
+retaining high hit rates for common application paths.</li>
+</ul>
+<h3 id="final-execution-via-segment-iteration">Final Execution via
+Segment Iteration</h3>
+<p>Once <code>castPath</code> returns the array of path segments—either
+from the memoized cache or newly generated—the
+<code>basePropertyDeep</code> helper takes over. It iterates through the
+array using a simple <code>while</code> loop, sequentially traversing
+each nested level of the target object:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseGet</span>(object<span class="op">,</span> path) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  path <span class="op">=</span> <span class="fu">castPath</span>(path<span class="op">,</span> object)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> index <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> length <span class="op">=</span> path<span class="op">.</span><span class="at">length</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (object <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> index <span class="op">&lt;</span> length) {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    object <span class="op">=</span> object[<span class="fu">toKey</span>(path[index<span class="op">++</span>])]<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (index <span class="op">&amp;&amp;</span> index <span class="op">==</span> length) <span class="op">?</span> object <span class="op">:</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By isolating the complex string parsing phase into a memoized,
+regex-driven step, Lodash ensures that the repeated execution of
+<code>_.property</code> performs nearly as fast as native, static
+property traversals.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash camelCase: Parsing Hyphenated Unicode Strings - lodash</title>
+    <meta name="description" content="Lodash’s .camelCase transforms hyphenated strings, including complex Unicode descriptors, into continuous camel-cased text by running the input through a specialized internal pipeline. This process involves detecting whether the string contains Unicode co">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-camel-case-parsing-hyphenated-unicode-strings">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash camelCase: Parsing Hyphenated Unicode Strings - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-camel-case-parsing-hyphenated-unicode-strings" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .camelCase transforms hyphenated strings, including complex Unicode descriptors, into continuous camel-cased text by running the input through a specialized internal pipeline. This process involves detecting whether the string contains Unicode co" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-camelcase-parsing-hyphenated-unicode-strings">Lodash
+camelCase: Parsing Hyphenated Unicode Strings</h1>
+<p>Lodash’s <code>_.camelCase</code> transforms hyphenated strings,
+including complex Unicode descriptors, into continuous camel-cased text
+by running the input through a specialized internal pipeline. This
+process involves detecting whether the string contains Unicode code
+points, segmenting the string into individual word tokens using regular
+expressions that treat hyphens as boundaries, and compounding the
+resulting tokens into a unified string where the first segment is
+lowercased and all subsequent segments are capitalized.</p>
+<h3 id="1-the-createcompounder-wrapper">1. The
+<code>createCompounder</code> Wrapper</h3>
+<p>At its core, <code>_.camelCase</code> is constructed via an internal
+utility function called <code>createCompounder</code>. This higher-order
+function defines how tokens are aggregated into a single string. It
+accepts a callback that controls the formatting of each extracted
+word:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> camelCase <span class="op">=</span> <span class="fu">createCompounder</span>(<span class="kw">function</span>(result<span class="op">,</span> word<span class="op">,</span> index) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  word <span class="op">=</span> word<span class="op">.</span><span class="fu">toLowerCase</span>()<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result <span class="op">+</span> (index <span class="op">?</span> <span class="fu">capitalize</span>(word) <span class="op">:</span> word)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>When an input string like <code>déjà-vu-element</code> or
+<code>hyphenated-unicode-descriptor</code> is passed into
+<code>camelCase</code>, <code>createCompounder</code> first invokes
+Lodash's internal <code>words</code> function to split the string before
+running the reduction loop.</p>
+<h3 id="2-unicode-detection-and-regex-selection">2. Unicode Detection
+and Regex Selection</h3>
+<p>To parse Unicode descriptors correctly, Lodash inspects the input
+string to determine whether it contains standard ASCII characters or
+multi-byte Unicode sequences. It uses a regular expression to test for
+Unicode symbols, combining marks, variation selectors, and astral
+symbols:</p>
+<ul>
+<li>If the string contains only ASCII characters, it applies
+<code>asciiWords</code>, a lightweight regex that splits on hyphens,
+underscores, and uppercase character boundaries.</li>
+<li>If Unicode characters are detected (such as accented letters like
+<code>é</code> or Cyrillic characters), Lodash switches to
+<code>unicodeWords</code>.</li>
+</ul>
+<p>The <code>unicodeWords</code> regular expression breaks down
+characters based on Unicode properties. Hyphens (along with spaces,
+punctuation, and other non-alphanumeric marks) are explicitly excluded
+from word matches, functioning strictly as delimiters.</p>
+<h3 id="3-word-tokenization">3. Word Tokenization</h3>
+<p>During tokenization, hyphens are stripped away because the matching
+patterns target continuous blocks of characters rather than searching
+for splitters. The Unicode regex matches:</p>
+<ul>
+<li>Sequences of upper-case letters followed by lower-case letters.</li>
+<li>Sequences of digits.</li>
+<li>Continuous segments of lower-case or upper-case Unicode letter
+blocks.</li>
+</ul>
+<p>Because a hyphen matches none of these word patterns, the tokenizer
+stops at the hyphen, drops it, and starts a new token on the other side.
+For example, the input <code>"nord-est-crème-brûlée"</code> is segmented
+into the array:</p>
+<p><code>['nord', 'est', 'crème', 'brûlée']</code></p>
+<h3 id="4-normalization-and-continuous-compounding">4. Normalization and
+Continuous Compounding</h3>
+<p>Once the array of tokens is generated, the reducer callback provided
+to <code>createCompounder</code> processes each token sequentially:</p>
+<ol type="1">
+<li><strong>Lowercasing</strong>: Every word is passed through
+<code>toLowerCase()</code>. Lodash ensures that Unicode case mappings
+are respected so accented letters retain their appropriate lower-case
+variants.</li>
+<li><strong>Capitalization</strong>: If the word is at index
+<code>0</code>, it remains entirely lowercase. If the word is at an
+index greater than <code>0</code>, the first character is capitalized
+using Lodash’s Unicode-safe <code>capitalize</code> function, while the
+remainder of the word stays lowercased.</li>
+<li><strong>Concatenation</strong>: The transformed words are
+concatenated directly with no spaces, hyphens, or separators.</li>
+</ol>
+<p>The array <code>['nord', 'est', 'crème', 'brûlée']</code> is
+transformed into <code>"nord"</code> + <code>"Est"</code> +
+<code>"Crème"</code> + <code>"Brûlée"</code>, resulting in the
+continuous camel-case identifier <code>"nordEstCrèmeBrûlée"</code>.
+Through this architecture, Lodash preserves the linguistic integrity of
+non-ASCII characters while stripping hyphens and standardizing the
+string case.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

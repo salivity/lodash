@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash padStart Aligns Strings to the Right - lodash</title>
+    <meta name="description" content="The .padStart method in the Lodash JavaScript library formats strings by appending padding characters to the beginning (left side) of an input string until it reaches a designated target length. Because characters are added to the left, the original conte">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-pad-start-aligns-strings-to-the-right">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash padStart Aligns Strings to the Right - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-pad-start-aligns-strings-to-the-right" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .padStart method in the Lodash JavaScript library formats strings by appending padding characters to the beginning (left side) of an input string until it reaches a designated target length. Because characters are added to the left, the original conte" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-padstart-aligns-strings-to-the-right">How Lodash
+padStart Aligns Strings to the Right</h1>
+<p>The <code>_.padStart</code> method in the Lodash JavaScript library
+formats strings by appending padding characters to the beginning (left
+side) of an input string until it reaches a designated target length.
+Because characters are added to the left, the original content is pushed
+forward, effectively aligning the visible text to the right. This
+article explains the syntax of <code>_.padStart</code>, its internal
+mechanics for calculating padding, and practical examples demonstrating
+how to format text and numerical data.</p>
+<h3 id="syntax-and-parameters">Syntax and Parameters</h3>
+<p>The method accepts three arguments:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">padStart</span>([string<span class="op">=</span><span class="st">&#39;&#39;</span>]<span class="op">,</span> [length<span class="op">=</span><span class="dv">0</span>]<span class="op">,</span> [chars<span class="op">=</span><span class="st">&#39; &#39;</span>])</span></code></pre></div>
+<ul>
+<li><strong><code>string</code></strong>: The original string to pad.
+Non-string values are converted to strings; if omitted, it defaults to
+an empty string.</li>
+<li><strong><code>length</code></strong>: The desired total length of
+the resulting string. If this value is less than or equal to the
+original string's length, the string is returned unchanged.</li>
+<li><strong><code>chars</code></strong>: The character or sequence of
+characters used for padding. If not specified, it defaults to a single
+whitespace (<code>' '</code>).</li>
+</ul>
+<h3 id="how-the-alignment-mechanics-work">How the Alignment Mechanics
+Work</h3>
+<p>Right-alignment is achieved through a calculation based on
+length:</p>
+<ol type="1">
+<li><strong>Length Calculation</strong>: Lodash determines how many
+padding characters are needed by subtracting the length of the input
+string from the requested target <code>length</code>
+(<code>neededPadding = length - string.length</code>).</li>
+<li><strong>Padding Generation</strong>: If <code>neededPadding</code>
+is greater than zero, Lodash creates a prefix string consisting of the
+<code>chars</code> argument repeated until the exact required count is
+met. If the padding pattern exceeds the required length, it is truncated
+to fit.</li>
+<li><strong>Concatenation</strong>: The generated padding is prepended
+to the original string (<code>padding + string</code>), keeping the
+original text fixed on the right edge of the final output.</li>
+</ol>
+<h3 id="basic-examples">Basic Examples</h3>
+<p>Padding with default whitespace creates standard tabular
+right-alignment, which is useful for formatting console output or
+receipts:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">padStart</span>(<span class="st">&#39;10&#39;</span><span class="op">,</span> <span class="dv">5</span>))<span class="op">;</span>    <span class="co">// &quot;   10&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">padStart</span>(<span class="st">&#39;250&#39;</span><span class="op">,</span> <span class="dv">5</span>))<span class="op">;</span>   <span class="co">// &quot;  250&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">padStart</span>(<span class="st">&#39;1000&#39;</span><span class="op">,</span> <span class="dv">5</span>))<span class="op">;</span>  <span class="co">// &quot; 1000&quot;</span></span></code></pre></div>
+<p>Each output string is padded with spaces until the total length
+equals five, aligning the numbers vertically along their rightmost
+edge.</p>
+<h3 id="padding-with-custom-characters">Padding with Custom
+Characters</h3>
+<p>Custom characters can be used to format values like time, dates, or
+serialized identification numbers:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Adding leading zeros</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">padStart</span>(<span class="st">&#39;7&#39;</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="st">&#39;0&#39;</span>))<span class="op">;</span>   <span class="co">// &quot;07&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">padStart</span>(<span class="st">&#39;42&#39;</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="st">&#39;0&#39;</span>))<span class="op">;</span>  <span class="co">// &quot;00042&quot;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Using multi-character patterns</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">padStart</span>(<span class="st">&#39;end&#39;</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="st">&#39;_-&#39;</span>))<span class="op">;</span> <span class="co">// &quot;_-_-_end&quot;</span></span></code></pre></div>
+<p>When using multi-character strings such as <code>_-</code>, Lodash
+repeats the sequence and cuts it off cleanly once the target length of
+<code>8</code> is reached.</p>
+<h3 id="edge-case-handling">Edge Case Handling</h3>
+<p>If the target length is smaller than or equal to the length of the
+string, Lodash does not truncate the source text:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">padStart</span>(<span class="st">&#39;Complete&#39;</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="st">&#39; &#39;</span>))<span class="op">;</span> <span class="co">// &quot;Complete&quot;</span></span></code></pre></div>
+<p>Additionally, <code>_.padStart</code> safely handles
+<code>null</code> or <code>undefined</code> inputs by treating them as
+empty strings, preventing runtime exceptions that native alternatives
+might trigger without explicit type conversions.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

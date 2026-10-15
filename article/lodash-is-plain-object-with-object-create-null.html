@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.isPlainObject with Object.create(null) - lodash</title>
+    <meta name="description" content="This article examines how the Lodash JavaScript library’s .isPlainObject function evaluates objects instantiated with Object.create(null). It covers the exact boolean result returned by the utility, the internal implementation logic that determines this o">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-is-plain-object-with-object-create-null">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.isPlainObject with Object.create(null) - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-is-plain-object-with-object-create-null" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the Lodash JavaScript library’s .isPlainObject function evaluates objects instantiated with Object.create(null). It covers the exact boolean result returned by the utility, the internal implementation logic that determines this o" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_isplainobject-with-objectcreatenull">Lodash
+_.isPlainObject with Object.create(null)</h1>
+<p>This article examines how the Lodash JavaScript library’s
+<code>_.isPlainObject</code> function evaluates objects instantiated
+with <code>Object.create(null)</code>. It covers the exact boolean
+result returned by the utility, the internal implementation logic that
+determines this outcome, and why this design choice matters when
+handling prototype-less dictionary objects in modern JavaScript.</p>
+<h2 id="the-short-answer">The Short Answer</h2>
+<p>In modern versions of Lodash (v4.0.0 and later), calling
+<code>_.isPlainObject(Object.create(null))</code> returns
+<code>true</code>.</p>
+<p>Lodash treats an object with a <code>null</code> prototype as a plain
+object, alongside standard object literals (<code>{}</code>) and objects
+created directly via <code>new Object()</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> lodash <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> nullProtoObj <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">create</span>(<span class="kw">null</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(lodash<span class="op">.</span><span class="fu">isPlainObject</span>(nullProtoObj))<span class="op">;</span> <span class="co">// true</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> literalObj <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(lodash<span class="op">.</span><span class="fu">isPlainObject</span>(literalObj))<span class="op">;</span> <span class="co">// true</span></span></code></pre></div>
+<h2 id="how-lodash-evaluates-objectcreatenull">How Lodash Evaluates
+<code>Object.create(null)</code></h2>
+<p>To understand why <code>Object.create(null)</code> evaluates to
+<code>true</code>, consider Lodash's definition and implementation of
+<code>_.isPlainObject</code>. Lodash defines a plain object as:</p>
+<ol type="1">
+<li>An object created by the <code>Object</code> constructor.</li>
+<li>An object with a <code>[[Prototype]]</code> of
+<code>null</code>.</li>
+</ol>
+<p>Internally, the <code>_.isPlainObject</code> algorithm follows these
+steps:</p>
+<ol type="1">
+<li><strong>Type and Tag Check:</strong> It verifies whether the input
+is "object-like" (non-null and <code>typeof value === 'object'</code>)
+and that its internal <code>[[Class]]</code> tag matches
+<code>[object Object]</code>.</li>
+<li><strong>Null Prototype Short-Circuit:</strong> It retrieves the
+prototype using <code>Object.getPrototypeOf(value)</code>. If the
+prototype is explicitly <code>null</code>, the function immediately
+returns <code>true</code>.</li>
+<li><strong>Prototype Chain Resolution:</strong> For objects with
+prototypes, it traverses up the prototype chain until it reaches the
+top-level prototype (<code>Object.prototype</code>) and ensures the
+object's direct prototype matches this terminal prototype.</li>
+</ol>
+<p>Because <code>Object.create(null)</code> sets the internal
+<code>[[Prototype]]</code> directly to <code>null</code>, it fulfills
+the check in step two without needing to traverse the prototype
+chain.</p>
+<h2 id="why-this-behavior-matters">Why This Behavior Matters</h2>
+<p>In JavaScript, <code>Object.create(null)</code> is commonly used to
+create clean map or dictionary objects. Because these objects do not
+inherit from <code>Object.prototype</code>, they are free from built-in
+properties like <code>toString</code>, <code>valueOf</code>, or
+<code>hasOwnProperty</code>. This prevents prototype pollution and key
+collision vulnerabilities.</p>
+<p>Earlier versions of utility libraries often relied strictly on
+checking constructor properties:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Native naive check</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isPlain</span>(obj) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> obj <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> obj<span class="op">.</span><span class="at">constructor</span> <span class="op">===</span> <span class="bu">Object</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">isPlain</span>(<span class="bu">Object</span><span class="op">.</span><span class="fu">create</span>(<span class="kw">null</span>))<span class="op">;</span> <span class="co">// false, because obj.constructor is undefined</span></span></code></pre></div>
+<p>Because <code>Object.create(null)</code> lacks a
+<code>constructor</code> property, naive checks incorrectly identify it
+as not being a plain object. Lodash avoids this pitfall by checking
+prototypes directly, ensuring that clean, prototype-free key-value maps
+are correctly classified as plain objects.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

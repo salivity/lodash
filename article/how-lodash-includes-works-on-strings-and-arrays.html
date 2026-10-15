@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.includes Works on Strings and Arrays - lodash</title>
+    <meta name="description" content="This article explores how the .includes method in the Lodash library checks for values inside both strings and arrays. It covers the syntax, the underlying SameValueZero equality comparison, how substring matching works, and how the optional index offset">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-includes-works-on-strings-and-arrays">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.includes Works on Strings and Arrays - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-includes-works-on-strings-and-arrays" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how the .includes method in the Lodash library checks for values inside both strings and arrays. It covers the syntax, the underlying SameValueZero equality comparison, how substring matching works, and how the optional index offset" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_includes-works-on-strings-and-arrays">How Lodash
+_.includes Works on Strings and Arrays</h1>
+<p>This article explores how the <code>_.includes</code> method in the
+Lodash library checks for values inside both strings and arrays. It
+covers the syntax, the underlying <code>SameValueZero</code> equality
+comparison, how substring matching works, and how the optional index
+offset parameter behaves during evaluation.</p>
+<h2 id="syntax-and-basic-mechanics">Syntax and Basic Mechanics</h2>
+<p>The <code>_.includes</code> method checks whether a target value is
+present inside a given collection. Its signature is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">includes</span>(collection<span class="op">,</span> value<span class="op">,</span> [fromIndex<span class="op">=</span><span class="dv">0</span>])</span></code></pre></div>
+<p>The method accepts a collection (such as an array or a string), the
+target <code>value</code> to look for, and an optional
+<code>fromIndex</code> indicating the position to start searching
+from.</p>
+<h2 id="how-_includes-checks-arrays">How <code>_.includes</code> Checks
+Arrays</h2>
+<p>When evaluated against an array, <code>_.includes</code> iterates
+through the array elements starting at the index specified by
+<code>fromIndex</code> (defaulting to <code>0</code>).</p>
+<ol type="1">
+<li><p><strong>Equality Comparison:</strong> Lodash uses the ECMAScript
+<code>SameValueZero</code> comparison algorithm. This means it behaves
+almost identically to strict equality (<code>===</code>), with one key
+exception: it treats <code>NaN</code> as equal to <code>NaN</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">includes</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">NaN</span>]<span class="op">,</span> <span class="kw">NaN</span>)<span class="op">;</span> <span class="co">// returns true</span></span></code></pre></div></li>
+<li><p><strong>Reference Matching:</strong> For non-primitive types,
+such as objects or other arrays, <code>_.includes</code> checks by
+reference, not by deep structural equality.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> }<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">includes</span>([user]<span class="op">,</span> user)<span class="op">;</span> <span class="co">// returns true</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">includes</span>([{ <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> }]<span class="op">,</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> })<span class="op">;</span> <span class="co">// returns false</span></span></code></pre></div></li>
+<li><p><strong>Index Handling:</strong> If <code>fromIndex</code> is
+negative, it is used as an offset from the end of the array. For
+example, a <code>fromIndex</code> of <code>-2</code> starts searching
+from the second-to-last element.</p></li>
+</ol>
+<h2 id="how-_includes-checks-strings">How <code>_.includes</code> Checks
+Strings</h2>
+<p>When passed a string as the first argument, <code>_.includes</code>
+switches behavior from element matching to substring matching.</p>
+<ol type="1">
+<li><p><strong>Substring Matching:</strong> Instead of checking for
+individual characters in an array of characters, it checks whether the
+provided string exists as a contiguous substring within the source
+string.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">includes</span>(<span class="st">&#39;JavaScript&#39;</span><span class="op">,</span> <span class="st">&#39;Script&#39;</span>)<span class="op">;</span> <span class="co">// returns true</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">includes</span>(<span class="st">&#39;JavaScript&#39;</span><span class="op">,</span> <span class="st">&#39;Java&#39;</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span> <span class="co">// returns false (search starts at index 1)</span></span></code></pre></div></li>
+<li><p><strong>Case Sensitivity:</strong> Substring matching is strictly
+case-sensitive. <code>'script'</code> will not match
+<code>'Script'</code>.</p></li>
+<li><p><strong>Offset Handling:</strong> When <code>fromIndex</code> is
+provided, any negative index is clamped to <code>0</code>. Lodash then
+inspects the string starting from that index toward the end.</p></li>
+</ol>
+<h2 id="key-differences-between-array-and-string-handling">Key
+Differences Between Array and String Handling</h2>
+<ul>
+<li><strong>Type Matching:</strong> In arrays, types are preserved
+during comparison (e.g., <code>'1'</code> does not match
+<code>1</code>). In strings, non-string target values are coerced to
+strings before searching.</li>
+<li><strong>Negative Indexes:</strong> Arrays support negative
+<code>fromIndex</code> values as backwards offsets from the length of
+the array, whereas strings clamp negative <code>fromIndex</code> values
+to <code>0</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

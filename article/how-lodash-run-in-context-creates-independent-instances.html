@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash runInContext Creates Independent Instances - lodash</title>
+    <meta name="description" content="Lodash’s .runInContext() method creates an isolated, fully functional instance of the Lodash library by scoping its internal utilities and configurations to a specified execution environment. This article explores how .runInContext constructs independent">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-run-in-context-creates-independent-instances">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash runInContext Creates Independent Instances - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-run-in-context-creates-independent-instances" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .runInContext() method creates an isolated, fully functional instance of the Lodash library by scoping its internal utilities and configurations to a specified execution environment. This article explores how .runInContext constructs independent" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-runincontext-creates-independent-instances">How
+Lodash runInContext Creates Independent Instances</h1>
+<p>Lodash’s <code>_.runInContext()</code> method creates an isolated,
+fully functional instance of the Lodash library by scoping its internal
+utilities and configurations to a specified execution environment. This
+article explores how <code>_.runInContext</code> constructs independent
+instances, how it binds JavaScript primitives and global constructors,
+and why it is essential for avoiding prototype contamination and
+cross-realm execution issues.</p>
+<h3 id="the-mechanism-behind-_runincontext">The Mechanism Behind
+<code>_.runInContext</code></h3>
+<p>At its core, Lodash is implemented inside a factory wrapper function.
+Instead of directly referencing hardcoded global variables like
+<code>window</code> or <code>global</code>, the library references
+native objects and constructors through an internal context object. When
+<code>_.runInContext(context)</code> is invoked, it re-executes this
+factory closure against the provided <code>context</code> argument or a
+synthesized global fallback.</p>
+<p>During this re-execution, the method carries out three fundamental
+steps:</p>
+<ol type="1">
+<li><strong>Context Normalization:</strong> It accepts a custom context
+object (such as an <code>iframe</code> window, a Node.js <code>vm</code>
+context, or a plain mock object). If no context is passed, it defaults
+to the ambient global scope.</li>
+<li><strong>Native Binding Resolution:</strong> It maps all required
+JavaScript primitives and global APIs—such as <code>Array</code>,
+<code>Object</code>, <code>Date</code>, <code>Math</code>,
+<code>TypeError</code>, <code>setTimeout</code>, and
+<code>clearTimeout</code>—directly from that specific context.</li>
+<li><strong>Closure Instantiation:</strong> It constructs a new
+<code>lodash</code> function and associates it with its own internal
+registry, caches, and configuration settings.</li>
+</ol>
+<h3 id="prototype-and-mixin-isolation">Prototype and Mixin
+Isolation</h3>
+<p>In a standard Lodash setup, calling <code>_.mixin()</code> mutates
+the shared <code>_</code> wrapper by appending custom functions to its
+prototype chain and static namespace. This shared state can introduce
+bugs when different modules or third-party dependencies alter the
+default instance.</p>
+<p>Because <code>_.runInContext()</code> produces an entirely separate
+closure, modifying the returned instance has zero impact on the original
+<code>_</code> instance.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> lodash <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Create an isolated instance</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> customLodash <span class="op">=</span> lodash<span class="op">.</span><span class="fu">runInContext</span>()<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Extend only the isolated instance</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>customLodash<span class="op">.</span><span class="fu">mixin</span>({</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">customMethod</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="st">&#39;isolated&#39;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="kw">typeof</span> customLodash<span class="op">.</span><span class="at">customMethod</span>)<span class="op">;</span> <span class="co">// &quot;function&quot;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="kw">typeof</span> lodash<span class="op">.</span><span class="at">customMethod</span>)<span class="op">;</span>       <span class="co">// &quot;undefined&quot;</span></span></code></pre></div>
+<h3 id="cross-realm-and-multi-window-support">Cross-Realm and
+Multi-Window Support</h3>
+<p>In environments with multiple global realms—such as browser
+applications containing <code>&lt;iframe&gt;</code> elements or Node.js
+services running <code>vm</code> contexts—built-in constructors differ
+across boundaries (for example,
+<code>iframeWindow.Array !== window.Array</code>). Standard type checks,
+such as <code>instanceof</code>, often fail across these boundaries.</p>
+<p>By executing <code>_.runInContext(iframe.contentWindow)</code>,
+Lodash re-binds its internal type-checking mechanisms to that iframe's
+realm. Utilities like <code>_.isDate</code> and
+<code>_.isPlainObject</code> accurately evaluate objects originating
+from that distinct global environment without prototype mismatch
+errors.</p>
+<h3 id="testing-and-mocking">Testing and Mocking</h3>
+<p>Because native globals are retrieved from the context parameter,
+developers can inject mock environments into Lodash for unit testing.
+Passing an object containing mocked timer functions (such as
+<code>setTimeout</code> or <code>Date.now</code>) allows utilities like
+<code>_.debounce</code> and <code>_.throttle</code> to execute against
+controlled time sources without altering global system clocks.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

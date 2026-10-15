@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash omitBy Filters Object Properties - lodash</title>
+    <meta name="description" content="The .omitBy method in the Lodash JavaScript library creates a shallow clone of an object, excluding all properties for which a given predicate function returns a truthy value. Instead of manually specifying fixed keys to remove, developers can evaluate ea">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-omit-by-filters-object-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash omitBy Filters Object Properties - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-omit-by-filters-object-properties" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .omitBy method in the Lodash JavaScript library creates a shallow clone of an object, excluding all properties for which a given predicate function returns a truthy value. Instead of manually specifying fixed keys to remove, developers can evaluate ea" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-omitby-filters-object-properties">How Lodash omitBy
+Filters Object Properties</h1>
+<p>The <code>_.omitBy</code> method in the Lodash JavaScript library
+creates a shallow clone of an object, excluding all properties for which
+a given predicate function returns a truthy value. Instead of manually
+specifying fixed keys to remove, developers can evaluate each key-value
+pair dynamically against custom logic, making it particularly useful for
+cleaning up payloads, removing nullish data, or stripping out specific
+data types. This article breaks down the mechanics of
+<code>_.omitBy</code>, its syntax, and how its predicate function
+evaluates properties to filter them out.</p>
+<h2 id="understanding-the-syntax-and-parameters">Understanding the
+Syntax and Parameters</h2>
+<p>The basic syntax of <code>_.omitBy</code> is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">omitBy</span>(object<span class="op">,</span> [predicate<span class="op">=</span>_<span class="op">.</span><span class="at">identity</span>])</span></code></pre></div>
+<ul>
+<li><strong><code>object</code></strong>: The source object to inspect
+and filter.</li>
+<li><strong><code>predicate</code></strong>: The function invoked per
+iteration. It receives two primary arguments: <code>(value, key)</code>.
+By default, this is <code>_.identity</code>.</li>
+</ul>
+<p>The method returns a brand-new object containing only the properties
+where the predicate returned a falsy value. The original object remains
+unmodified.</p>
+<h2 id="how-the-predicate-function-evaluates-properties">How the
+Predicate Function Evaluates Properties</h2>
+<p>Under the hood, <code>_.omitBy</code> iterates over the enumerable
+string-keyed properties of the source object. During each iteration, it
+passes the current property’s <code>value</code> and <code>key</code> to
+the predicate function.</p>
+<p>The fundamental rule of <code>_.omitBy</code> is:</p>
+<ul>
+<li>If the predicate returns <strong>truthy</strong> (<code>true</code>,
+non-empty string, number other than <code>0</code>, etc.), the property
+is <strong>omitted</strong>.</li>
+<li>If the predicate returns <strong>falsy</strong> (<code>false</code>,
+<code>null</code>, <code>undefined</code>, <code>0</code>,
+<code>NaN</code>, <code>""</code>), the property is
+<strong>retained</strong>.</li>
+</ul>
+<p>This behavior is the exact inverse of <code>_.pickBy</code>, which
+keeps properties when the predicate evaluates to truthy.</p>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="1-removing-null-or-undefined-values">1. Removing Null or
+Undefined Values</h3>
+<p>A common use case is stripping out unset properties from an API
+request payload using Lodash’s built-in <code>_.isNil</code> helper.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> userData <span class="op">=</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alex&#39;</span><span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">age</span><span class="op">:</span> <span class="dv">29</span><span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">email</span><span class="op">:</span> <span class="kw">null</span><span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">phoneNumber</span><span class="op">:</span> <span class="kw">undefined</span><span class="op">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">active</span><span class="op">:</span> <span class="kw">true</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> cleanedData <span class="op">=</span> _<span class="op">.</span><span class="fu">omitBy</span>(userData<span class="op">,</span> _<span class="op">.</span><span class="at">isNil</span>)<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(cleanedData)<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: { name: &#39;Alex&#39;, age: 29, active: true }</span></span></code></pre></div>
+<p>In this scenario, <code>_.isNil(value)</code> returns
+<code>true</code> for <code>email</code> and <code>phoneNumber</code>,
+causing <code>_.omitBy</code> to exclude them from the output
+object.</p>
+<h3 id="2-filtering-by-value-type">2. Filtering by Value Type</h3>
+<p>You can define inline predicate functions to discard specific data
+types, such as numbers or booleans:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> rawInput <span class="op">=</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">id</span><span class="op">:</span> <span class="dv">101</span><span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Report&#39;</span><span class="op">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">views</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">isDraft</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">description</span><span class="op">:</span> <span class="st">&#39;Monthly summary&#39;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Omit any property whose value is a number</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> nonNumeric <span class="op">=</span> _<span class="op">.</span><span class="fu">omitBy</span>(rawInput<span class="op">,</span> (value) <span class="kw">=&gt;</span> <span class="kw">typeof</span> value <span class="op">===</span> <span class="st">&#39;number&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(nonNumeric)<span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: { title: &#39;Report&#39;, isDraft: false, description: &#39;Monthly summary&#39; }</span></span></code></pre></div>
+<h3 id="3-filtering-using-property-keys">3. Filtering Using Property
+Keys</h3>
+<p>The predicate also receives the property key as its second parameter,
+allowing exclusions based on key naming conventions:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> internalRecord <span class="op">=</span> {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">id</span><span class="op">:</span> <span class="st">&#39;abc-123&#39;</span><span class="op">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Project Alpha&#39;</span><span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">_internalId</span><span class="op">:</span> <span class="dv">98765</span><span class="op">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">_checksum</span><span class="op">:</span> <span class="st">&#39;d41d8cd98f00b204e9800998ecf8427e&#39;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Omit properties starting with an underscore</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> publicRecord <span class="op">=</span> _<span class="op">.</span><span class="fu">omitBy</span>(internalRecord<span class="op">,</span> (value<span class="op">,</span> key) <span class="kw">=&gt;</span> key<span class="op">.</span><span class="fu">startsWith</span>(<span class="st">&#39;_&#39;</span>))<span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(publicRecord)<span class="op">;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: { id: &#39;abc-123&#39;, title: &#39;Project Alpha&#39; }</span></span></code></pre></div>
+<h2 id="key-considerations">Key Considerations</h2>
+<ul>
+<li><strong>Shallow Filtering</strong>: <code>_.omitBy</code> only
+evaluates top-level properties. Nested objects are not recursively
+filtered; the entire nested structure is retained or omitted based on
+the top-level evaluation.</li>
+<li><strong>Immutability</strong>: The function does not mutate the
+input object. It always returns a new object reference.</li>
+<li><strong>Inherited Properties</strong>: Only own enumerable
+properties are considered during iteration; inherited prototype
+properties are ignored.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

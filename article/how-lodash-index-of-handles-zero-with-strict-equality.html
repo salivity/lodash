@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash indexOf Handles Zero with Strict Equality - lodash</title>
+    <meta name="description" content="This article examines how the .indexOf method in the Lodash JavaScript library evaluates zero values, detailing the mechanics of JavaScript&#39;s number representation, strict equality comparison, and the internal implementation of index searches. Readers wil">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-index-of-handles-zero-with-strict-equality">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash indexOf Handles Zero with Strict Equality - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-index-of-handles-zero-with-strict-equality" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the .indexOf method in the Lodash JavaScript library evaluates zero values, detailing the mechanics of JavaScript&#39;s number representation, strict equality comparison, and the internal implementation of index searches. Readers wil" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-indexof-handles-zero-with-strict-equality">How Lodash
+indexOf Handles Zero with Strict Equality</h1>
+<p>This article examines how the <code>_.indexOf</code> method in the
+Lodash JavaScript library evaluates zero values, detailing the mechanics
+of JavaScript's number representation, strict equality comparison, and
+the internal implementation of index searches. Readers will learn why
+strict equality does not distinguish between integer zero and
+floating-point zero, how positive and negative zeros are evaluated, and
+how Lodash executes these comparisons under the hood.</p>
+<h3 id="number-representation-in-javascript">Number Representation in
+JavaScript</h3>
+<p>In JavaScript, all numbers are represented as double-precision 64-bit
+binary format IEEE 754 values. The language engine does not provide
+distinct primitive data types for integers versus floating-point
+numbers. Consequently, an integer literal zero (<code>0</code>) and a
+floating-point literal zero (<code>0.0</code>) translate to the exact
+same underlying binary representation in memory:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dv">0</span> <span class="op">===</span> <span class="fl">0.0</span><span class="op">;</span> <span class="co">// true</span></span></code></pre></div>
+<p>Because both representations are identical at the engine level,
+JavaScript does not treat integer zero and floating zero as separate
+states. The only standard distinction IEEE 754 provides regarding zero
+values is sign: positive zero (<code>+0</code>) and negative zero
+(<code>-0</code>).</p>
+<h3 id="the-strict-equality-comparison-">The Strict Equality Comparison
+(<code>===</code>)</h3>
+<p>Lodash's <code>_.indexOf</code> method relies on the Strict Equality
+Comparison algorithm defined by ECMAScript specifications. When using
+<code>===</code>, the algorithm evaluates numbers according to specific
+rules:</p>
+<ol type="1">
+<li>If either operand is <code>NaN</code>, the result is
+<code>false</code>.</li>
+<li>If the values are identical numbers, the result is
+<code>true</code>.</li>
+<li>If one value is <code>+0</code> and the other is <code>-0</code>,
+the result is <code>true</code>.</li>
+</ol>
+<p>Because <code>===</code> explicitly evaluates <code>+0 === -0</code>
+as <code>true</code> and considers <code>0</code> and <code>0.0</code>
+identical, strict equality actively prevents differentiation between
+these representations rather than separating them.</p>
+<h3 id="lodashs-internal-implementation-of-_indexof">Lodash's Internal
+Implementation of <code>_.indexOf</code></h3>
+<p>When calling <code>_.indexOf(array, value, fromIndex)</code>, Lodash
+delegates the operation to internal helper functions:</p>
+<ol type="1">
+<li><strong><code>baseIndexOf</code></strong>: Determines whether the
+search target requires special handling (such as <code>NaN</code>, which
+cannot match itself using strict equality).</li>
+<li><strong><code>strictIndexOf</code></strong>: Executes when searching
+for regular primitive values, including numbers.</li>
+</ol>
+<p>The internal implementation of <code>strictIndexOf</code> runs a
+optimized <code>while</code> loop that directly uses the strict equality
+operator:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">strictIndexOf</span>(array<span class="op">,</span> value<span class="op">,</span> fromIndex) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> index <span class="op">=</span> fromIndex <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> { length } <span class="op">=</span> array<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="op">++</span>index <span class="op">&lt;</span> length) {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (array[index] <span class="op">===</span> value) {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> index<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">-</span><span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because <code>array[index] === value</code> is the evaluation
+condition, passing <code>0</code>, <code>0.0</code>, <code>+0</code>, or
+<code>-0</code> matches the first occurrence of any zero representation
+found in the array:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> array <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">2</span>]<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">indexOf</span>(array<span class="op">,</span> <span class="fl">0.0</span>)<span class="op">;</span> <span class="co">// Returns 1</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">indexOf</span>(array<span class="op">,</span> <span class="op">-</span><span class="dv">0</span>)<span class="op">;</span>  <span class="co">// Returns 1</span></span></code></pre></div>
+<h3 id="distinguishing-zeroes-beyond-strict-equality">Distinguishing
+Zeroes Beyond Strict Equality</h3>
+<p>Because <code>_.indexOf</code> adheres to strict equality semantics,
+it mirrors the behavior of native <code>Array.prototype.indexOf</code>.
+If an application requires distinguishing signed zeros (<code>+0</code>
+versus <code>-0</code>), strict equality cannot be used. Instead,
+differentiation requires the SameValue algorithm implemented via
+<code>Object.is()</code> or division by zero (since
+<code>1 / 0 === Infinity</code> while
+<code>1 / -0 === -Infinity</code>). Lodash intentionally avoids this
+differentiation in <code>_.indexOf</code> to remain consistent with
+standard JavaScript array search conventions.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

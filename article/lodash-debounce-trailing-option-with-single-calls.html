@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Debounce Trailing Option With Single Calls - lodash</title>
+    <meta name="description" content="This article explains how the trailing option in Lodash&#39;s .debounce function operates when an event is triggered only once without any secondary calls during the wait period. It details the execution flow under both the default configuration and when comb">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-debounce-trailing-option-with-single-calls">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Debounce Trailing Option With Single Calls - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-debounce-trailing-option-with-single-calls" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the trailing option in Lodash&#39;s .debounce function operates when an event is triggered only once without any secondary calls during the wait period. It details the execution flow under both the default configuration and when comb" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-debounce-trailing-option-with-single-calls">Lodash
+Debounce Trailing Option With Single Calls</h1>
+<p>This article explains how the <code>trailing</code> option in
+Lodash's <code>_.debounce</code> function operates when an event is
+triggered only once without any secondary calls during the wait period.
+It details the execution flow under both the default configuration and
+when combined with the <code>leading</code> option, demonstrating how
+Lodash manages timers and function execution for isolated calls.</p>
+<p>When using <code>_.debounce</code> in the Lodash JavaScript library,
+the <code>trailing</code> option specifies whether the debounced
+function should be invoked on the trailing edge of the timeout period.
+By default, Lodash sets
+<code>{ trailing: true, leading: false }</code>.</p>
+<h3 id="default-behavior-trailing-true-and-leading-false">Default
+Behavior: <code>trailing: true</code> and
+<code>leading: false</code></h3>
+<p>If only a single call is made and no secondary calls occur within the
+specified <code>wait</code> window:</p>
+<ol type="1">
+<li><strong>Timer Initialization:</strong> Lodash records the arguments
+and context of the call and starts a timer for the duration of the
+<code>wait</code> delay.</li>
+<li><strong>Timer Expiration:</strong> Because no subsequent calls
+arrive to reset the timer, the countdown completes uninterrupted.</li>
+<li><strong>Execution:</strong> Upon timeout expiration, Lodash
+evaluates the trailing edge logic. Since <code>trailing</code> is
+<code>true</code> and the captured call has not yet been executed,
+Lodash invokes the debounced function once with the initial
+arguments.</li>
+</ol>
+<p>In this default scenario, a single isolated call executes exactly
+once, delayed by the <code>wait</code> duration.</p>
+<h3 id="combined-behavior-trailing-true-and-leading-true">Combined
+Behavior: <code>trailing: true</code> and
+<code>leading: true</code></h3>
+<p>When both <code>leading</code> and <code>trailing</code> are enabled,
+the handling of an isolated call changes:</p>
+<ol type="1">
+<li><strong>Immediate Execution:</strong> The first call triggers the
+function immediately on the leading edge.</li>
+<li><strong>Timer Initialization:</strong> Lodash sets a timer for the
+<code>wait</code> duration.</li>
+<li><strong>Trailing Check:</strong> When the timer expires, Lodash
+checks if any secondary calls occurred while the timer was active.</li>
+<li><strong>Suppression:</strong> Because no secondary calls were made,
+the arguments list remains unupdated. Lodash detects that the latest
+call was already executed on the leading edge, so it suppresses the
+trailing execution.</li>
+</ol>
+<p>Under this configuration, an isolated call executes immediately once
+and does not fire a second time when the timer expires.</p>
+<h3 id="behavior-when-trailing-false">Behavior When
+<code>trailing: false</code></h3>
+<p>If <code>trailing</code> is explicitly set to <code>false</code> and
+<code>leading: false</code>, making a single call results in no
+execution at all, as both edges are disabled. If
+<code>leading: true</code> and <code>trailing: false</code>, the single
+call fires immediately, and no action occurs at the end of the wait
+delay.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash xorBy String Comparison Across Locales - lodash</title>
+    <meta name="description" content="The .xorBy method in the Lodash JavaScript library creates an array of unique values representing the symmetric difference between given arrays, using an iteratee function to extract the comparison criteria. However, Lodash does not provide built-in inter">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-xor-by-string-comparison-across-locales">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash xorBy String Comparison Across Locales - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-xor-by-string-comparison-across-locales" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .xorBy method in the Lodash JavaScript library creates an array of unique values representing the symmetric difference between given arrays, using an iteratee function to extract the comparison criteria. However, Lodash does not provide built-in inter" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-xorby-string-comparison-across-locales">Lodash xorBy
+String Comparison Across Locales</h1>
+<p>The <code>_.xorBy</code> method in the Lodash JavaScript library
+creates an array of unique values representing the symmetric difference
+between given arrays, using an iteratee function to extract the
+comparison criteria. However, Lodash does not provide built-in
+internationalization or locale-sensitive string evaluation. To process
+string comparisons across different language locales using
+<code>_.xorBy</code>, developers must supply a custom iteratee that
+leverages native JavaScript internationalization tools, such as
+<code>String.prototype.normalize()</code> or <code>Intl.Collator</code>,
+to standardize characters before Lodash evaluates their uniqueness.</p>
+<h3 id="native-comparison-behavior-in-lodash">Native Comparison Behavior
+in Lodash</h3>
+<p>Internally, Lodash’s comparison mechanisms (including those powering
+<code>_.xorBy</code>) rely on the <code>SameValueZero</code> algorithm.
+When comparing primitive strings, this algorithm matches character
+sequences strictly by their binary UTF-16 code units.</p>
+<p>Because <code>SameValueZero</code> performs binary evaluation:</p>
+<ul>
+<li>Diacritics and accented characters (e.g., "e" versus "é") are
+treated as distinct values.</li>
+<li>Equivalent Unicode representations (such as a precomposed character
+versus a combining character sequence) evaluate as unequal unless
+normalized.</li>
+<li>Case distinctions and language-specific collation rules (such as the
+Turkish dotted and dotless "i") are ignored unless explicitly handled
+before evaluation.</li>
+</ul>
+<h3 id="how-_xorby-applies-the-iteratee">How _.xorBy Applies the
+Iteratee</h3>
+<p><code>_.xorBy</code> accepts an iteratee as its final argument:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">xorBy</span>([arrays]<span class="op">,</span> [iteratee<span class="op">=</span>_<span class="op">.</span><span class="at">identity</span>])</span></code></pre></div>
+<p>During execution, <code>_.xorBy</code> runs each element through this
+iteratee function to generate a comparison criterion. The returned value
+from the iteratee is what Lodash checks against its internal hash maps
+and sets using <code>SameValueZero</code>. The original values
+corresponding to the unique criteria are preserved in the final output
+array.</p>
+<h3 id="implementing-locale-aware-comparison">Implementing Locale-Aware
+Comparison</h3>
+<p>To make <code>_.xorBy</code> locale-aware, you must pass a custom
+iteratee function that normalizes string inputs according to the rules
+of the desired language locale.</p>
+<h4 id="1-unicode-normalization-and-case-folding">1. Unicode
+Normalization and Case Folding</h4>
+<p>For general cross-language handling where accents or distinct forms
+of identical characters should match, use
+<code>String.prototype.normalize()</code> alongside
+<code>String.prototype.toLocaleLowerCase()</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> listA <span class="op">=</span> [<span class="st">&#39;resume&#39;</span><span class="op">,</span> <span class="st">&#39;café&#39;</span>]<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> listB <span class="op">=</span> [<span class="st">&#39;résumé&#39;</span><span class="op">,</span> <span class="st">&#39;CAFE&#39;</span>]<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">xorBy</span>(listA<span class="op">,</span> listB<span class="op">,</span> (item) <span class="kw">=&gt;</span> </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  item</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">normalize</span>(<span class="st">&#39;NFD&#39;</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">[\u0300-\u036f]</span><span class="ss">/g</span><span class="op">,</span> <span class="st">&#39;&#39;</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span><span class="fu">toLocaleLowerCase</span>(<span class="st">&#39;en&#39;</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span></code></pre></div>
+<p>In this implementation, the iteratee strips accents and converts
+casing based on the specified locale, allowing <code>_.xorBy</code> to
+recognize <code>"café"</code> and <code>"CAFE"</code> as equivalent.</p>
+<h4 id="2-handling-complex-locales-with-sort-keys">2. Handling Complex
+Locales with Sort Keys</h4>
+<p>When comparing strings based on formal linguistic equivalence where
+simple lowercasing is insufficient (such as distinguishing or equating
+specific digraphs or accents depending on the language), you can
+generate collation keys or normalized canonical tokens:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> group1 <span class="op">=</span> [<span class="st">&#39;ä&#39;</span>]<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> group2 <span class="op">=</span> [<span class="st">&#39;ae&#39;</span>]<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">// German phonebook collation treats &#39;ä&#39; similarly to &#39;ae&#39;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> collator <span class="op">=</span> <span class="kw">new</span> <span class="bu">Intl</span><span class="op">.</span><span class="fu">Collator</span>(<span class="st">&#39;de-DE-u-co-phonebk&#39;</span><span class="op">,</span> { <span class="dt">sensitivity</span><span class="op">:</span> <span class="st">&#39;base&#39;</span> })<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">getCollationKey</span>(str) {</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Normalize base characters for locale-specific comparison</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> str<span class="op">.</span><span class="fu">normalize</span>(<span class="st">&#39;NFC&#39;</span>)<span class="op">.</span><span class="fu">toLocaleLowerCase</span>(<span class="st">&#39;de-DE&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> uniqueValues <span class="op">=</span> _<span class="op">.</span><span class="fu">xorBy</span>(group1<span class="op">,</span> group2<span class="op">,</span> getCollationKey)<span class="op">;</span></span></code></pre></div>
+<p>Lodash delegates the generation of comparison criteria entirely to
+the iteratee. By ensuring the iteratee transforms localized strings into
+uniform canonical representations, <code>_.xorBy</code> effectively
+executes locale-accurate symmetric differences across diverse language
+datasets.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

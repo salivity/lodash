@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.gte Compares Numerical Values - lodash</title>
+    <meta name="description" content="In the Lodash JavaScript library, the .gte method determines whether a target value is greater than or equal to another value. When comparing numerical values, .gte performs a relational comparison, returning the boolean true if the first argument is math">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-gte-compares-numerical-values">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.gte Compares Numerical Values - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-gte-compares-numerical-values" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the Lodash JavaScript library, the .gte method determines whether a target value is greater than or equal to another value. When comparing numerical values, .gte performs a relational comparison, returning the boolean true if the first argument is math" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_gte-compares-numerical-values">How Lodash _.gte
+Compares Numerical Values</h1>
+<p>In the Lodash JavaScript library, the <code>_.gte</code> method
+determines whether a target value is greater than or equal to another
+value. When comparing numerical values, <code>_.gte</code> performs a
+relational comparison, returning the boolean <code>true</code> if the
+first argument is mathematically greater than or equal to the second
+argument, and <code>false</code> otherwise. This article covers how
+<code>_.gte</code> handles standard integers, floating-point numbers,
+and special numeric cases such as <code>Infinity</code> and
+<code>NaN</code>.</p>
+<h2 id="syntax-and-core-evaluation">Syntax and Core Evaluation</h2>
+<p>The syntax for the method is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(value<span class="op">,</span> other)</span></code></pre></div>
+<p>When both arguments are numbers, <code>_.gte</code> relies on
+JavaScript’s standard relational comparison operators
+(<code>&gt;=</code>). It directly evaluates the numerical magnitude of
+<code>value</code> relative to <code>other</code>.</p>
+<ul>
+<li><strong>Greater than:</strong> <code>_.gte(5, 2)</code> evaluates to
+<code>true</code> because <code>5</code> is larger than
+<code>2</code>.</li>
+<li><strong>Equal to:</strong> <code>_.gte(3, 3)</code> evaluates to
+<code>true</code> because both values are identical.</li>
+<li><strong>Less than:</strong> <code>_.gte(1, 4)</code> evaluates to
+<code>false</code> because <code>1</code> is smaller than
+<code>4</code>.</li>
+</ul>
+<h2 id="floating-point-and-negative-numbers">Floating-Point and Negative
+Numbers</h2>
+<p>The function treats negative numbers and decimals identically to the
+native <code>&gt;=</code> operator:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(<span class="op">-</span><span class="dv">1</span><span class="op">,</span> <span class="op">-</span><span class="dv">5</span>)<span class="op">;</span>    <span class="co">// =&gt; true (-1 is mathematically greater than -5)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(<span class="op">-</span><span class="dv">10</span><span class="op">,</span> <span class="op">-</span><span class="dv">2</span>)<span class="op">;</span>   <span class="co">// =&gt; false</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(<span class="fl">3.14</span><span class="op">,</span> <span class="fl">3.0</span>)<span class="op">;</span> <span class="co">// =&gt; true</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(<span class="fl">2.5</span><span class="op">,</span> <span class="fl">2.5</span>)<span class="op">;</span>  <span class="co">// =&gt; true</span></span></code></pre></div>
+<p>Like standard JavaScript operations, floating-point precision issues
+apply if calculations produce slight rounding inaccuracies prior to
+being passed into the function.</p>
+<h2 id="handling-infinity-and-nan">Handling Infinity and NaN</h2>
+<p><code>_.gte</code> handles special numerical values in accordance
+with the IEEE 754 floating-point standard:</p>
+<ul>
+<li><p><strong>Infinity:</strong> <code>Infinity</code> is treated as
+greater than any finite number, while <code>-Infinity</code> is treated
+as smaller than any finite number.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(<span class="kw">Infinity</span><span class="op">,</span> <span class="dv">1000</span>)<span class="op">;</span>   <span class="co">// =&gt; true</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(<span class="op">-</span><span class="kw">Infinity</span><span class="op">,</span> <span class="op">-</span><span class="dv">1000</span>)<span class="op">;</span> <span class="co">// =&gt; false</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(<span class="kw">Infinity</span><span class="op">,</span> <span class="kw">Infinity</span>)<span class="op">;</span> <span class="co">// =&gt; true</span></span></code></pre></div></li>
+<li><p><strong>NaN (Not-a-Number):</strong> Comparisons involving
+<code>NaN</code> always evaluate to <code>false</code> because
+<code>NaN</code> is not considered greater than, equal to, or less than
+any numeric value.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(<span class="kw">NaN</span><span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span>   <span class="co">// =&gt; false</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(<span class="dv">5</span><span class="op">,</span> <span class="kw">NaN</span>)<span class="op">;</span>   <span class="co">// =&gt; false</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">gte</span>(<span class="kw">NaN</span><span class="op">,</span> <span class="kw">NaN</span>)<span class="op">;</span> <span class="co">// =&gt; false</span></span></code></pre></div></li>
+</ul>
+<p>In summary, for numerical values, Lodash's <code>_.gte</code> serves
+as a clean, functional wrapper around the native JavaScript
+<code>&gt;=</code> operator, evaluating whether the first numeric
+parameter is mathematically greater than or equivalent to the
+second.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

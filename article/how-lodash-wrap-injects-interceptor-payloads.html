@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.wrap Injects Interceptor Payloads - lodash</title>
+    <meta name="description" content="This article examines the structural mapping technique used by Lodash&#39;s .wrap method to inject interceptor payloads into functional pipelines. It covers how .wrap delegates execution to Lodash&#39;s internal partial application architecture, maps incoming arg">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-wrap-injects-interceptor-payloads">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.wrap Injects Interceptor Payloads - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-wrap-injects-interceptor-payloads" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines the structural mapping technique used by Lodash&#39;s .wrap method to inject interceptor payloads into functional pipelines. It covers how .wrap delegates execution to Lodash&#39;s internal partial application architecture, maps incoming arg" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_wrap-injects-interceptor-payloads">How Lodash _.wrap
+Injects Interceptor Payloads</h1>
+<p>This article examines the structural mapping technique used by
+Lodash's <code>_.wrap</code> method to inject interceptor payloads into
+functional pipelines. It covers how <code>_.wrap</code> delegates
+execution to Lodash's internal partial application architecture, maps
+incoming arguments across call boundaries, and manages bitwise wrapper
+metadata to enforce payload interception without mutating target
+functions.</p>
+<h2 id="the-core-delegation-model-of-_wrap">The Core Delegation Model of
+<code>_.wrap</code></h2>
+<p>At its core, <code>_.wrap(value, [wrapper=identity])</code> does not
+introduce an isolated execution engine. Instead, it delegates its
+structural mapping directly to Lodash’s internal partial application
+mechanism. Invoking <code>_.wrap(value, wrapper)</code> is functionally
+equivalent to evaluating <code>_.partial(wrapper, value)</code>.</p>
+<p>Through this delegation, <code>_.wrap</code> treats the provided
+<code>value</code>—whether an execution primitive, an object payload, or
+a target function—as the first bound parameter of the
+<code>wrapper</code> interceptor function.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Internal abstraction equivalent</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">wrap</span>(value<span class="op">,</span> wrapper) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">partial</span>(wrapper<span class="op">,</span> value)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="structural-argument-mapping">Structural Argument Mapping</h2>
+<p>The structural mapping technique relies on shifting positional
+argument indices between the outer caller and the inner interceptor.</p>
+<p>When an intercepted function is created via <code>_.wrap</code>, the
+execution pipeline establishes an explicit index-offset mapping:</p>
+<ol type="1">
+<li><strong>Index 0 (Injected Payload):</strong> The target
+<code>value</code> supplied at definition time is statically mapped to
+the first parameter of the <code>wrapper</code> function.</li>
+<li><strong>Index 1 to N (Dynamic Arguments):</strong> Any arguments
+supplied to the generated wrapper at runtime are captured using variadic
+rest parameters and appended immediately after the bound payload.</li>
+</ol>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Runtime structural mapping</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> wrappedFunction <span class="op">=</span> _<span class="op">.</span><span class="fu">wrap</span>(targetFunction<span class="op">,</span> <span class="kw">function</span>(injectedTarget<span class="op">,</span> <span class="op">...</span>runtimeArgs) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// injectedTarget === targetFunction</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// runtimeArgs === arguments passed at the call site</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">injectedTarget</span>(<span class="op">...</span>runtimeArgs)<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>When the consumer invokes <code>wrappedFunction(a, b, c)</code>,
+Lodash constructs the final arguments array by concatenating the
+pre-bound payload array <code>[targetFunction]</code> with the
+invocation arguments <code>[a, b, c]</code>, yielding
+<code>[targetFunction, a, b, c]</code>.</p>
+<h2 id="bitwise-wrapper-metadata-and-createwrap">Bitwise Wrapper
+Metadata and <code>createWrap</code></h2>
+<p>Internally, Lodash optimizes functional wrappers through a unified
+wrapper stack managed by <code>createWrap</code> rather than recursively
+nesting function closures. This system uses bitwise flags to record
+functional modifications:</p>
+<ul>
+<li><code>WRAP_PARTIAL_FLAG</code> (represented internally by the bit
+flag <code>32</code>): Indicates partial application from the left.</li>
+<li><code>WRAP_PARTIAL_RIGHT_FLAG</code> (represented by
+<code>64</code>): Indicates partial application from the right.</li>
+</ul>
+<p>When <code>_.wrap</code> calls <code>_.partial</code>, Lodash
+activates the <code>WRAP_PARTIAL_FLAG</code>. The internal method
+<code>baseSetData</code> stores metadata on the wrapper function via an
+array that defines:</p>
+<ul>
+<li>The target wrapper function reference.</li>
+<li>The bitwise mask (<code>32</code>).</li>
+<li>The partially applied arguments array: <code>[value]</code>.</li>
+<li>An array of argument placeholder markers
+(<code>holders</code>).</li>
+</ul>
+<p>During invocation, <code>createPartial</code> checks whether the
+target wrapper is already an instance of an internal Lodash wrapper. If
+metadata exists, Lodash re-indexes and merges the argument arrays
+linearly instead of allocating an additional layer of call-stack frames.
+This prevents call-stack exhaustion when multiple wrappers or
+interceptors decorate the same target.</p>
+<h2 id="interceptor-payload-execution-flow">Interceptor Payload
+Execution Flow</h2>
+<p>The structural mapping enables complete control over the wrapped
+entity's execution lifecycle. The interceptor payload can modify control
+flow through three primary patterns:</p>
+<ol type="1">
+<li><strong>Pre-Execution Modification:</strong> The wrapper can
+intercept, validate, or sanitize <code>runtimeArgs</code> before
+dispatching them to the bound <code>value</code> function.</li>
+<li><strong>Short-Circuiting:</strong> The wrapper can terminate
+execution early and return an alternate payload without invoking the
+original target.</li>
+<li><strong>Post-Execution Mutation:</strong> The wrapper can capture
+the return value of <code>injectedTarget(...runtimeArgs)</code> and
+transform the output before returning it to the caller.</li>
+</ol>
+<p>By combining index-shifted parameter application with its centralized
+bitwise wrapper architecture, Lodash's <code>_.wrap</code> provides a
+deterministic and memory-efficient structural mapping mechanism for
+intercepting functional invocations.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

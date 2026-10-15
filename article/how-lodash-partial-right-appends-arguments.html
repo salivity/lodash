@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash partialRight Appends Arguments - lodash</title>
+    <meta name="description" content="The .partialRight method in the Lodash JavaScript library creates a partially applied function where pre-specified arguments are appended to the end of the argument list instead of the beginning. This article explains how .partialRight functions, how it s">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-partial-right-appends-arguments">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash partialRight Appends Arguments - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-partial-right-appends-arguments" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .partialRight method in the Lodash JavaScript library creates a partially applied function where pre-specified arguments are appended to the end of the argument list instead of the beginning. This article explains how .partialRight functions, how it s" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-partialright-appends-arguments">How Lodash
+partialRight Appends Arguments</h1>
+<p>The <code>_.partialRight</code> method in the Lodash JavaScript
+library creates a partially applied function where pre-specified
+arguments are appended to the end of the argument list instead of the
+beginning. This article explains how <code>_.partialRight</code>
+functions, how it structures argument order during execution, and how to
+effectively use it with code examples and placeholder mechanics.</p>
+<h2 id="understanding-_partialright">Understanding
+<code>_.partialRight</code></h2>
+<p>In functional programming, partial application is the process of
+fixing a number of arguments to a function, producing another function
+of smaller arity. While standard partial application (like Lodash's
+<code>_.partial</code>) binds arguments from the left,
+<code>_.partialRight</code> binds arguments from the right-hand
+side.</p>
+<p>When you create a function using
+<code>_.partialRight(func, [partials])</code>, Lodash stores the
+provided partial arguments. When the resulting wrapper function is later
+invoked with runtime arguments, Lodash places the runtime arguments
+first, followed immediately by the partially applied arguments.</p>
+<h2 id="basic-syntax-and-execution">Basic Syntax and Execution</h2>
+<p>The syntax for <code>_.partialRight</code> is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">partialRight</span>(func<span class="op">,</span> [partials])</span></code></pre></div>
+<ul>
+<li><strong><code>func</code></strong>: The target function to partially
+apply arguments to.</li>
+<li><strong><code>[partials]</code></strong>: The arguments to append to
+future calls of <code>func</code>.</li>
+</ul>
+<p>Consider a simple greeting function that expects two parameters:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">greet</span>(greeting<span class="op">,</span> name) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="vs">`</span><span class="sc">${</span>greeting<span class="sc">}</span><span class="vs">, </span><span class="sc">${</span>name<span class="sc">}</span><span class="vs">!`</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Partially apply the &#39;name&#39; argument from the right</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> greetFred <span class="op">=</span> _<span class="op">.</span><span class="fu">partialRight</span>(greet<span class="op">,</span> <span class="st">&#39;Fred&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Provide the &#39;greeting&#39; argument at call time</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">greetFred</span>(<span class="st">&#39;Hello&#39;</span>))<span class="op">;</span> </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;Hello, Fred!&quot;</span></span></code></pre></div>
+<p>In this example, <code>'Fred'</code> is anchored to the second
+parameter (<code>name</code>). When <code>greetFred('Hello')</code> is
+called, <code>'Hello'</code> fills the first open parameter
+(<code>greeting</code>), resulting in
+<code>greet('Hello', 'Fred')</code>.</p>
+<h2 id="handling-multiple-arguments">Handling Multiple Arguments</h2>
+<p>When multiple arguments are supplied at both creation time and
+invocation time, <code>_.partialRight</code> maintains their relative
+order while placing the invocation arguments before the preset
+arguments.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">formatPath</span>(domain<span class="op">,</span> apiVersion<span class="op">,</span> endpoint) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="vs">`https://</span><span class="sc">${</span>domain<span class="sc">}</span><span class="vs">/</span><span class="sc">${</span>apiVersion<span class="sc">}</span><span class="vs">/</span><span class="sc">${</span>endpoint<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Preset apiVersion and endpoint</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> getUsersEndpoint <span class="op">=</span> _<span class="op">.</span><span class="fu">partialRight</span>(formatPath<span class="op">,</span> <span class="st">&#39;v1&#39;</span><span class="op">,</span> <span class="st">&#39;users&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Provide domain at invocation</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">getUsersEndpoint</span>(<span class="st">&#39;example.com&#39;</span>))<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;https://example.com/v1/users&quot;</span></span></code></pre></div>
+<p>The call sequence evaluates as follows:</p>
+<ol type="1">
+<li>Runtime arguments are collected: <code>['example.com']</code></li>
+<li>Preset arguments are collected: <code>['v1', 'users']</code></li>
+<li>Lodash merges them in order:
+<code>['example.com', 'v1', 'users']</code></li>
+<li>The target function executes with the combined array.</li>
+</ol>
+<h2 id="using-placeholders">Using Placeholders</h2>
+<p>Lodash allows the use of its identity object (<code>_</code>) as a
+placeholder to reserve specific positions within the appended
+arguments.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sendEmail</span>(to<span class="op">,</span> subject<span class="op">,</span> body) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="vs">`Sending &quot;</span><span class="sc">${</span>subject<span class="sc">}</span><span class="vs">&quot; to </span><span class="sc">${</span>to<span class="sc">}</span><span class="vs">: </span><span class="sc">${</span>body<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Fix &#39;body&#39;, leave &#39;subject&#39; dynamic via placeholder</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> notifyAdmin <span class="op">=</span> _<span class="op">.</span><span class="fu">partialRight</span>(sendEmail<span class="op">,</span> _<span class="op">,</span> <span class="st">&#39;System reboot scheduled.&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">notifyAdmin</span>(<span class="st">&#39;admin@example.com&#39;</span><span class="op">,</span> <span class="st">&#39;Alert&#39;</span>))<span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;Sending &quot;Alert&quot; to admin@example.com: System reboot scheduled.&quot;</span></span></code></pre></div>
+<p>When a placeholder is encountered, Lodash maps the runtime arguments
+to fill open slots from left to right, filling placeholders first before
+appending remaining arguments.</p>
+<h2 id="key-differences-between-_partial-and-_partialright">Key
+Differences Between <code>_.partial</code> and
+<code>_.partialRight</code></h2>
+<ul>
+<li><strong><code>_.partial</code></strong>: Prepends arguments. Calling
+<code>_.partial(fn, 1)(2)</code> resolves to <code>fn(1, 2)</code>.</li>
+<li><strong><code>_.partialRight</code></strong>: Appends arguments.
+Calling <code>_.partialRight(fn, 1)(2)</code> resolves to
+<code>fn(2, 1)</code>.</li>
+</ul>
+<p>This distinction makes <code>_.partialRight</code> ideal for adapting
+functions designed with callback-last interfaces or functions where
+configuration parameters naturally belong at the end of the argument
+signature.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash sortedLastIndexOf with Sparse Arrays - lodash</title>
+    <meta name="description" content="This article explores how Lodash’s .sortedLastIndexOf function interacts with sparse arrays containing missing indices or empty slots. Because .sortedLastIndexOf relies on a binary search algorithm designed for contiguous, sorted data, encountering empty">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-sorted-last-index-of-with-sparse-arrays">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash sortedLastIndexOf with Sparse Arrays - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-sorted-last-index-of-with-sparse-arrays" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how Lodash’s .sortedLastIndexOf function interacts with sparse arrays containing missing indices or empty slots. Because .sortedLastIndexOf relies on a binary search algorithm designed for contiguous, sorted data, encountering empty" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-sortedlastindexof-with-sparse-arrays">Lodash
+sortedLastIndexOf with Sparse Arrays</h1>
+<p>This article explores how Lodash’s <code>_.sortedLastIndexOf</code>
+function interacts with sparse arrays containing missing indices or
+empty slots. Because <code>_.sortedLastIndexOf</code> relies on a binary
+search algorithm designed for contiguous, sorted data, encountering
+empty indices causes JavaScript to evaluate missing elements as
+<code>undefined</code>. This disrupts the search logic, leading to
+inaccurate index calculations or unexpected <code>-1</code> return
+values.</p>
+<h2 id="mechanism-of-_sortedlastindexof">Mechanism of
+_.sortedLastIndexOf</h2>
+<p>The <code>_.sortedLastIndexOf</code> method performs a binary search
+over an array that is assumed to be sorted in ascending order. Instead
+of iterating sequentially from the end of the collection like
+<code>_.lastIndexOf</code>, it repeatedly divides the search range in
+half to find the highest index at which a specified value appears.</p>
+<p>For the binary search to function correctly, the dataset must satisfy
+a strict sorting invariant where every element at index <code>i</code>
+is less than or equal to the element at index <code>i + 1</code>.</p>
+<h2 id="how-sparse-arrays-interfere-with-the-search">How Sparse Arrays
+Interfere with the Search</h2>
+<p>A sparse array in JavaScript contains "holes"—indices that have not
+been assigned a value (for example, <code>[1, , , 4]</code>). When
+Lodash retrieves an element at a midpoint index using bracket notation
+(<code>array[mid]</code>), accessing an empty slot evaluates to
+<code>undefined</code>.</p>
+<p>This creates two critical issues for
+<code>_.sortedLastIndexOf</code>:</p>
+<ol type="1">
+<li><strong>Broken Relational Comparisons</strong>: In JavaScript,
+relational comparisons involving <code>undefined</code> (such as
+<code>value &lt; undefined</code> or <code>undefined &lt; value</code>)
+evaluate to <code>false</code>. The binary search algorithm uses these
+comparisons to determine whether to branch left or right. When
+comparisons fail silently, the search boundary moves in the wrong
+direction.</li>
+<li><strong>Violation of Sorted Order</strong>: Even if all defined
+numbers in a sparse array appear in ascending order, the implicit
+<code>undefined</code> values scattered throughout the array violate the
+monotonic order required by binary search algorithms.</li>
+</ol>
+<h2 id="resulting-behavior">Resulting Behavior</h2>
+<p>When calling <code>_.sortedLastIndexOf</code> on a sparse array:</p>
+<ul>
+<li><strong>Missed Matches</strong>: If a midpoint lands on an
+unassigned index, the search algorithm miscalculates the search window
+and often fails to locate a value that actually exists in the array,
+returning <code>-1</code>.</li>
+<li><strong>Incorrect Indices</strong>: If the algorithm terminates
+prematurely or converges on an incorrect offset due to failed comparison
+branches, it will return <code>-1</code> because the final equality
+check against the target value fails.</li>
+<li><strong>Searching for <code>undefined</code></strong>: If you
+explicitly search for <code>undefined</code> using
+<code>_.sortedLastIndexOf</code>, the method will still not reliably
+locate missing slots because the binary search logic does not treat
+sparse holes as an ordered set of elements unless they are packed
+contiguously at the end of the array.</li>
+</ul>
+<h2 id="example">Example</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// A sparse array with holes at indices 1 and 2</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sparseArray <span class="op">=</span> [<span class="dv">10</span><span class="op">,</span> <span class="op">,</span> <span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="dv">30</span>]<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Expected to find the last index of 20 (index 4)</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">sortedLastIndexOf</span>(sparseArray<span class="op">,</span> <span class="dv">20</span>))<span class="op">;</span> <span class="co">// May output -1 or an incorrect index</span></span></code></pre></div>
+<p>In this scenario, if the binary search checks index 2 (an empty slot
+evaluating to <code>undefined</code>), the relational comparison fails,
+causing the algorithm to discard the partition containing the target
+value.</p>
+<h2 id="recommended-solution">Recommended Solution</h2>
+<p>To safely use <code>_.sortedLastIndexOf</code>, normalize sparse
+arrays into dense arrays prior to execution. Removing missing slots or
+re-indexing guarantees that the binary search operates across
+continuous, predictable boundaries:</p>
+<ul>
+<li>Use <code>Array.prototype.filter()</code> or Lodash’s
+<code>_.compact()</code> to eliminate holes if falsy values are not
+needed.</li>
+<li>Use <code>Array.from(sparseArray)</code> to convert holes into
+explicit <code>undefined</code> values, then sort the array so that all
+<code>undefined</code> values are shifted to the end, preserving the
+sorting contract required by the method.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

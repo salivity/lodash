@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>String matchAll vs Lodash for Regex Matching - lodash</title>
+    <meta name="description" content="The introduction of String.prototype.matchAll in ECMAScript 2020 provides a native, streamlined way to capture multiple regular expression matches alongside their capturing groups. Historically, JavaScript lacked an intuitive built-in approach for this ta">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/string-match-all-vs-lodash-for-regex-matching">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="String matchAll vs Lodash for Regex Matching - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/string-match-all-vs-lodash-for-regex-matching" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The introduction of String.prototype.matchAll in ECMAScript 2020 provides a native, streamlined way to capture multiple regular expression matches alongside their capturing groups. Historically, JavaScript lacked an intuitive built-in approach for this ta" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="string-matchall-vs-lodash-for-regex-matching">String matchAll vs
+Lodash for Regex Matching</h1>
+<p>The introduction of <code>String.prototype.matchAll</code> in
+ECMAScript 2020 provides a native, streamlined way to capture multiple
+regular expression matches alongside their capturing groups.
+Historically, JavaScript lacked an intuitive built-in approach for this
+task, leading developers to rely on utility libraries like Lodash or
+verbose <code>RegExp.prototype.exec</code> loops to parse complex string
+patterns. By delivering an iterable containing complete match arrays,
+<code>matchAll</code> makes external regex utility patterns and Lodash
+workarounds obsolete for string extraction.</p>
+<h3 id="the-limitation-of-traditional-native-methods">The Limitation of
+Traditional Native Methods</h3>
+<p>Prior to <code>matchAll</code>, developers primarily relied on two
+native options: <code>String.prototype.match</code> and
+<code>RegExp.prototype.exec</code>.</p>
+<p>When used with the global flag (<code>/g</code>),
+<code>String.prototype.match</code> returns all matching substrings but
+discards capturing groups, match indices, and named capture groups. To
+preserve capturing groups, developers were forced to use
+<code>RegExp.prototype.exec</code> inside a mutable <code>while</code>
+loop, manually tracking the state of the regular expression:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> regex <span class="op">=</span> <span class="ss">/t</span><span class="sc">(</span><span class="ss">e</span><span class="sc">)(</span><span class="ss">st</span><span class="sc">(\d?))</span><span class="ss">/g</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> text <span class="op">=</span> <span class="st">&#39;test1test2&#39;</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> match<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> ((match <span class="op">=</span> regex<span class="op">.</span><span class="fu">exec</span>(text)) <span class="op">!==</span> <span class="kw">null</span>) {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(match)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This approach is prone to errors, such as infinite loops if the regex
+lacks the global flag or if state management fails.</p>
+<h3 id="how-lodash-filled-the-gap">How Lodash Filled the Gap</h3>
+<p>Because native regex extraction was cumbersome, developers regularly
+turned to Lodash to handle repetitive string processing and token
+extraction. Functions like <code>_.words</code> provided simpler
+string-splitting mechanisms, while custom Lodash pipelines were
+frequently used to wrap and map over <code>RegExp.exec</code>
+iterations. Developers used functional utilities to iterate cleanly over
+strings, transform capture groups, and avoid maintaining stateful
+<code>while</code> loops directly in application code.</p>
+<p>While Lodash does not feature an exact <code>_.matchAll</code>
+function, developers heavily depended on its collection and string
+processing methods to compensate for JavaScript's native shortcomings
+regarding iterative regex parsing.</p>
+<h3 id="how-stringprototypematchall-replaces-utility-helpers">How
+<code>String.prototype.matchAll</code> Replaces Utility Helpers</h3>
+<p><code>String.prototype.matchAll</code> completely solves the
+limitations of <code>match</code> and the verbosity of
+<code>exec</code>. Calling <code>matchAll</code> returns an iterator of
+match objects, each containing the full match, all capture groups, the
+index where the match was found, the original input string, and any
+named groups defined in the pattern.</p>
+<p>Because the returned value is an iterable, it integrates naturally
+with modern JavaScript features like <code>for...of</code> loops, array
+destructuring, and <code>Array.from</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> regex <span class="op">=</span> <span class="ss">/t</span><span class="sc">(</span><span class="ss">e</span><span class="sc">)(</span><span class="ss">st</span><span class="sc">(\d?))</span><span class="ss">/g</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> text <span class="op">=</span> <span class="st">&#39;test1test2&#39;</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Clean array of matches with all groups preserved</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> matches <span class="op">=</span> [<span class="op">...</span>text<span class="op">.</span><span class="fu">matchAll</span>(regex)]<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>matches<span class="op">.</span><span class="fu">forEach</span>(match <span class="kw">=&gt;</span> {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(match[<span class="dv">0</span>])<span class="op">;</span> <span class="co">// full match</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(match[<span class="dv">1</span>])<span class="op">;</span> <span class="co">// first capture group</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(match<span class="op">.</span><span class="at">index</span>)<span class="op">;</span> <span class="co">// start index</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Unlike <code>RegExp.prototype.exec</code>, <code>matchAll</code>
+handles regex state internally without mutating the original
+<code>lastIndex</code> on the regular expression, ensuring safer, pure
+functional operations.</p>
+<h3 id="eliminating-the-need-for-external-helpers">Eliminating the Need
+for External Helpers</h3>
+<p>With <code>String.prototype.matchAll</code>, the need to rely on
+external library routines or verbose loops to extract structured token
+data disappears. Developers gain the following advantages without
+importing utility libraries:</p>
+<ol type="1">
+<li><strong>Group Retention:</strong> Capture groups and named capture
+groups are preserved across all global matches.</li>
+<li><strong>Immutability:</strong> Internal regex tracking prevents side
+effects without manual resets of <code>regex.lastIndex</code>.</li>
+<li><strong>Idiomatic Processing:</strong> Native iterables allow
+immediate transformation via standard array methods like
+<code>.map()</code>, <code>.filter()</code>, and
+<code>.reduce()</code>.</li>
+<li><strong>Reduced Bundle Size:</strong> Removing third-party string
+and regex iteration wrappers reduces application dependencies and
+overall bundle overhead.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

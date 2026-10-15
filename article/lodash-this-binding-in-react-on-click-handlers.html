@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash this Binding in React onClick Handlers - lodash</title>
+    <meta name="description" content="Passing a Lodash method directly to a React onClick handler causes the method to lose its original execution context, setting its internal this binding to undefined under JavaScript&#39;s strict mode. Because React invokes event handlers as standalone functio">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-this-binding-in-react-on-click-handlers">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash this Binding in React onClick Handlers - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-this-binding-in-react-on-click-handlers" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Passing a Lodash method directly to a React onClick handler causes the method to lose its original execution context, setting its internal this binding to undefined under JavaScript&#39;s strict mode. Because React invokes event handlers as standalone functio" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-this-binding-in-react-onclick-handlers">Lodash this
+Binding in React onClick Handlers</h1>
+<p>Passing a Lodash method directly to a React <code>onClick</code>
+handler causes the method to lose its original execution context,
+setting its internal <code>this</code> binding to <code>undefined</code>
+under JavaScript's strict mode. Because React invokes event handlers as
+standalone function references rather than as methods on an object, any
+Lodash utility that relies on <code>this</code> or higher-order
+utilities that forward <code>this</code> will fail to access their
+expected context, often while simultaneously receiving an unwanted React
+<code>SyntheticEvent</code> as their first argument.</p>
+<h3 id="how-javascript-function-invocation-alters-this">How JavaScript
+Function Invocation Alters <code>this</code></h3>
+<p>In JavaScript, a function's <code>this</code> keyword is determined
+dynamically at call time based on how the function is invoked. When you
+pass a method reference directly—such as
+<code>onClick={_.debounce}</code> or an instance method from a Lodash
+wrapper—you extract the function from the <code>_</code> object.</p>
+<p>When a user clicks the element, React's synthetic event system
+invokes the callback directly:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Conceptual representation of React triggering the handler</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">handler</span>(syntheticEvent)<span class="op">;</span></span></code></pre></div>
+<p>Because the function is invoked without a receiver (there is no
+<code>object.method()</code> syntax), standard call rules apply. In
+ECMAScript modules and React applications, strict mode is enabled by
+default. Under strict mode, an unbound, standalone function call sets
+<code>this</code> to <code>undefined</code>. In non-strict environments,
+<code>this</code> falls back to the global object (<code>window</code>
+in browsers).</p>
+<h3 id="the-impact-on-specific-lodash-methods">The Impact on Specific
+Lodash Methods</h3>
+<ol type="1">
+<li><strong>Standard Pure Utilities (<code>_.clone</code>,
+<code>_.isEmpty</code>):</strong> Most standalone Lodash utilities are
+written functionally and do not rely internally on <code>this</code>.
+However, directly passing them still causes issues because React
+automatically supplies the <code>SyntheticEvent</code> as the first
+argument. Calling <code>onClick={_.isEmpty}</code> will evaluate the
+truthiness of the event object rather than your target state or
+data.</li>
+<li><strong>Context-Forwarding Utilities (<code>_.debounce</code>,
+<code>_.throttle</code>):</strong> Functions like
+<code>_.debounce</code> are designed to preserve and forward the
+<code>this</code> context of the call-site to the underlying debounced
+function. When passed directly to <code>onClick</code>, the debounced
+wrapper is executed by React with <code>this</code> set to
+<code>undefined</code>. Consequently, your wrapped callback also
+receives <code>undefined</code> as <code>this</code>.</li>
+<li><strong>Chained Sequences (<code>_()</code> wrappers):</strong> If
+you instantiate a Lodash chain sequence and pass a chained method
+directly to <code>onClick</code>, internal references expecting the
+wrapper instance will break, resulting in
+<code>TypeError: Cannot read properties of undefined</code>.</li>
+</ol>
+<h3 id="how-to-correctly-handle-lodash-in-react-events">How to Correctly
+Handle Lodash in React Events</h3>
+<p>To ensure correct context and argument passing, avoid passing utility
+methods directly as references.</p>
+<h4 id="use-an-arrow-function-wrapper">Use an Arrow Function
+Wrapper</h4>
+<p>Wrapping the call inside an inline arrow function ensures that
+arguments are explicitly controlled and prevents passing the synthetic
+event into functions not built for it:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode jsx"><code class="sourceCode javascriptreact"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">&lt;button</span> <span class="ot">onClick</span><span class="op">=</span><span class="va">{</span>(<span class="bu">event</span>) <span class="kw">=&gt;</span> _<span class="op">.</span><span class="fu">debounce</span>(handleAction<span class="op">,</span> <span class="dv">300</span>)()<span class="va">}</span><span class="kw">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  Click Me</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">&lt;/button&gt;</span></span></code></pre></div>
+<h4 id="persist-debounced-and-throttled-handlers">Persist Debounced and
+Throttled Handlers</h4>
+<p>For utilities that maintain internal state, such as
+<code>_.debounce</code> or <code>_.throttle</code>, re-creating them
+inside the render pass will reset their timers. Combine them with
+React's <code>useCallback</code> or <code>useMemo</code> hooks:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode jsx"><code class="sourceCode javascriptreact"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> React<span class="op">,</span> { useCallback } <span class="im">from</span> <span class="st">&#39;react&#39;</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> debounce <span class="im">from</span> <span class="st">&#39;lodash/debounce&#39;</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">ActionButton</span>() {</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> handleClick <span class="op">=</span> <span class="fu">useCallback</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">debounce</span>((<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>      <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Button clicked&#39;</span><span class="op">,</span> <span class="bu">event</span>)<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span> <span class="dv">300</span>)<span class="op">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    []</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return </span><span class="kw">&lt;button</span> <span class="ot">onClick</span><span class="op">=</span><span class="va">{</span>handleClick<span class="va">}</span><span class="kw">&gt;</span>Submit<span class="kw">&lt;/button&gt;</span><span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By explicitly managing invocation via closures or hooks, you prevent
+<code>this</code> from resolving to <code>undefined</code> and ensure
+only the intended arguments are passed to Lodash functions.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

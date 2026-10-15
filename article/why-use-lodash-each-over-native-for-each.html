@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Use Lodash _.each Over Native forEach - lodash</title>
+    <meta name="description" content="While native JavaScript provides Array.prototype.forEach for iterating over collections, Lodash&#39;s .each (an alias for .forEach) offers enhanced flexibility, safety, and functionality. This article explores why developers still rely on Lodash&#39;s implementat">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/why-use-lodash-each-over-native-for-each">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Use Lodash _.each Over Native forEach - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/why-use-lodash-each-over-native-for-each" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="While native JavaScript provides Array.prototype.forEach for iterating over collections, Lodash&#39;s .each (an alias for .forEach) offers enhanced flexibility, safety, and functionality. This article explores why developers still rely on Lodash&#39;s implementat" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-use-lodash-_each-over-native-foreach">Why Use Lodash _.each
+Over Native forEach</h1>
+<p>While native JavaScript provides <code>Array.prototype.forEach</code>
+for iterating over collections, Lodash's <code>_.each</code> (an alias
+for <code>_.forEach</code>) offers enhanced flexibility, safety, and
+functionality. This article explores why developers still rely on
+Lodash's implementation, highlighting key advantages such as native
+support for iterating over objects, the ability to exit loops early, and
+robust defense against null or undefined values.</p>
+<h3 id="seamless-support-for-objects-and-arrays">Seamless Support for
+Objects and Arrays</h3>
+<p>The native <code>Array.prototype.forEach</code> method functions
+exclusively on arrays. To iterate over an object using vanilla
+JavaScript, developers must first transform the object into an array
+using <code>Object.keys()</code>, <code>Object.values()</code>, or
+<code>Object.entries()</code>.</p>
+<p>In contrast, <code>_.each</code> natively accepts both arrays and
+plain objects. When passed an object, it automatically traverses the
+object's own enumerable string keyed properties, passing the value, key,
+and the collection itself to the callback function:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> <span class="st">&#39;Admin&#39;</span> }<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Iterates cleanly without Object.keys()</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">each</span>(user<span class="op">,</span> (value<span class="op">,</span> key) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`</span><span class="sc">${</span>key<span class="sc">}</span><span class="vs">: </span><span class="sc">${</span>value<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="early-loop-termination">Early Loop Termination</h3>
+<p>A well-known limitation of native <code>forEach</code> is that it
+cannot be stopped or broken out of; it will execute the callback for
+every single element unless an error is thrown.</p>
+<p>Lodash solves this limitation by allowing early termination.
+Returning <code>false</code> from the iteratee function immediately
+exits the loop, functioning identically to a <code>break</code>
+statement in a standard <code>for</code> loop:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">each</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span>]<span class="op">,</span> (num) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (num <span class="op">&gt;</span> <span class="dv">3</span>) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span> <span class="co">// Stops execution immediately</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(num)<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="safe-handling-of-null-and-undefined">Safe Handling of Null and
+Undefined</h3>
+<p>Attempting to run native <code>forEach</code> on a variable that
+resolves to <code>null</code> or <code>undefined</code> results in an
+uncaught
+<code>TypeError: Cannot read property 'forEach' of undefined</code>. To
+prevent application crashes, developers must write defensive checks or
+use optional chaining (e.g., <code>data?.forEach(...)</code>).</p>
+<p>Lodash’s <code>_.each</code> handles <code>null</code>,
+<code>undefined</code>, and primitive values gracefully. If an invalid
+collection is supplied, the method simply skips execution without
+throwing a runtime error, reducing boilerplate validation code in
+data-fetching pipelines.</p>
+<h3 id="predictable-iteration-over-sparse-arrays">Predictable Iteration
+Over Sparse Arrays</h3>
+<p>Sparse arrays—arrays with missing indices or empty slots—can
+introduce subtle bugs in native iteration methods. Native
+<code>forEach</code> skips empty slots entirely without invoking the
+callback. Lodash standardizes iteration across different types of
+array-like structures and sparse collections, ensuring that behavior
+remains predictable across various JavaScript runtime environments.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

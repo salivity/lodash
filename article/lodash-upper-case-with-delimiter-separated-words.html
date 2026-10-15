@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash upperCase with Delimiter Separated Words - lodash</title>
+    <meta name="description" content="The .upperCase method in the Lodash JavaScript library transforms delimiter-separated strings into clean, space-separated uppercase words. When passed a string containing delimiters such as hyphens, underscores, dots, or slashes, Lodash strips those delim">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-upper-case-with-delimiter-separated-words">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash upperCase with Delimiter Separated Words - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-upper-case-with-delimiter-separated-words" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .upperCase method in the Lodash JavaScript library transforms delimiter-separated strings into clean, space-separated uppercase words. When passed a string containing delimiters such as hyphens, underscores, dots, or slashes, Lodash strips those delim" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-uppercase-with-delimiter-separated-words">Lodash
+upperCase with Delimiter Separated Words</h1>
+<p>The <code>_.upperCase</code> method in the Lodash JavaScript library
+transforms delimiter-separated strings into clean, space-separated
+uppercase words. When passed a string containing delimiters such as
+hyphens, underscores, dots, or slashes, Lodash strips those delimiters,
+extracts the individual words, capitalizes every letter, and joins the
+words with a single space. This article details how this transformation
+works under the hood and provides clear examples of different delimiter
+formats.</p>
+<h2 id="how-_uppercase-works">How <code>_.upperCase</code> Works</h2>
+<p>When <code>_.upperCase</code> processes a string, it follows a
+three-step pipeline:</p>
+<ol type="1">
+<li><strong>Word Extraction</strong>: It splits the input string into
+discrete words using Lodash's internal word-segmentation logic. This
+logic detects boundaries created by whitespace, casing transitions (like
+camelCase), and common punctuation/delimiters.</li>
+<li><strong>Delimiter Removal</strong>: The identified delimiter
+characters (such as <code>-</code>, <code>_</code>, <code>.</code>, or
+<code>/</code>) are discarded during the extraction phase rather than
+preserved.</li>
+<li><strong>Reassembly</strong>: The isolated words are converted
+entirely to uppercase letters and joined together using a single space
+(<code>" "</code>) character.</li>
+</ol>
+<h2 id="handling-specific-delimiters">Handling Specific Delimiters</h2>
+<p>Lodash handles both single and mixed delimiter types consistently
+across standard naming conventions.</p>
+<h3 id="hyphens-kebab-case">Hyphens (Kebab-Case)</h3>
+<p>Hyphens are stripped, including consecutive or surrounding
+hyphens.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">upperCase</span>(<span class="st">&#39;user-profile-settings&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;USER PROFILE SETTINGS&#39;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">upperCase</span>(<span class="st">&#39;--header-nav--&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;HEADER NAV&#39;</span></span></code></pre></div>
+<h3 id="underscores-snake_case">Underscores (Snake_Case)</h3>
+<p>Underscores are treated as word boundaries and removed, making the
+function ideal for formatting database column names or constant
+identifiers.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">upperCase</span>(<span class="st">&#39;first_name_field&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;FIRST NAME FIELD&#39;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">upperCase</span>(<span class="st">&#39;__API_RESPONSE__&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;API RESPONSE&#39;</span></span></code></pre></div>
+<h3 id="dots-and-slashes-path-formats">Dots and Slashes (Path
+Formats)</h3>
+<p>Dots, forward slashes, and backslashes are also treated as word
+breaks.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">upperCase</span>(<span class="st">&#39;config.database.port&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;CONFIG DATABASE PORT&#39;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">upperCase</span>(<span class="st">&#39;assets/images/logo&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;ASSETS IMAGES LOGO&#39;</span></span></code></pre></div>
+<h3 id="mixed-delimiters">Mixed Delimiters</h3>
+<p>If a string uses multiple distinct delimiters together, Lodash
+removes all of them and standardizes the output.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">upperCase</span>(<span class="st">&#39;order_item-id.number&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;ORDER ITEM ID NUMBER&#39;</span></span></code></pre></div>
+<h2 id="summary-of-delimiter-behavior">Summary of Delimiter
+Behavior</h2>
+<ul>
+<li><strong>Separation</strong>: Any sequence of non-alphanumeric
+symbols acts as a delimiter boundary.</li>
+<li><strong>Stripping</strong>: Delimiters are not replaced one-to-one;
+instead, redundant or contiguous delimiters are collapsed and
+eliminated.</li>
+<li><strong>Standardization</strong>: Regardless of whether the original
+string used hyphens, underscores, or periods, the final output always
+utilizes single spaces between uppercase words.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

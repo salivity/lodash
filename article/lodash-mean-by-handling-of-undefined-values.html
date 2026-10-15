@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash meanBy Handling of Undefined Values - lodash</title>
+    <meta name="description" content="This article examines how the Lodash JavaScript library handles strictly undefined object properties when calculating averages using .meanBy. It details the internal summation and division logic, explains why runtime exceptions are prevented, and explores">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-mean-by-handling-of-undefined-values">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash meanBy Handling of Undefined Values - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-mean-by-handling-of-undefined-values" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the Lodash JavaScript library handles strictly undefined object properties when calculating averages using .meanBy. It details the internal summation and division logic, explains why runtime exceptions are prevented, and explores" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-meanby-handling-of-undefined-values">Lodash meanBy
+Handling of Undefined Values</h1>
+<p>This article examines how the Lodash JavaScript library handles
+strictly <code>undefined</code> object properties when calculating
+averages using <code>_.meanBy</code>. It details the internal summation
+and division logic, explains why runtime exceptions are prevented, and
+explores the resulting output when single, multiple, or all properties
+in a collection resolve to <code>undefined</code>.</p>
+<h3 id="silent-fallback-and-error-suppression">Silent Fallback and Error
+Suppression</h3>
+<p>Lodash adheres to a defensive programming philosophy across its
+utility suite. When <code>_.meanBy</code> iterates over an array of
+objects and attempts to access an object property that is strictly
+<code>undefined</code> (or entirely undeclared), it does not throw a
+<code>TypeError</code> or any other runtime exception. Instead, Lodash
+safely accesses the property using internal iteratee handlers and
+processes the <code>undefined</code> value through standard execution
+paths.</p>
+<h3 id="the-internal-basesum-logic">The Internal <code>baseSum</code>
+Logic</h3>
+<p>The computation performed by <code>_.meanBy</code> relies internally
+on <code>baseMean</code>, which delegates to <code>baseSum</code>.
+During the iteration loop in <code>baseSum</code>, each element is
+transformed by the iteratee function, and an explicit equality check is
+performed:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (current <span class="op">!==</span> <span class="kw">undefined</span>) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  result <span class="op">=</span> result <span class="op">===</span> <span class="kw">undefined</span> <span class="op">?</span> current <span class="op">:</span> (result <span class="op">+</span> current)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because of this conditional check:</p>
+<ul>
+<li><strong>Skipped Addition:</strong> Any item whose iteratee evaluates
+to <code>undefined</code> is ignored during summation. It is not added
+to the running total.</li>
+<li><strong>No String or NaN Coercion During Addition:</strong> In
+standard JavaScript, adding a number to <code>undefined</code> produces
+<code>NaN</code>. Lodash avoids this by simply bypassing any index that
+yields <code>undefined</code>.</li>
+</ul>
+<h3 id="denominator-calculation-and-average-discrepancies">Denominator
+Calculation and Average Discrepancies</h3>
+<p>While <code>undefined</code> values are excluded from the numerator
+(the sum), Lodash does <strong>not</strong> exclude them from the
+denominator (the divisor).</p>
+<p><code>baseMean</code> calculates the average by dividing the result
+of <code>baseSum</code> by the total length of the original collection
+(<code>array.length</code>), not the count of defined entries:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> length <span class="op">?</span> (<span class="fu">baseSum</span>(array<span class="op">,</span> iteratee) <span class="op">/</span> length) <span class="op">:</span> NAN<span class="op">;</span></span></code></pre></div>
+<p>For example, if you evaluate:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [{ <span class="dt">val</span><span class="op">:</span> <span class="dv">10</span> }<span class="op">,</span> { <span class="dt">val</span><span class="op">:</span> <span class="kw">undefined</span> }]<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">meanBy</span>(items<span class="op">,</span> <span class="st">&#39;val&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<ul>
+<li><code>baseSum</code> calculates <code>10</code> (skipping the second
+element).</li>
+<li>The array length is <code>2</code>.</li>
+<li>The return value is <code>5</code> (<code>10 / 2</code>), rather
+than <code>10</code>.</li>
+</ul>
+<h3 id="behavior-when-all-properties-are-undefined">Behavior When All
+Properties Are Undefined</h3>
+<p>If every element in the collection evaluates to
+<code>undefined</code>, <code>baseSum</code> completes its loop without
+updating its internal accumulator. As a result, <code>baseSum</code>
+returns <code>undefined</code>.</p>
+<p>When <code>baseMean</code> attempts to compute the average:</p>
+<ul>
+<li>The mathematical operation becomes
+<code>undefined / length</code>.</li>
+<li>In JavaScript arithmetic, dividing <code>undefined</code> by any
+number evaluates to <code>NaN</code>.</li>
+</ul>
+<p>Consequently, when all iterated properties are strictly
+<code>undefined</code>, <code>_.meanBy</code> returns
+<code>NaN</code>.</p>
+<h3 id="difference-between-undefined-null-and-nan">Difference Between
+<code>undefined</code>, <code>null</code>, and <code>NaN</code></h3>
+<p>Understanding Lodash's error handling requires noting how
+<code>undefined</code> is distinguished from other falsy or non-numeric
+values:</p>
+<ul>
+<li><strong><code>undefined</code>:</strong> Filtered out by the
+<code>current !== undefined</code> condition in
+<code>baseSum</code>.</li>
+<li><strong><code>null</code>:</strong> Not filtered out. JavaScript
+coerces <code>null</code> to <code>0</code> during arithmetic addition
+(<code>result + null</code>), contributing <code>0</code> to the total
+sum.</li>
+<li><strong><code>NaN</code>:</strong> Not filtered out. Adding
+<code>NaN</code> to any number results in <code>NaN</code>, which
+poisons the accumulator and forces the final output of
+<code>_.meanBy</code> to be <code>NaN</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

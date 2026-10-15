@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash isFinite vs Native Global isFinite - lodash</title>
+    <meta name="description" content="This article explores how Lodash’s .isFinite method handles values—specifically numeric strings—compared to JavaScript&#39;s native global isFinite function. While JavaScript&#39;s global function applies aggressive type coercion that can produce unexpected false">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-is-finite-vs-native-global-is-finite">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash isFinite vs Native Global isFinite - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-is-finite-vs-native-global-is-finite" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how Lodash’s .isFinite method handles values—specifically numeric strings—compared to JavaScript&#39;s native global isFinite function. While JavaScript&#39;s global function applies aggressive type coercion that can produce unexpected false" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-isfinite-vs-native-global-isfinite">Lodash isFinite vs
+Native Global isFinite</h1>
+<p>This article explores how Lodash’s <code>_.isFinite</code> method
+handles values—specifically numeric strings—compared to JavaScript's
+native global <code>isFinite</code> function. While JavaScript's global
+function applies aggressive type coercion that can produce unexpected
+false positives, Lodash's implementation enforces strict type checking.
+Understanding this distinction is essential for preventing data
+validation bugs when parsing numeric inputs in JavaScript
+applications.</p>
+<h3 id="the-problem-with-native-global-isfinite">The Problem with Native
+Global <code>isFinite</code></h3>
+<p>JavaScript's built-in global <code>isFinite()</code> function
+converts its argument to a number before evaluating whether it is
+finite. Because of this implicit type coercion, passing a numeric string
+causes the engine to parse the string as a number:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">isFinite</span>(<span class="st">&quot;42&quot;</span>)<span class="op">;</span>    <span class="co">// true</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">isFinite</span>(<span class="st">&quot;3.14&quot;</span>)<span class="op">;</span>  <span class="co">// true</span></span></code></pre></div>
+<p>While this may seem convenient, the global method's type coercion
+extends to non-numeric types and empty values, leading to notorious
+JavaScript edge cases:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="pp">isFinite</span>(<span class="st">&quot;&quot;</span>)<span class="op">;</span>      <span class="co">// true (empty string coerces to 0)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="pp">isFinite</span>(<span class="st">&quot;   &quot;</span>)<span class="op">;</span>   <span class="co">// true (whitespace coerces to 0)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="pp">isFinite</span>(<span class="kw">null</span>)<span class="op">;</span>    <span class="co">// true (null coerces to 0)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="pp">isFinite</span>([])<span class="op">;</span>      <span class="co">// true (empty array coerces to 0)</span></span></code></pre></div>
+<p>In these cases, non-numeric values and empty inputs are reported as
+finite numbers, which can easily introduce logic errors into validation
+routines.</p>
+<h3 id="how-lodash-_isfinite-evaluates-values">How Lodash
+<code>_.isFinite</code> Evaluates Values</h3>
+<p>Lodash’s <code>_.isFinite</code> method evaluates values safely by
+verifying that the input is actually a number primitive or object before
+checking its finiteness. Under the hood, Lodash ensures that the value's
+type is strictly numeric:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isFinite</span>(<span class="dv">42</span>)<span class="op">;</span>       <span class="co">// true</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isFinite</span>(<span class="fl">3.14</span>)<span class="op">;</span>     <span class="co">// true</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isFinite</span>(<span class="kw">Infinity</span>)<span class="op">;</span> <span class="co">// false</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isFinite</span>(<span class="kw">NaN</span>)<span class="op">;</span>      <span class="co">// false</span></span></code></pre></div>
+<p>When evaluated against numeric strings or coercive edge cases,
+<code>_.isFinite</code> does not coerce the value to a number. It
+immediately returns <code>false</code> because the input is not a number
+primitive:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isFinite</span>(<span class="st">&quot;42&quot;</span>)<span class="op">;</span>     <span class="co">// false</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isFinite</span>(<span class="st">&quot;&quot;</span>)<span class="op">;</span>       <span class="co">// false</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isFinite</span>(<span class="kw">null</span>)<span class="op">;</span>     <span class="co">// false</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isFinite</span>([])<span class="op">;</span>       <span class="co">// false</span></span></code></pre></div>
+<h3 id="key-differences-summary">Key Differences Summary</h3>
+<ol type="1">
+<li><strong>Type Coercion</strong>: Global <code>isFinite</code> coerces
+all arguments via the <code>Number()</code> conversion rules before
+checking finiteness. Lodash’s <code>_.isFinite</code> checks the type
+first and rejects non-numeric types outright.</li>
+<li><strong>Numeric String Handling</strong>: Global
+<code>isFinite("123")</code> evaluates to <code>true</code>. Lodash
+<code>_.isFinite("123")</code> evaluates to <code>false</code>.</li>
+<li><strong>Falsy and Empty Values</strong>: Global
+<code>isFinite</code> incorrectly evaluates <code>""</code>,
+<code>" "</code>, and <code>null</code> as finite numbers
+(<code>0</code>). Lodash safely returns <code>false</code> for all of
+them.</li>
+</ol>
+<h3 id="relation-to-numberisfinite">Relation to
+<code>Number.isFinite</code></h3>
+<p>Lodash’s behavior mirrors the modern standard method
+<code>Number.isFinite()</code>, introduced in ECMAScript 2015 (ES6).
+Both <code>Number.isFinite()</code> and Lodash’s
+<code>_.isFinite()</code> avoid the legacy coercion pitfalls of the
+global <code>isFinite</code> function.</p>
+<p>If an application requires treating valid numeric strings as numbers,
+developers must explicitly parse them using <code>Number()</code>,
+<code>parseFloat()</code>, or <code>parseInt()</code> before passing the
+result to <code>_.isFinite</code>. This guarantees that string
+conversion is intentional rather than an unintended side effect of
+validation.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

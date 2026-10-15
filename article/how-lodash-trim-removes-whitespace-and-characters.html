@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.trim Removes Whitespace and Characters - lodash</title>
+    <meta name="description" content="The .trim method in the Lodash JavaScript library is a utility designed to strip unwanted leading and trailing characters from a string. While native JavaScript provides String.prototype.trim() strictly for standard whitespace, Lodash&#39;s .trim expands on t">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-trim-removes-whitespace-and-characters">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.trim Removes Whitespace and Characters - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-trim-removes-whitespace-and-characters" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .trim method in the Lodash JavaScript library is a utility designed to strip unwanted leading and trailing characters from a string. While native JavaScript provides String.prototype.trim() strictly for standard whitespace, Lodash&#39;s .trim expands on t" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_trim-removes-whitespace-and-characters">How Lodash
+_.trim Removes Whitespace and Characters</h1>
+<p>The <code>_.trim</code> method in the Lodash JavaScript library is a
+utility designed to strip unwanted leading and trailing characters from
+a string. While native JavaScript provides
+<code>String.prototype.trim()</code> strictly for standard whitespace,
+Lodash's <code>_.trim</code> expands on this functionality by allowing
+developers to define a custom set of characters to eliminate from both
+ends of a target string. This article explains the internal mechanics of
+<code>_.trim</code>, its syntax, and how it handles both default
+whitespace and custom character sets.</p>
+<h2 id="syntax-and-core-mechanics">Syntax and Core Mechanics</h2>
+<p>The function signature for <code>_.trim</code> is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">trim</span>([string<span class="op">=</span><span class="st">&#39;&#39;</span>]<span class="op">,</span> [chars<span class="op">=</span>whitespace])</span></code></pre></div>
+<p>It takes two optional parameters:</p>
+<ol type="1">
+<li><code>string</code>: The string to modify. If nullish
+(<code>null</code> or <code>undefined</code>), it safely coerces the
+input to an empty string.</li>
+<li><code>chars</code>: The specific characters to remove from both
+ends. If omitted, it defaults to standard whitespace characters.</li>
+</ol>
+<p>Behind the scenes, Lodash inspects whether the <code>chars</code>
+argument was provided. Based on this check, it delegates the trimming
+process to specific regular expressions.</p>
+<h2 id="default-behavior-removing-whitespace">Default Behavior: Removing
+Whitespace</h2>
+<p>When called with only a string argument, <code>_.trim</code> behaves
+similarly to native <code>String.prototype.trim()</code>, but with
+broader environment compatibility and safe type coercion:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">trim</span>(<span class="st">&#39;   Hello World!   &#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; &#39;Hello World!&#39;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">trim</span>(<span class="st">&#39;</span><span class="sc">\n\t</span><span class="st">  Data Processing  </span><span class="sc">\t\r</span><span class="st">&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; &#39;Data Processing&#39;</span></span></code></pre></div>
+<p>Internally, when no <code>chars</code> argument is passed, Lodash
+applies a pre-compiled regular expression targeting all standard leading
+and trailing Unicode whitespace characters (including spaces, tabs, line
+breaks, and non-breaking spaces). It replaces any sequence matching
+<code>^\s+</code> and <code>\s+$</code> with an empty string.</p>
+<h2 id="custom-character-trimming">Custom Character Trimming</h2>
+<p>When a <code>chars</code> argument is specified, <code>_.trim</code>
+shifts from default whitespace matching to a dynamic character-stripping
+routine:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">trim</span>(<span class="st">&#39;-_-hello-_-&#39;</span><span class="op">,</span> <span class="st">&#39;_-&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; &#39;hello&#39;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">trim</span>(<span class="st">&#39;/api/v1/users/&#39;</span><span class="op">,</span> <span class="st">&#39;/&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; &#39;api/v1/users&#39;</span></span></code></pre></div>
+<p>To achieve this, Lodash executes the following steps:</p>
+<ol type="1">
+<li><p><strong>Character Decomposition:</strong> Lodash converts the
+<code>chars</code> string into an array of individual characters
+(handling Unicode surrogate pairs if present).</p></li>
+<li><p><strong>Regex Escaping:</strong> Any character inside
+<code>chars</code> that functions as a regular expression metacharacter
+(such as <code>.</code>, <code>*</code>, <code>?</code>, <code>^</code>,
+<code>$</code>, <code>[</code>, or <code>]</code>) is escaped using an
+internal <code>escapeRegExp</code> utility.</p></li>
+<li><p><strong>Pattern Assembly:</strong> It builds a character class
+pattern representing the characters to remove. The compiled expression
+looks fundamentally like:</p>
+<pre class="regex"><code>^[$chars]+|[$chars]+$</code></pre></li>
+<li><p><strong>Execution:</strong> The pattern matches any consecutive
+occurrence of the specified characters at the start (<code>^</code>) and
+end (<code>$</code>) of the string, stripping them simultaneously while
+leaving any matching characters in the middle intact.</p></li>
+</ol>
+<h2 id="key-advantages-over-native-trim">Key Advantages Over Native
+<code>trim()</code></h2>
+<ul>
+<li><strong>Custom Delimiters:</strong> Native
+<code>String.prototype.trim()</code> cannot strip non-whitespace
+characters like slashes, commas, or punctuation.</li>
+<li><strong>Type Safety:</strong> If passed <code>null</code>,
+<code>undefined</code>, or non-string types, <code>_.trim</code>
+converts the value without throwing a <code>TypeError</code>, returning
+an empty string or the stringified representation of the value.</li>
+<li><strong>Unicode Support:</strong> Lodash accounts for multi-byte
+Unicode characters properly when parsing the custom character set.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

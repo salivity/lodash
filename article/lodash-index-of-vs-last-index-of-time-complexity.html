@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash indexOf vs lastIndexOf Time Complexity - lodash</title>
+    <meta name="description" content="This article examines the algorithmic time complexity of .indexOf and .lastIndexOf in the Lodash JavaScript library. It explains how both methods operate under the hood, compares their theoretical performance metrics, and clarifies the practical differenc">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-index-of-vs-last-index-of-time-complexity">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash indexOf vs lastIndexOf Time Complexity - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-index-of-vs-last-index-of-time-complexity" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines the algorithmic time complexity of .indexOf and .lastIndexOf in the Lodash JavaScript library. It explains how both methods operate under the hood, compares their theoretical performance metrics, and clarifies the practical differenc" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-indexof-vs-lastindexof-time-complexity">Lodash indexOf vs
+lastIndexOf Time Complexity</h1>
+<p>This article examines the algorithmic time complexity of
+<code>_.indexOf</code> and <code>_.lastIndexOf</code> in the Lodash
+JavaScript library. It explains how both methods operate under the hood,
+compares their theoretical performance metrics, and clarifies the
+practical differences between searching an array from the beginning
+versus the end.</p>
+<h2 id="theoretical-time-complexity">Theoretical Time Complexity</h2>
+<p>In terms of asymptotic Big-O notation, there is <strong>no
+difference</strong> in algorithmic time complexity between
+<code>_.indexOf</code> and <code>_.lastIndexOf</code>:</p>
+<ul>
+<li><strong>Worst-Case Complexity:</strong> <span
+class="math inline">\(O(n)\)</span></li>
+<li><strong>Average-Case Complexity:</strong> <span
+class="math inline">\(O(n)\)</span></li>
+<li><strong>Best-Case Complexity:</strong> <span
+class="math inline">\(O(1)\)</span></li>
+<li><strong>Space Complexity:</strong> <span
+class="math inline">\(O(1)\)</span></li>
+</ul>
+<p>In both algorithms, <span class="math inline">\(n\)</span> represents
+the length of the input array. In the worst-case scenario—such as when
+the target element does not exist in the array—both methods must
+traverse the entire array, examining each element exactly once. This
+linear traversal requires <span class="math inline">\(O(n)\)</span>
+operations. The space complexity remains <span
+class="math inline">\(O(1)\)</span> because both methods iterate
+iteratively using pointers without allocating additional memory
+proportional to the array size.</p>
+<h2 id="how-_indexof-operates">How <code>_.indexOf</code> Operates</h2>
+<p>The <code>_.indexOf</code> method searches an array from left to
+right (from index <code>0</code> toward index <code>n - 1</code>, unless
+a custom <code>fromIndex</code> is specified).</p>
+<ul>
+<li><strong>Best Case (<span
+class="math inline">\(O(1)\)</span>):</strong> The target element is
+located at the very start of the search (index <code>0</code>). The loop
+terminates immediately.</li>
+<li><strong>Worst Case (<span
+class="math inline">\(O(n)\)</span>):</strong> The target value is
+located at the final index (<code>n - 1</code>) or is not present in the
+array at all, forcing the search to inspect all <span
+class="math inline">\(n\)</span> items.</li>
+</ul>
+<p><em>(Note: While Lodash provides a separate method called
+<code>_.sortedIndexOf</code> for sorted arrays that operates in <span
+class="math inline">\(O(\log n)\)</span> using binary search, the
+standard <code>_.indexOf</code> method performs a strict linear
+scan.)</em></p>
+<h2 id="how-_lastindexof-operates">How <code>_.lastIndexOf</code>
+Operates</h2>
+<p>The <code>_.lastIndexOf</code> method performs the exact reverse
+operation, searching from right to left (from index <code>n - 1</code>
+toward index <code>0</code>).</p>
+<ul>
+<li><strong>Best Case (<span
+class="math inline">\(O(1)\)</span>):</strong> The target element is
+located at the very end of the array (index <code>n - 1</code>). The
+function returns on the first iteration.</li>
+<li><strong>Worst Case (<span
+class="math inline">\(O(n)\)</span>):</strong> The target value is at
+the first index (<code>0</code>) or does not exist in the array,
+requiring a full traversal of all <span class="math inline">\(n\)</span>
+elements.</li>
+</ul>
+<h2 id="practical-differences">Practical Differences</h2>
+<p>While their Big-O theoretical classifications are identical, the
+practical performance depends on where the desired data is distributed
+in the array:</p>
+<ol type="1">
+<li><strong>Duplicate Values:</strong> If an array contains multiple
+instances of a value, <code>_.indexOf</code> finds the first occurrence,
+while <code>_.lastIndexOf</code> finds the final occurrence.</li>
+<li><strong>Data Insertion Patterns:</strong> If you are querying items
+in an append-only collection (such as an event log), recent entries are
+located near the end of the array. Using <code>_.lastIndexOf</code> will
+often yield an early exit, resulting in practical execution times closer
+to <span class="math inline">\(O(1)\)</span> rather than <span
+class="math inline">\(O(n)\)</span>. Conversely, items likely to be near
+the front will resolve faster using <code>_.indexOf</code>.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

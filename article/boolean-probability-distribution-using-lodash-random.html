@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boolean Probability Distribution Using Lodash random - lodash</title>
+    <meta name="description" content="This article explains how to leverage the Lodash .random method to generate boolean values based on custom probability distributions. While .random natively generates numerical values, enabling its floating-point functionality allows you to model weighted">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/boolean-probability-distribution-using-lodash-random">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Boolean Probability Distribution Using Lodash random - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/boolean-probability-distribution-using-lodash-random" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to leverage the Lodash .random method to generate boolean values based on custom probability distributions. While .random natively generates numerical values, enabling its floating-point functionality allows you to model weighted" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="boolean-probability-distribution-using-lodash-random">Boolean
+Probability Distribution Using Lodash random</h1>
+<p>This article explains how to leverage the Lodash
+<code>_.random</code> method to generate boolean values based on custom
+probability distributions. While <code>_.random</code> natively
+generates numerical values, enabling its floating-point functionality
+allows you to model weighted true and false outcomes with precise
+statistical control.</p>
+<h3 id="basic-5050-boolean-generation">Basic 50/50 Boolean
+Generation</h3>
+<p>By default, calling <code>_.random(0, 1)</code> yields an integer of
+either <code>0</code> or <code>1</code>, each with an equal 50% chance.
+You can cast this result directly to a boolean:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> isTrue <span class="op">=</span> <span class="bu">Boolean</span>(_<span class="op">.</span><span class="fu">random</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>))<span class="op">;</span></span></code></pre></div>
+<h3 id="implementing-weighted-probability-distributions">Implementing
+Weighted Probability Distributions</h3>
+<p>To create an uneven probability distribution (for example, an 80%
+chance of returning <code>true</code> and a 20% chance of returning
+<code>false</code>), configure <code>_.random</code> to return a
+floating-point number between <code>0</code> and <code>1</code>.</p>
+<p>The syntax for <code>_.random</code> is
+<code>_.random([lower=0], [upper=1], [floating])</code>. Setting the
+third argument to <code>true</code> produces a continuous floating-point
+value.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Function that returns true based on a specified probability (between 0 and 1)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">getRandomBoolean</span>(probability <span class="op">=</span> <span class="fl">0.5</span>) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> _<span class="op">.</span><span class="fu">random</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="kw">true</span>) <span class="op">&lt;</span> probability<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">// 70% chance of true, 30% chance of false</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> eventOccurred <span class="op">=</span> <span class="fu">getRandomBoolean</span>(<span class="fl">0.7</span>)<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">// 15% chance of true, 85% chance of false</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> rareEvent <span class="op">=</span> <span class="fu">getRandomBoolean</span>(<span class="fl">0.15</span>)<span class="op">;</span></span></code></pre></div>
+<h3 id="integer-based-percentage-approach">Integer-Based Percentage
+Approach</h3>
+<p>If you prefer working directly with percentages rather than decimals,
+configure the range between <code>1</code> and <code>100</code> using
+standard integer outputs:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">getPercentChance</span>(percentage) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> _<span class="op">.</span><span class="fu">random</span>(<span class="dv">1</span><span class="op">,</span> <span class="dv">100</span>) <span class="op">&lt;=</span> percentage<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// 25% chance of returning true</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> isQuarterChance <span class="op">=</span> <span class="fu">getPercentChance</span>(<span class="dv">25</span>)<span class="op">;</span></span></code></pre></div>
+<p>Using floating-point numbers between <code>0</code> and
+<code>1</code> is optimal for standard mathematical probabilities, while
+the integer method from <code>1</code> to <code>100</code> provides an
+intuitive syntax for percentage-based logic.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

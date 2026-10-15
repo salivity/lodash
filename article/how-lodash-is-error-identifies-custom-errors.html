@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash isError Identifies Custom Errors - lodash</title>
+    <meta name="description" content="This article examines how the Lodash utility function .isError evaluates custom error objects, addressing specifically whether stack trace properties are inspected during type detection. You will learn the exact internal validation steps Lodash uses, why">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-error-identifies-custom-errors">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash isError Identifies Custom Errors - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-error-identifies-custom-errors" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the Lodash utility function .isError evaluates custom error objects, addressing specifically whether stack trace properties are inspected during type detection. You will learn the exact internal validation steps Lodash uses, why" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-iserror-identifies-custom-errors">How Lodash isError
+Identifies Custom Errors</h1>
+<p>This article examines how the Lodash utility function
+<code>_.isError</code> evaluates custom error objects, addressing
+specifically whether stack trace properties are inspected during type
+detection. You will learn the exact internal validation steps Lodash
+uses, why stack trace properties like <code>stack</code> are completely
+omitted from verification, and how custom error classes must be
+structured to be recognized by the library.</p>
+<h2 id="the-short-answer-stack-properties-are-not-verified">The Short
+Answer: Stack Properties Are Not Verified</h2>
+<p>Despite common assumptions, <strong><code>_.isError</code> does not
+verify any stack trace properties</strong>. It does not check for the
+presence, format, or type of <code>error.stack</code>,
+<code>error.stackTraceLimit</code>, or V8 methods like
+<code>Error.captureStackTrace</code>.</p>
+<p>Because the <code>stack</code> property is historically non-standard
+and varies significantly across JavaScript runtimes (browsers, Node.js,
+and embedded engines), Lodash avoids relying on stack trace metadata
+entirely.</p>
+<h2 id="how-_iserror-actually-evaluates-errors">How
+<code>_.isError</code> Actually Evaluates Errors</h2>
+<p>Lodash implements a multi-step check to identify standard errors, DOM
+exceptions, and custom error classes across different execution realms
+(such as iframes or worker threads).</p>
+<p>The source code evaluates objects using the following logic:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isError</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span><span class="fu">isObjectLike</span>(value)) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">var</span> tag <span class="op">=</span> <span class="fu">baseGetTag</span>(value)<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> tag <span class="op">==</span> errorTag <span class="op">||</span> tag <span class="op">==</span> domExcTag <span class="op">||</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    (<span class="kw">typeof</span> value<span class="op">.</span><span class="at">message</span> <span class="op">==</span> <span class="st">&#39;string&#39;</span> <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> value<span class="op">.</span><span class="at">name</span> <span class="op">==</span> <span class="st">&#39;string&#39;</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="fu">isPlainObject</span>(value))<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="1-object-verification">1. Object Verification</h3>
+<p>The candidate must satisfy <code>isObjectLike(value)</code>, meaning
+the value must not be <code>null</code> and its <code>typeof</code>
+evaluation must be <code>'object'</code>.</p>
+<h3 id="2-internal-tag-matching">2. Internal Tag Matching</h3>
+<p>Lodash first checks the internal <code>[[Class]]</code> tag via
+<code>Object.prototype.toString.call(value)</code>:</p>
+<ul>
+<li><code>[object Error]</code> matches standard built-in error
+instances (<code>Error</code>, <code>TypeError</code>,
+<code>RangeError</code>, etc.).</li>
+<li><code>[object DOMException]</code> matches browser DOM
+exceptions.</li>
+</ul>
+<h3 id="3-duck-typing-fallback-for-custom-errors">3. Duck-Typing
+Fallback for Custom Errors</h3>
+<p>When a custom error class does not produce the
+<code>[object Error]</code> tag—often the case with transpiled ES5
+classes, manual prototypical inheritance, or custom objects overriding
+<code>Symbol.toStringTag</code>—Lodash applies a structural duck-typing
+check:</p>
+<ul>
+<li><strong><code>typeof value.message === 'string'</code></strong>: The
+object must contain a string <code>message</code> property.</li>
+<li><strong><code>typeof value.name === 'string'</code></strong>: The
+object must contain a string <code>name</code> property.</li>
+<li><strong><code>!isPlainObject(value)</code></strong>: The object must
+<strong>not</strong> be a plain object literal (<code>{}</code>). It
+must have an inherited prototype chain or a prototype not directly
+pointing to <code>Object.prototype</code> or <code>null</code>.</li>
+</ul>
+<h2 id="why-lodash-avoids-checking-the-stack-property">Why Lodash Avoids
+Checking the <code>stack</code> Property</h2>
+<p>Lodash deliberately omits <code>stack</code> checks for several
+technical reasons:</p>
+<ul>
+<li><strong>ECMAScript Specification</strong>: The ECMAScript standard
+does not mandate a <code>stack</code> property on
+<code>Error.prototype</code>. While standard in modern engines, it
+remains implementation-dependent.</li>
+<li><strong>Lazy Stack Evaluation</strong>: Modern JavaScript engines
+like V8 implement <code>stack</code> as a getter function that formats
+the stack trace on access. Inspecting <code>stack</code> during a
+generic type check can trigger unnecessary performance overhead.</li>
+<li><strong>Absence in Specific Environments</strong>: Some minimal or
+legacy runtimes do not generate stack traces automatically when an error
+object is instantiated.</li>
+</ul>
+<h2 id="creating-compatible-custom-error-classes">Creating Compatible
+Custom Error Classes</h2>
+<p>To guarantee that a custom error class is identified by
+<code>_.isError</code>, ensure it inherits from <code>Error</code> or
+satisfies the structural criteria:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CustomAppError <span class="kw">extends</span> <span class="bu">Error</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">constructor</span>(message) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">super</span>(message)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">name</span> <span class="op">=</span> <span class="st">&#39;CustomAppError&#39;</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Satisfies the internal tag check and inherits from Error</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isError</span>(<span class="kw">new</span> <span class="fu">CustomAppError</span>(<span class="st">&#39;Failure&#39;</span>))<span class="op">;</span> <span class="co">// true</span></span></code></pre></div>
+<p>If constructing a simulated error without inheriting directly from
+<code>Error</code>, satisfy the duck-typing fallback:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">CustomProtoError</span>(message) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">this</span><span class="op">.</span><span class="at">name</span> <span class="op">=</span> <span class="st">&#39;CustomProtoError&#39;</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">this</span><span class="op">.</span><span class="at">message</span> <span class="op">=</span> message<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>CustomProtoError<span class="op">.</span><span class="at">prototype</span> <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">create</span>(<span class="bu">Object</span><span class="op">.</span><span class="at">prototype</span>)<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Passes because name and message are strings, and it is not a plain object literal</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isError</span>(<span class="kw">new</span> <span class="fu">CustomProtoError</span>(<span class="st">&#39;Failure&#39;</span>))<span class="op">;</span> <span class="co">// true</span></span></code></pre></div>
+<p>Omitting <code>stack</code> entirely from your custom error
+implementations will have no negative impact on detection by
+<code>_.isError</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

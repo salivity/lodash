@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash forIn Bypasses ES6 Symbol Properties - lodash</title>
+    <meta name="description" content="Lodash’s .forIn method is designed to iterate over an object&#39;s own and inherited enumerable properties, but it completely ignores properties keyed by ES6 Symbols. This behavior is intentional, rooted in the method&#39;s strict adherence to standard ECMAScript">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-for-in-bypasses-es-6-symbol-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash forIn Bypasses ES6 Symbol Properties - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-for-in-bypasses-es-6-symbol-properties" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .forIn method is designed to iterate over an object&#39;s own and inherited enumerable properties, but it completely ignores properties keyed by ES6 Symbols. This behavior is intentional, rooted in the method&#39;s strict adherence to standard ECMAScript" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-forin-bypasses-es6-symbol-properties">How Lodash
+forIn Bypasses ES6 Symbol Properties</h1>
+<p>Lodash’s <code>_.forIn</code> method is designed to iterate over an
+object's own and inherited enumerable properties, but it completely
+ignores properties keyed by ES6 Symbols. This behavior is intentional,
+rooted in the method's strict adherence to standard ECMAScript
+<code>for...in</code> semantics and its internal key-enumeration
+architecture. This article details the underlying
+mechanisms—specifically native property traversal algorithms and the
+intentional exclusion of modern reflection APIs—that cause
+<code>_.forIn</code> to bypass Symbol-mapped properties.</p>
+<h3 id="reliance-on-standard-forin-semantics">Reliance on Standard
+<code>for...in</code> Semantics</h3>
+<p>The primary reason <code>_.forIn</code> ignores Symbol keys is that
+it models the behavior of JavaScript's native <code>for...in</code>
+loop. When the ECMAScript 2015 (ES6) specification introduced the
+<code>Symbol</code> primitive, it defined Symbols to represent
+non-string object keys intended for private metadata and extension-safe
+properties.</p>
+<p>Under the ECMAScript specification, standard enumeration
+algorithms—such as <code>[[Enumerate]]</code> and operations driving the
+native <code>for...in</code> statement—are explicitly restricted to
+string-keyed properties. Because Lodash’s <code>_.forIn</code> is built
+directly on top of or as a polyfill for this native looping construct,
+it automatically adopts the engine's built-in exclusion of Symbol
+identifiers.</p>
+<h3 id="internal-traversal-via-basefor-and-key-extraction">Internal
+Traversal via <code>baseFor</code> and Key Extraction</h3>
+<p>Under the hood, Lodash implements <code>_.forIn</code> using an
+internal iterator, typically <code>baseFor</code> or
+<code>baseForOwn</code>, which accepts an iteration function. In
+standard execution paths, <code>_.forIn</code> takes one of two
+approaches depending on optimization flags and target environments:</p>
+<ol type="1">
+<li><strong>Direct Native Loop:</strong> It evaluates the object using a
+standard <code>for (var key in object)</code> construct. In any
+ES6-compliant engine, this native loop automatically ignores Symbol
+keys, even if the property descriptor marks the Symbol as
+<code>enumerable: true</code>.</li>
+<li><strong>Internal Key Lists via <code>keysIn</code>:</strong> If the
+operation maps keys to an array first (as seen in variations like
+<code>_.forInRight</code>), it relies on <code>baseKeysIn</code>. This
+helper crawls the object and its prototype chain collecting string
+properties via <code>Object.keys()</code> or traditional
+<code>for...in</code> filters.</li>
+</ol>
+<p>Neither execution path incorporates APIs required to reveal Symbol
+properties.</p>
+<h3 id="deliberate-omission-of-symbol-reflection-apis">Deliberate
+Omission of Symbol Reflection APIs</h3>
+<p>In JavaScript, Symbol keys cannot be retrieved through general
+property enumerators; they require dedicated reflection functions. An
+engine only exposes Symbols if code explicitly invokes:</p>
+<ul>
+<li><code>Object.getOwnPropertySymbols(obj)</code></li>
+<li><code>Reflect.ownKeys(obj)</code></li>
+</ul>
+<p>Lodash includes utilities that retrieve Symbols when explicitly
+necessary (for example, internal cloning or assigning routines such as
+<code>baseClone</code> and <code>_.merge</code>), where it combines
+<code>keys</code> with <code>getOwnPropertySymbols</code>. However,
+<code>_.forIn</code> deliberately omits these calls.</p>
+<p>Because <code>_.forIn</code> does not traverse prototype chains using
+<code>Object.getPrototypeOf()</code> combined with
+<code>Object.getOwnPropertySymbols()</code>, Symbol-mapped properties
+never enter the iteration pipeline.</p>
+<h3 id="demonstrating-the-behavior">Demonstrating the Behavior</h3>
+<p>The divergence between string keys and Symbol keys in
+<code>_.forIn</code> can be observed in basic usage:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> symKey <span class="op">=</span> <span class="bu">Symbol</span>(<span class="st">&#39;id&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> object <span class="op">=</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">regularKey</span><span class="op">:</span> <span class="st">&#39;visible&#39;</span><span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  [symKey]<span class="op">:</span> <span class="st">&#39;hidden&#39;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Ensure the Symbol property is explicitly enumerable</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="fu">defineProperty</span>(object<span class="op">,</span> symKey<span class="op">,</span> {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">enumerable</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">value</span><span class="op">:</span> <span class="st">&#39;still hidden&#39;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">forIn</span>(object<span class="op">,</span> (value<span class="op">,</span> key) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(key<span class="op">,</span> value)<span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co">// Output:</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co">// &#39;regularKey&#39; &#39;visible&#39;</span></span></code></pre></div>
+<p>Even with <code>enumerable</code> set to <code>true</code>, the
+Symbol key is omitted. By combining the default filtering of native
+<code>for...in</code> loops with an internal implementation that
+abstains from calling <code>Object.getOwnPropertySymbols</code>,
+<code>_.forIn</code> maintains legacy specification compatibility and
+prevents unintended access to Symbol-mapped metadata.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

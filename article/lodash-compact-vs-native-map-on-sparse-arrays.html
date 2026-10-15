@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Compact vs Native Map on Sparse Arrays - lodash</title>
+    <meta name="description" content="JavaScript arrays containing empty slots—commonly referred to as sparse arrays—present unique indexing challenges across different utility functions. While native methods like Array.prototype.map respect the absence of explicit elements by skipping unallo">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-compact-vs-native-map-on-sparse-arrays">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Compact vs Native Map on Sparse Arrays - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-compact-vs-native-map-on-sparse-arrays" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="JavaScript arrays containing empty slots—commonly referred to as sparse arrays—present unique indexing challenges across different utility functions. While native methods like Array.prototype.map respect the absence of explicit elements by skipping unallo" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-compact-vs-native-map-on-sparse-arrays">Lodash Compact vs
+Native Map on Sparse Arrays</h1>
+<p>JavaScript arrays containing empty slots—commonly referred to as
+sparse arrays—present unique indexing challenges across different
+utility functions. While native methods like
+<code>Array.prototype.map</code> respect the absence of explicit
+elements by skipping unallocated indices and preserving empty slots,
+Lodash’s <code>_.compact</code> processes array length uniformly,
+evaluating missing slots as falsy values and re-indexing the retained
+elements sequentially. This article examines the mechanical differences
+between how <code>_.compact</code> handles sparse indices and how native
+array mapping maintains sparse structures.</p>
+<h3 id="the-mechanics-of-sparse-arrays-in-javascript">The Mechanics of
+Sparse Arrays in JavaScript</h3>
+<p>A sparse array is an array where certain indices have not been
+assigned a value, creating "holes" rather than storing
+<code>undefined</code>. For example, executing
+<code>const arr = [1, , 3]</code> results in an array of length 3 where
+index <code>0</code> and <code>2</code> exist, but index <code>1</code>
+does not exist as an own property of the object (<code>1 in arr</code>
+returns <code>false</code>).</p>
+<p>When JavaScript operations encounter these holes, behavior diverges
+depending on whether the operation inspects property existence via the
+internal <code>[[HasProperty]]</code> check or accesses values by
+reading index positions directly up to the <code>length</code>
+property.</p>
+<h3 id="how-native-arrayprototypemap-handles-missing-slots">How Native
+<code>Array.prototype.map</code> Handles Missing Slots</h3>
+<p>Native <code>Array.prototype.map</code> conforms to ECMAScript
+specifications that explicitly check for property existence before
+invoking the callback. During iteration:</p>
+<ol type="1">
+<li>The algorithm checks whether the current index exists as an own or
+inherited property (<code>k in O</code>).</li>
+<li>If the index does not exist, the callback function is bypassed
+entirely for that slot.</li>
+<li>The resulting array retains the hole at the exact same index
+position, preserving the sparse architecture and length of the source
+array.</li>
+</ol>
+<p>Because the callback is never executed for missing slots, native
+mapping does not alter the index distribution of the existing elements,
+nor does it normalize holes to <code>undefined</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sparse <span class="op">=</span> [<span class="dv">10</span><span class="op">,</span> <span class="op">,</span> <span class="dv">30</span>]<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> mapped <span class="op">=</span> sparse<span class="op">.</span><span class="fu">map</span>(x <span class="kw">=&gt;</span> x <span class="op">*</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(mapped)<span class="op">;</span> <span class="co">// [20, &lt;1 empty item&gt;, 60]</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="dv">1</span> <span class="kw">in</span> mapped)<span class="op">;</span> <span class="co">// false</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(mapped<span class="op">.</span><span class="at">length</span>)<span class="op">;</span> <span class="co">// 3</span></span></code></pre></div>
+<h3 id="how-_compact-handles-sparse-arrays">How <code>_.compact</code>
+Handles Sparse Arrays</h3>
+<p>Lodash’s <code>_.compact</code> is designed to create a new array
+with all falsy values removed (<code>false</code>, <code>null</code>,
+<code>0</code>, <code>""</code>, <code>undefined</code>, and
+<code>NaN</code>). Its underlying implementation does not check whether
+a property exists via the <code>in</code> operator; instead, it
+processes the array using an index-based loop from <code>0</code> to
+<code>length - 1</code>.</p>
+<p>When <code>_.compact</code> reads an empty slot via direct property
+access (<code>array[index]</code>), the JavaScript runtime evaluates the
+non-existent property as <code>undefined</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Conceptual representation of Lodash&#39;s internal compact logic</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">compact</span>(array) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> resIndex <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> result <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (array <span class="op">==</span> <span class="kw">null</span>) {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">const</span> value <span class="kw">of</span> array) {</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (value) {</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>      result[resIndex<span class="op">++</span>] <span class="op">=</span> value<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because <code>undefined</code> is falsy:</p>
+<ol type="1">
+<li><strong>Hole Conversion:</strong> The missing slot is accessed
+directly, producing <code>undefined</code>.</li>
+<li><strong>Falsy Exclusion:</strong> The <code>undefined</code> value
+fails the truthiness check.</li>
+<li><strong>Contiguous Re-indexing:</strong> The remaining truthy
+elements are pushed into a new, contiguous collection indexed strictly
+from <code>0</code> onward via an internal pointer.</li>
+</ol>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sparse <span class="op">=</span> [<span class="dv">10</span><span class="op">,</span> <span class="op">,</span> <span class="dv">30</span>]<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> compacted <span class="op">=</span> _<span class="op">.</span><span class="fu">compact</span>(sparse)<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(compacted)<span class="op">;</span> <span class="co">// [10, 30]</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="dv">1</span> <span class="kw">in</span> compacted)<span class="op">;</span> <span class="co">// true (value is 30)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(compacted<span class="op">.</span><span class="at">length</span>)<span class="op">;</span> <span class="co">// 2</span></span></code></pre></div>
+<h3 id="key-differences-in-index-allocation">Key Differences in Index
+Allocation</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Native
+<code>Array.prototype.map</code></th>
+<th style="text-align: left;">Lodash <code>_.compact</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Hole Detection</strong></td>
+<td style="text-align: left;">Checks property existence
+(<code>HasProperty</code>)</td>
+<td style="text-align: left;">Direct lookup (returns
+<code>undefined</code>)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Index Preservation</strong></td>
+<td style="text-align: left;">Retains original index offsets</td>
+<td style="text-align: left;">Collapses empty slots; re-indexes to a
+dense array</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Output Array Length</strong></td>
+<td style="text-align: left;">Equal to the input array's
+<code>length</code></td>
+<td style="text-align: left;">Decreased by the number of falsy and
+missing slots</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Array Density</strong></td>
+<td style="text-align: left;">Remains sparse</td>
+<td style="text-align: left;">Produces a strictly dense array</td>
+</tr>
+</tbody>
+</table>
+<p>Native mapping treats missing slots as structurally deliberate and
+preserves the coordinate space of the array. Conversely,
+<code>_.compact</code> normalizes sparse holes into runtime
+<code>undefined</code> values and discards them, resulting in a strictly
+dense, zero-indexed array where subsequent elements shift to fill the
+omitted index positions.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

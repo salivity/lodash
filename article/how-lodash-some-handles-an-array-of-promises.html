@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.some Handles an Array of Promises - lodash</title>
+    <meta name="description" content="Lodash’s .some method processes arrays synchronously, which fundamentally alters how it interacts with asynchronous structures like Promises. When provided an array populated entirely by dynamically resolved Promises, .some does not await their resolution">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-some-handles-an-array-of-promises">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.some Handles an Array of Promises - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-some-handles-an-array-of-promises" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .some method processes arrays synchronously, which fundamentally alters how it interacts with asynchronous structures like Promises. When provided an array populated entirely by dynamically resolved Promises, .some does not await their resolution" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_some-handles-an-array-of-promises">How Lodash _.some
+Handles an Array of Promises</h1>
+<p>Lodash’s <code>_.some</code> method processes arrays synchronously,
+which fundamentally alters how it interacts with asynchronous structures
+like Promises. When provided an array populated entirely by dynamically
+resolved Promises, <code>_.some</code> does not await their resolution;
+instead, it evaluates the <code>Promise</code> instances immediately as
+standard JavaScript objects. This article explains how Lodash evaluates
+these collections, why unexpected <code>true</code> results occur, and
+how to properly handle asynchronous evaluation.</p>
+<h3 id="the-synchronous-evaluation-of-promises">The Synchronous
+Evaluation of Promises</h3>
+<p>Lodash collection methods, including <code>_.some</code>, are
+strictly synchronous. When <code>_.some</code> iterates over an array
+containing Promises, it passes each raw <code>Promise</code> object
+directly to the predicate function without pausing execution or waiting
+for the Promise to settle.</p>
+<p>Because every <code>Promise</code> in JavaScript is an object, it
+evaluates to a truthy value in a boolean context, regardless of whether
+the internal state of that Promise is pending, fulfilled, or
+rejected.</p>
+<h3 id="default-predicate-behavior">Default Predicate Behavior</h3>
+<p>If no custom predicate is passed to <code>_.some</code>, Lodash
+defaults to <code>_.identity</code>, which returns the value of the
+current element:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> p1 <span class="op">=</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">resolve</span>(<span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> p2 <span class="op">=</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">resolve</span>(<span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">some</span>([p1<span class="op">,</span> p2])<span class="op">;</span> </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// result is true</span></span></code></pre></div>
+<p>In this scenario:</p>
+<ol type="1">
+<li><code>_.some</code> inspects the first element,
+<code>p1</code>.</li>
+<li><code>p1</code> is an instance of <code>Promise</code>, which is an
+object and therefore truthy.</li>
+<li>Because the truth test passes immediately, <code>_.some</code>
+short-circuits and returns <code>true</code>.</li>
+<li>The remaining elements are not evaluated, and the underlying
+resolved values (even if <code>false</code>) are ignored.</li>
+</ol>
+<h3 id="custom-and-asynchronous-predicates">Custom and Asynchronous
+Predicates</h3>
+<p>Passing an <code>async</code> predicate function does not fix this
+behavior. An <code>async</code> function always returns a
+<code>Promise</code>, which is also truthy.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> values <span class="op">=</span> [<span class="bu">Promise</span><span class="op">.</span><span class="fu">resolve</span>(<span class="kw">false</span>)<span class="op">,</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">resolve</span>(<span class="kw">false</span>)]<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">some</span>(values<span class="op">,</span> <span class="kw">async</span> (p) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> resolved <span class="op">=</span> <span class="cf">await</span> p<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> resolved <span class="op">===</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// result is true</span></span></code></pre></div>
+<p>Even though the predicate checks if the resolved value is
+<code>true</code>, the return value of the <code>async</code> callback
+itself is a pending <code>Promise</code>. Since that returned
+<code>Promise</code> is truthy, <code>_.some</code> interprets it as a
+passing condition on the very first iteration and returns
+<code>true</code>.</p>
+<h3 id="the-proper-way-to-process-promises-with-some">The Proper Way to
+Process Promises with <code>some</code></h3>
+<p>To evaluate an array of dynamically resolved Promises against a
+condition, the Promises must be awaited before applying the logical
+test, or handled using asynchronous primitives.</p>
+<h4 id="approach-1-resolve-all-promises-first">Approach 1: Resolve All
+Promises First</h4>
+<p>If all Promises must resolve before determining if at least one
+satisfies the condition:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> promises <span class="op">=</span> [<span class="bu">Promise</span><span class="op">.</span><span class="fu">resolve</span>(<span class="kw">false</span>)<span class="op">,</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">resolve</span>(<span class="kw">true</span>)]<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> resolvedValues <span class="op">=</span> <span class="cf">await</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">all</span>(promises)<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> resolvedValues<span class="op">.</span><span class="fu">some</span>((val) <span class="kw">=&gt;</span> val <span class="op">===</span> <span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// result is true</span></span></code></pre></div>
+<h4 id="approach-2-short-circuiting-asynchronously">Approach 2:
+Short-Circuiting Asynchronously</h4>
+<p>To mimic the short-circuiting behavior of <code>_.some</code>
+asynchronously—returning as soon as the first truthy condition is
+met—wrap the condition in individual Promises and use native
+<code>Promise.any</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> promises <span class="op">=</span> [<span class="bu">Promise</span><span class="op">.</span><span class="fu">resolve</span>(<span class="kw">false</span>)<span class="op">,</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">resolve</span>(<span class="kw">true</span>)]<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> hasMatch <span class="op">=</span> <span class="cf">await</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">any</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  promises<span class="op">.</span><span class="fu">map</span>(<span class="kw">async</span> (p) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> val <span class="op">=</span> <span class="cf">await</span> p<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (val <span class="op">===</span> <span class="kw">true</span>) <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="st">&quot;Condition not met&quot;</span>)<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>)<span class="op">.</span><span class="fu">then</span>(() <span class="kw">=&gt;</span> <span class="kw">true</span>)<span class="op">.</span><span class="fu">catch</span>(() <span class="kw">=&gt;</span> <span class="kw">false</span>)<span class="op">;</span></span></code></pre></div>
+<p>Using <code>_.some</code> directly on an array of Promises will
+virtually always evaluate to <code>true</code> due to JavaScript's
+truthy object semantics. Asynchronous collections must always be awaited
+prior to passing their values to Lodash iteration methods.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.create Establishes Prototype Chains - lodash</title>
+    <meta name="description" content="The Lodash .create method provides a streamlined way to implement prototypal inheritance in JavaScript by generating a new object with a specified prototype and optional custom properties. This article breaks down how .create links objects via the interna">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-create-establishes-prototype-chains">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.create Establishes Prototype Chains - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-create-establishes-prototype-chains" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .create method provides a streamlined way to implement prototypal inheritance in JavaScript by generating a new object with a specified prototype and optional custom properties. This article breaks down how .create links objects via the interna" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_create-establishes-prototype-chains">How Lodash
+_.create Establishes Prototype Chains</h1>
+<p>The Lodash <code>_.create</code> method provides a streamlined way to
+implement prototypal inheritance in JavaScript by generating a new
+object with a specified prototype and optional custom properties. This
+article breaks down how <code>_.create</code> links objects via the
+internal prototype chain, how it assigns own properties, and how its
+behavior compares to native JavaScript inheritance patterns.</p>
+<h2 id="the-mechanism-behind-_create">The Mechanism Behind
+<code>_.create</code></h2>
+<p>In JavaScript, objects inherit properties and methods through a
+reference chain known as the prototype chain. Every object has an
+internal slot, typically denoted as <code>[[Prototype]]</code>, which
+points to either another object or <code>null</code>.</p>
+<p>The syntax for the Lodash function is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">create</span>(prototype<span class="op">,</span> [properties])</span></code></pre></div>
+<p>When called, <code>_.create</code> performs two primary
+operations:</p>
+<ol type="1">
+<li><strong>Allocates a new object with the target prototype:</strong>
+Internally, Lodash utilizes native
+<code>Object.create(prototype)</code>. This sets the hidden
+<code>[[Prototype]]</code> of the newly created instance directly to the
+<code>prototype</code> argument passed to the function.</li>
+<li><strong>Assigns own properties:</strong> If a secondary
+<code>properties</code> object is supplied, Lodash assigns those
+properties directly to the new instance as own, enumerable properties
+using an internal assignment utility (similar to
+<code>Object.assign</code>).</li>
+</ol>
+<h2 id="prototype-resolution-in-action">Prototype Resolution in
+Action</h2>
+<p>Once <code>_.create</code> returns the object, any property lookup
+follows the standard ECMAScript prototype lookup algorithm:</p>
+<ul>
+<li><strong>Own Property Check:</strong> The JavaScript engine first
+checks if the requested property exists directly on the newly created
+object.</li>
+<li><strong>Delegation Up the Chain:</strong> If the property is not
+found on the instance, the engine traverses the
+<code>[[Prototype]]</code> link to inspect the prototype object passed
+into <code>_.create</code>.</li>
+<li><strong>Termination:</strong> This delegation continues until the
+property is found or the chain reaches <code>null</code> (typically
+ending at <code>Object.prototype</code>).</li>
+</ul>
+<p>Consider the following example:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> vehicleProto <span class="op">=</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">drive</span><span class="op">:</span> <span class="kw">function</span>() {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&#39;Moving forward&#39;</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> car <span class="op">=</span> _<span class="op">.</span><span class="fu">create</span>(vehicleProto<span class="op">,</span> { <span class="dt">wheels</span><span class="op">:</span> <span class="dv">4</span> })<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(car<span class="op">.</span><span class="at">wheels</span>)<span class="op">;</span> <span class="co">// 4 (Own property)</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(car<span class="op">.</span><span class="fu">drive</span>())<span class="op">;</span> <span class="co">// &#39;Moving forward&#39; (Inherited via prototype chain)</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="bu">Object</span><span class="op">.</span><span class="fu">getPrototypeOf</span>(car) <span class="op">===</span> vehicleProto)<span class="op">;</span> <span class="co">// true</span></span></code></pre></div>
+<p>In this structure, <code>car.wheels</code> resides directly on the
+<code>car</code> instance. Calling <code>car.drive()</code> fails to
+find the property on <code>car</code> itself, so the engine delegates to
+<code>vehicleProto</code>, where the method is resolved.</p>
+<h2 id="differences-between-_create-and-objectcreate">Differences
+Between <code>_.create</code> and <code>Object.create</code></h2>
+<p>While <code>_.create</code> relies on <code>Object.create</code> to
+construct the prototype chain, it simplifies how own properties are
+applied.</p>
+<p>Native <code>Object.create</code> accepts property descriptor objects
+as its second argument:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Native Object.create</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> obj <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">create</span>(proto<span class="op">,</span> {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">prop</span><span class="op">:</span> {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">value</span><span class="op">:</span> <span class="st">&#39;test&#39;</span><span class="op">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">writable</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">enumerable</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">configurable</span><span class="op">:</span> <span class="kw">true</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Lodash's <code>_.create</code> abstracts this verbosity by allowing
+standard key-value pairs:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Lodash _.create</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> obj <span class="op">=</span> _<span class="op">.</span><span class="fu">create</span>(proto<span class="op">,</span> { <span class="dt">prop</span><span class="op">:</span> <span class="st">&#39;test&#39;</span> })<span class="op">;</span></span></code></pre></div>
+<p>By pairing <code>Object.create</code> delegation with simple object
+assignment, <code>_.create</code> establishes an explicit prototype
+chain while keeping object initialization concise and readable.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

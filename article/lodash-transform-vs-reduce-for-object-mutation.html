@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash transform vs reduce for Object Mutation - lodash</title>
+    <meta name="description" content="Lodash’s .transform is an iteration utility specifically designed for building and mutating objects and arrays, serving as a more ergonomic alternative to .reduce. While .reduce is a general-purpose accumulator pattern borrowed from functional programming">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-transform-vs-reduce-for-object-mutation">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash transform vs reduce for Object Mutation - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-transform-vs-reduce-for-object-mutation" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .transform is an iteration utility specifically designed for building and mutating objects and arrays, serving as a more ergonomic alternative to .reduce. While .reduce is a general-purpose accumulator pattern borrowed from functional programming" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-transform-vs-reduce-for-object-mutation">Lodash transform
+vs reduce for Object Mutation</h1>
+<p>Lodash’s <code>_.transform</code> is an iteration utility
+specifically designed for building and mutating objects and arrays,
+serving as a more ergonomic alternative to <code>_.reduce</code>. While
+<code>_.reduce</code> is a general-purpose accumulator pattern borrowed
+from functional programming, <code>_.transform</code> streamlines object
+transformation by automatically handling accumulator returns, inferring
+initial accumulator types, and supporting early loop termination.</p>
+<h3 id="implicit-accumulator-returns">Implicit Accumulator Returns</h3>
+<p>In standard <code>_.reduce</code> or JavaScript's native
+<code>Array.prototype.reduce</code>, every iteration cycle requires an
+explicit return statement for the accumulator. Forgetting to return the
+accumulator is one of the most common sources of bugs during object
+mutation:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Using _.reduce: requires explicit return</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">reduce</span>(source<span class="op">,</span> (acc<span class="op">,</span> value<span class="op">,</span> key) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (value <span class="op">&gt;</span> <span class="dv">10</span>) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    acc[key] <span class="op">=</span> value<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> acc<span class="op">;</span> <span class="co">// Mandatory, otherwise next iteration acc is undefined</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> {})<span class="op">;</span></span></code></pre></div>
+<p>With <code>_.transform</code>, the accumulator is returned
+automatically. You directly mutate the accumulator without having to
+return it at the end of the callback:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Using _.transform: implicit return</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">transform</span>(source<span class="op">,</span> (acc<span class="op">,</span> value<span class="op">,</span> key) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (value <span class="op">&gt;</span> <span class="dv">10</span>) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    acc[key] <span class="op">=</span> value<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="automatic-accumulator-initialization">Automatic Accumulator
+Initialization</h3>
+<p>When using <code>_.reduce</code> for object transformation, you must
+explicitly pass an empty object (<code>{}</code>) or array
+(<code>[]</code>) as the initial value. If omitted,
+<code>_.reduce</code> defaults to the first element in the collection,
+which breaks object-building patterns.</p>
+<p>In contrast, <code>_.transform</code> automatically initializes the
+accumulator to match the prototype of the source collection if an
+accumulator is not explicitly provided.</p>
+<ul>
+<li>If the collection is an array, the accumulator defaults to
+<code>[]</code>.</li>
+<li>If the collection is an object, the accumulator defaults to
+<code>{}</code>.</li>
+<li>Inherited properties on custom prototypes are also respected.</li>
+</ul>
+<h3 id="early-loop-termination">Early Loop Termination</h3>
+<p>Standard reduce operations cannot be stopped once started; they
+process every single key-value pair in the collection unless an
+exception is thrown.</p>
+<p><code>_.transform</code> incorporates short-circuiting. Returning
+<code>false</code> from inside the callback function immediately halts
+the iteration, mimicking the behavior of a standard <code>break</code>
+statement in a <code>for</code> loop:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> firstMatches <span class="op">=</span> _<span class="op">.</span><span class="fu">transform</span>(largeDataset<span class="op">,</span> (acc<span class="op">,</span> value<span class="op">,</span> key) <span class="kw">=&gt;</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  acc[key] <span class="op">=</span> value<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="bu">Object</span><span class="op">.</span><span class="fu">keys</span>(acc)<span class="op">.</span><span class="at">length</span> <span class="op">&gt;=</span> <span class="dv">5</span>) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span> <span class="co">// Stops execution immediately</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="summary-of-differences">Summary of Differences</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;"><code>_.reduce</code></th>
+<th style="text-align: left;"><code>_.transform</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Primary Purpose</strong></td>
+<td style="text-align: left;">General value reduction (numbers, strings,
+etc.)</td>
+<td style="text-align: left;">Object/Array mutation and building</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Accumulator Return</strong></td>
+<td style="text-align: left;">Explicit (<code>return acc</code>)
+required</td>
+<td style="text-align: left;">Implicitly handled</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Default Accumulator</strong></td>
+<td style="text-align: left;">First element of the collection</td>
+<td style="text-align: left;">Empty instance matching the collection
+type</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Break Iteration</strong></td>
+<td style="text-align: left;">Not supported natively</td>
+<td style="text-align: left;">Supported by returning
+<code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>_.reduce</code> remains the appropriate tool when condensing a
+collection into a single primitive value, such as calculating a sum.
+However, when the goal is to filter, reshape, or map an object or array
+into a new structure, <code>_.transform</code> provides a cleaner, less
+error-prone API.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

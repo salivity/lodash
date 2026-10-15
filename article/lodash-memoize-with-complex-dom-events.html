@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash memoize with Complex DOM Events - lodash</title>
+    <meta name="description" content="This article provides an overview of how Lodash&#39;s .memoize handles complex DOM event payloads, detailing its default caching mechanism, the challenges caused by event object structures, and the required implementation patterns to achieve reliable results.">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-memoize-with-complex-dom-events">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash memoize with Complex DOM Events - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-memoize-with-complex-dom-events" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how Lodash&#39;s .memoize handles complex DOM event payloads, detailing its default caching mechanism, the challenges caused by event object structures, and the required implementation patterns to achieve reliable results." />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-memoize-with-complex-dom-events">Lodash memoize with
+Complex DOM Events</h1>
+<p>This article provides an overview of how Lodash's
+<code>_.memoize</code> handles complex DOM event payloads, detailing its
+default caching mechanism, the challenges caused by event object
+structures, and the required implementation patterns to achieve reliable
+results. By default, <code>_.memoize</code> caches results based on the
+reference identity of the first argument, which introduces critical
+limitations when dealing with the mutable, ephemeral, and circular
+nature of native and synthetic DOM events.</p>
+<h2 id="default-key-resolution-and-object-references">Default Key
+Resolution and Object References</h2>
+<p>By default, <code>_.memoize</code> uses the first argument passed to
+the memoized function as the cache key:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">memoize</span>(func<span class="op">,</span> resolver) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// If resolver is not provided, args[0] is used as the key</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> key <span class="op">=</span> resolver <span class="op">?</span> resolver<span class="op">.</span><span class="fu">apply</span>(<span class="kw">this</span><span class="op">,</span> args) <span class="op">:</span> args[<span class="dv">0</span>]<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ...</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When a complex DOM event (such as a native <code>MouseEvent</code> or
+<code>KeyboardEvent</code>) is passed as the argument, Lodash places the
+entire event object directly into its internal cache map as a key.
+Because JavaScript maps and objects evaluate non-primitive keys by
+reference equality (<code>===</code>), the caching behavior depends
+entirely on whether subsequent calls receive the identical event
+instance.</p>
+<p>In practice, browsers instantiate a new event object for every
+interaction, even if the user performs identical actions (like clicking
+the same button twice). As a result, memoizing an event handler without
+configuration produces almost zero cache hits because each event
+instance possesses a distinct memory address.</p>
+<h2 id="pitfalls-of-complex-dom-event-payloads">Pitfalls of Complex DOM
+Event Payloads</h2>
+<p>Passing raw DOM events to <code>_.memoize</code> introduces several
+technical hazards:</p>
+<h3 id="1-memory-leaks">1. Memory Leaks</h3>
+<p>DOM events maintain references to the DOM nodes that triggered them
+via properties like <code>target</code>, <code>currentTarget</code>, and
+the <code>composedPath()</code> array. When <code>_.memoize</code>
+stores an event object in its cache, it retains those references
+indefinitely. If the associated elements are removed from the document,
+the garbage collector cannot reclaim their memory, causing a detached
+DOM node leak.</p>
+<h3 id="2-serialization-failures">2. Serialization Failures</h3>
+<p>Developers often attempt to resolve complex objects by supplying a
+resolver that uses <code>JSON.stringify</code>. However, DOM events
+contain cyclic references (e.g.,
+<code>event.target.ownerDocument.defaultView</code> references
+<code>window</code>, which references document elements). Executing
+<code>JSON.stringify(event)</code> throws an uncaught
+<code>TypeError: Converting circular structure to JSON</code>.</p>
+<h3 id="3-ephemeral-properties-and-pooling">3. Ephemeral Properties and
+Pooling</h3>
+<p>In standard browser environments, properties like
+<code>event.timeStamp</code> or coordinates change constantly. In older
+versions of frameworks like React, <code>SyntheticEvent</code> objects
+were pooled and wiped clean immediately after the callback executed. A
+memoized function holding a reference to a pooled event would access an
+empty or mutated payload on subsequent operations.</p>
+<h2 id="implementing-a-custom-resolver">Implementing a Custom
+Resolver</h2>
+<p>To make <code>_.memoize</code> work correctly with DOM event
+payloads, you must supply a custom <code>resolver</code> function as the
+second argument. The resolver extracts specific, deterministic primitive
+values from the event to construct a unique, reliable string or number
+key.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> _ <span class="im">from</span> <span class="st">&#39;lodash&#39;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">handlePointerMove</span>(<span class="bu">event</span>) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Expensive calculation based on event coordinates</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">computedX</span><span class="op">:</span> <span class="bu">event</span><span class="op">.</span><span class="at">clientX</span> <span class="op">*</span> <span class="fl">1.5</span><span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">computedY</span><span class="op">:</span> <span class="bu">event</span><span class="op">.</span><span class="at">clientY</span> <span class="op">*</span> <span class="fl">1.5</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Resolver extracts primitives to avoid object reference traps</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> resolveEventKey <span class="op">=</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span><span class="bu">event</span><span class="op">.</span><span class="at">type</span><span class="sc">}</span><span class="vs">-</span><span class="sc">${</span><span class="bu">event</span><span class="op">.</span><span class="at">clientX</span><span class="sc">}</span><span class="vs">-</span><span class="sc">${</span><span class="bu">event</span><span class="op">.</span><span class="at">clientY</span><span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> memoizedPointerMove <span class="op">=</span> _<span class="op">.</span><span class="fu">memoize</span>(handlePointerMove<span class="op">,</span> resolveEventKey)<span class="op">;</span></span></code></pre></div>
+<p>By decoupling the cache key from the event object's identity and
+avoiding whole-object serialization, the resolver ensures that
+<code>_.memoize</code> identifies duplicate inputs accurately while
+preventing memory leaks and circular reference errors.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

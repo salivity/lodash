@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash lowerCase Handles Compound Words - lodash</title>
+    <meta name="description" content="The .lowerCase method in the Lodash JavaScript library converts strings into space-separated, lowercase words. When dealing with compound words written in conventions such as camelCase, kebab-case, or snakecase, .lowerCase breaks these terms down into the">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-lower-case-handles-compound-words">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash lowerCase Handles Compound Words - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-lower-case-handles-compound-words" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .lowerCase method in the Lodash JavaScript library converts strings into space-separated, lowercase words. When dealing with compound words written in conventions such as camelCase, kebab-case, or snakecase, .lowerCase breaks these terms down into the" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-lowercase-handles-compound-words">How Lodash
+lowerCase Handles Compound Words</h1>
+<p>The <code>_.lowerCase</code> method in the Lodash JavaScript library
+converts strings into space-separated, lowercase words. When dealing
+with compound words written in conventions such as camelCase,
+kebab-case, or snake_case, <code>_.lowerCase</code> breaks these terms
+down into their individual constituent words, eliminates all separating
+characters or casing boundaries, and joins them using single spaces in
+full lowercase.</p>
+<h2 id="splitting-and-normalizing-compound-words">Splitting and
+Normalizing Compound Words</h2>
+<p>When <code>_.lowerCase</code> evaluates a string, it relies
+internally on Lodash's word-splitting logic. It identifies the
+boundaries between words based on uppercase transitions, punctuation
+marks, hyphens, and underscores.</p>
+<p>Instead of simply converting all letters to lowercase while retaining
+the structure, <code>_.lowerCase</code> fundamentally reformats compound
+tokens. It takes the parsed words, strips any punctuation or symbols
+connecting them, and unites them with a single standard space.</p>
+<h3 id="behavior-by-casing-format">Behavior by Casing Format</h3>
+<ul>
+<li><strong>camelCase and PascalCase:</strong> Transitions from
+lowercase to uppercase letters mark a word boundary. The uppercase
+letters are converted to lowercase and preceded by a space.
+<ul>
+<li><code>_.lowerCase('camelCaseWord')</code> results in
+<code>'camel case word'</code>.</li>
+<li><code>_.lowerCase('PascalCaseWord')</code> results in
+<code>'pascal case word'</code>.</li>
+</ul></li>
+<li><strong>kebab-case:</strong> Hyphens are treated as delimiters and
+removed.
+<ul>
+<li><code>_.lowerCase('kebab-case-word')</code> results in
+<code>'kebab case word'</code>.</li>
+</ul></li>
+<li><strong>snake_case:</strong> Underscores act as delimiters and are
+removed.
+<ul>
+<li><code>_.lowerCase('snake_case_word')</code> results in
+<code>'snake case word'</code>.</li>
+</ul></li>
+<li><strong>Mixed Delimiters and Casing:</strong> Combinations
+containing mixed symbols and capitalization are completely normalized.
+<ul>
+<li><code>_.lowerCase('__COMPOUND_mixed-caseWord__')</code> results in
+<code>'compound mixed case word'</code>.</li>
+</ul></li>
+</ul>
+<h2 id="handling-consecutive-uppercase-letters">Handling Consecutive
+Uppercase Letters</h2>
+<p>When compound words contain acronyms or abbreviations,
+<code>_.lowerCase</code> detects where the acronym ends and the next
+word begins:</p>
+<ul>
+<li><code>_.lowerCase('getHTMLResponse')</code> results in
+<code>'get html response'</code>.</li>
+<li><code>_.lowerCase('parseXML')</code> results in
+<code>'parse xml'</code>.</li>
+</ul>
+<p>Because <code>_.lowerCase</code> always decouples connected words, it
+is best suited for producing human-readable text for display, rather
+than generating programming identifiers like variable names or object
+keys.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

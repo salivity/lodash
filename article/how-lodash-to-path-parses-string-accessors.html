@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash toPath Parses String Accessors - lodash</title>
+    <meta name="description" content="Lodash&#39;s .toPath utility converts deep object property paths from strings into sequential arrays of property keys and indices. This article explains the internal mechanics of .toPath, detailing how the library normalizes edge-case inputs, leverages memoiz">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-to-path-parses-string-accessors">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash toPath Parses String Accessors - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-to-path-parses-string-accessors" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .toPath utility converts deep object property paths from strings into sequential arrays of property keys and indices. This article explains the internal mechanics of .toPath, detailing how the library normalizes edge-case inputs, leverages memoiz" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-topath-parses-string-accessors">How Lodash toPath
+Parses String Accessors</h1>
+<p>Lodash's <code>_.toPath</code> utility converts deep object property
+paths from strings into sequential arrays of property keys and indices.
+This article explains the internal mechanics of <code>_.toPath</code>,
+detailing how the library normalizes edge-case inputs, leverages
+memoization for performance, and executes a dedicated regular expression
+engine to cleanly extract dot-separated, bracket-indexed, and quoted
+object accessors into distinct array segments.</p>
+<h3 id="input-normalization-and-edge-cases">Input Normalization and Edge
+Cases</h3>
+<p>Before running any parsing logic, <code>_.toPath</code> checks the
+data type of the input:</p>
+<ul>
+<li><strong>Arrays</strong>: If the input is already an array, Lodash
+maps over its elements to ensure symbols and keys are preserved,
+returning a new array without running string extraction.</li>
+<li><strong>Symbols</strong>: JavaScript <code>Symbol</code> primitives
+are wrapped directly in a single-element array
+(<code>[value]</code>).</li>
+<li><strong>Nullish Values</strong>: Passing <code>null</code> or
+<code>undefined</code> returns an empty array (<code>[]</code>).</li>
+<li><strong>Primitives</strong>: Numbers and other primitives are
+converted to their string representations before further
+processing.</li>
+</ul>
+<h3 id="performance-optimization-with-memoization">Performance
+Optimization with Memoization</h3>
+<p>String manipulation and regex evaluations are computationally
+expensive when performed repeatedly in deeply nested data
+transformations. To mitigate this, Lodash routes string parsing through
+an internal wrapper called <code>memoizeCapped</code>.</p>
+<p>This cache stores the parsed array results for up to 500 unique path
+strings. If the cache reaches this threshold, it clears completely to
+prevent memory leaks in long-running Node.js processes or single-page
+applications. If an incoming path string exists in the cache,
+<code>_.toPath</code> immediately returns the cached array.</p>
+<h3 id="the-parsing-regular-expression">The Parsing Regular
+Expression</h3>
+<p>When a path string misses the cache, Lodash invokes an internal
+helper named <code>stringToPath</code>. This function relies on a
+comprehensive regular expression (<code>rePropName</code>) designed to
+capture three distinct accessor styles:</p>
+<ol type="1">
+<li><strong>Standard Identifiers</strong>: Matches standard alphanumeric
+property keys separated by dots (e.g., <code>foo.bar</code>).</li>
+<li><strong>Unquoted Bracketed Notation</strong>: Matches numeric
+indices or property names inside square brackets without quotes (e.g.,
+<code>[0]</code> or <code>[value]</code>).</li>
+<li><strong>Quoted Bracketed Notation</strong>: Matches single- or
+double-quoted strings within brackets, allowing properties that contain
+spaces, special characters, or literal dots (e.g.,
+<code>['foo.bar']</code> or <code>["key with spaces"]</code>).</li>
+</ol>
+<p>In Lodash's source code, the pattern is structured roughly as:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> rePropName <span class="op">=</span> <span class="ss">/</span><span class="sc">[^.[\]]+|\[(?</span><span class="ss">:</span><span class="sc">([^&quot;&#39;][^[]*)|([&quot;&#39;])((?</span><span class="ss">:</span><span class="sc">(?</span><span class="ss">!</span><span class="sc">\2)[^\\]|\\</span><span class="ss">.</span><span class="sc">)*?)\2)\]|(?</span><span class="ss">=</span><span class="sc">(?</span><span class="ss">:</span><span class="sc">\.|\[\])(?</span><span class="ss">:</span><span class="sc">\.|\[\]|</span><span class="ss">$</span><span class="sc">))</span><span class="ss">/g</span><span class="op">;</span></span></code></pre></div>
+<h3 id="segment-extraction-and-sanitization">Segment Extraction and
+Sanitization</h3>
+<p>The <code>stringToPath</code> function initializes an empty array and
+uses <code>String.prototype.replace</code> alongside
+<code>rePropName</code> as an iterator to capture matches
+sequentially:</p>
+<ul>
+<li><strong>Dot Removal</strong>: Standard dot accessors are captured
+directly as their bare string names.</li>
+<li><strong>Bracket Stripping</strong>: When an accessor is enclosed in
+brackets, the outer brackets are removed. If the segment is an index
+(such as <code>[0]</code>), the number is captured as a string
+(<code>"0"</code>).</li>
+<li><strong>Quote and Escape Handling</strong>: If an accessor contains
+quotes (such as <code>["a.b"]</code>), the regular expression strips the
+surrounding quotation marks. Any escaped characters inside the quoted
+string (such as <code>\\"</code> or <code>\\.</code>) have their
+escaping backslashes resolved.</li>
+</ul>
+<p>Each processed match is pushed to the result array. For example, the
+input path string:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;user.posts[0][&#39;meta.data&#39;].id&quot;</span></span></code></pre></div>
+<p>is evaluated step-by-step into:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>[<span class="st">&quot;user&quot;</span><span class="op">,</span> <span class="st">&quot;posts&quot;</span><span class="op">,</span> <span class="st">&quot;0&quot;</span><span class="op">,</span> <span class="st">&quot;meta.data&quot;</span><span class="op">,</span> <span class="st">&quot;id&quot;</span>]</span></code></pre></div>
+<p>Once the regex finishes traversing the string, the resulting array of
+property strings is cached and returned, enabling other Lodash utilities
+like <code>_.get</code>, <code>_.set</code>, and <code>_.has</code> to
+traverse nested objects reliably.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

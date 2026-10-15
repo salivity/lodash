@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash isInteger Handles Floating-Point Precision - lodash</title>
+    <meta name="description" content="Lodash’s .isInteger method verifies whether a given value is an integer by determining if the value is a finite number equal to its truncated integer form. Because JavaScript represents all numbers using the IEEE 754 standard for double-precision floating">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-integer-handles-floating-point-precision">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash isInteger Handles Floating-Point Precision - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-integer-handles-floating-point-precision" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .isInteger method verifies whether a given value is an integer by determining if the value is a finite number equal to its truncated integer form. Because JavaScript represents all numbers using the IEEE 754 standard for double-precision floating" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-isinteger-handles-floating-point-precision">How
+Lodash isInteger Handles Floating-Point Precision</h1>
+<p>Lodash’s <code>_.isInteger</code> method verifies whether a given
+value is an integer by determining if the value is a finite number equal
+to its truncated integer form. Because JavaScript represents all numbers
+using the IEEE 754 standard for double-precision floating points,
+<code>_.isInteger</code> does not evaluate mathematical integers in the
+abstract, but rather the binary floating-point representation of the
+value. Consequently, its evaluation at precision boundaries is strictly
+dictated by the 53-bit significand limit of JavaScript numbers, leading
+to specific behaviors around safe integer thresholds, fractional
+rounding underflow, and large-magnitude numbers.</p>
+<h3 id="the-underlying-evaluation-logic">The Underlying Evaluation
+Logic</h3>
+<p>At its core, Lodash defines <code>_.isInteger</code> by checking
+whether the input type is a number and whether it matches its integer
+conversion:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isInteger</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">typeof</span> value <span class="op">===</span> <span class="st">&#39;number&#39;</span> <span class="op">&amp;&amp;</span> value <span class="op">==</span> <span class="fu">toInteger</span>(value)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>In modern environments, this behaves virtually identically to
+ECMAScript’s native <code>Number.isInteger(value)</code>. The
+calculation checks that the value is not <code>NaN</code>, not infinite,
+and that <code>Math.floor(Math.abs(value)) === Math.abs(value)</code>
+(or <code>value % 1 === 0</code>).</p>
+<p>Because this check happens purely in the floating-point domain, the
+precision limits of standard 64-bit floats determine the outcome before
+the code can even distinguish fractional components.</p>
+<h3 id="the-53-bit-significand-and-max_safe_integer">The 53-Bit
+Significand and <code>MAX_SAFE_INTEGER</code></h3>
+<p>Standard IEEE 754 doubles allocate 53 bits (including the implicit
+leading bit) to the significand (fraction). This guarantees exact
+integer precision up to <span class="math inline">\(2^{53} - 1\)</span>
+(<code>9,007,199,254,740,991</code>), accessible in JavaScript as
+<code>Number.MAX_SAFE_INTEGER</code>.</p>
+<p>When evaluating numeric precision boundaries:</p>
+<ul>
+<li><strong>Within Safe Bounds:</strong> For values between
+<code>-Number.MAX_SAFE_INTEGER</code> and
+<code>Number.MAX_SAFE_INTEGER</code>, every mathematical integer has a
+unique, exact binary representation. Here, <code>_.isInteger</code>
+behaves with exact mathematical accuracy.</li>
+<li><strong>Beyond Safe Bounds:</strong> Once numbers exceed <span
+class="math inline">\(2^{53}\)</span>, the exponent scale forces the
+least significant bits to represent increments greater than <span
+class="math inline">\(1\)</span>. Between <span
+class="math inline">\(2^{53}\)</span> and <span
+class="math inline">\(2^{54}\)</span>, only even integers can be
+represented. Beyond <span class="math inline">\(2^{54}\)</span>, the
+representable numbers skip by multiples of 4, 8, 16, and so on.</li>
+</ul>
+<p>Because any floating-point number with an exponent of 52 or greater
+has no fractional bits allocated in the IEEE 754 format,
+<code>_.isInteger</code> evaluates all representable numbers in this
+range as <code>true</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isInteger</span>(<span class="dv">9007199254740992</span>)<span class="op">;</span> <span class="co">// true (2^53)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isInteger</span>(<span class="dv">9007199254740993</span>)<span class="op">;</span> <span class="co">// true, because it rounds to 9007199254740992 in memory</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isInteger</span>(<span class="fl">1e25</span>)<span class="op">;</span>             <span class="co">// true</span></span></code></pre></div>
+<p><code>_.isInteger</code> does not reject numbers that exceed safe
+precision limits. It simply confirms that the current floating-point
+representation does not contain a fractional remainder.</p>
+<h3 id="fractional-precision-and-machine-epsilon">Fractional Precision
+and Machine Epsilon</h3>
+<p>The boundary behavior also affects fractional values near zero and
+near whole numbers. In IEEE 754, the gap between 1 and the next larger
+floating-point number is <code>Number.EPSILON</code> (<span
+class="math inline">\(2^{-52} \approx 2.22 \times
+10^{-16}\)</span>).</p>
+<p>If a fractional offset is smaller than the precision threshold at a
+specific magnitude, the JavaScript runtime rounds the value to the
+nearest representable float before <code>_.isInteger</code> receives
+it:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isInteger</span>(<span class="dv">1</span> <span class="op">+</span> <span class="fl">1e-16</span>)<span class="op">;</span> <span class="co">// true (rounds down to exactly 1.0)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isInteger</span>(<span class="dv">1</span> <span class="op">+</span> <span class="fl">1e-15</span>)<span class="op">;</span> <span class="co">// false (fraction is preserved in the significand)</span></span></code></pre></div>
+<p>At this boundary, <code>_.isInteger</code> does not fail due to its
+own logic; rather, the runtime has already discarded the fractional
+precision.</p>
+<h3 id="_isinteger-vs-_issafeinteger"><code>_.isInteger</code> vs.
+<code>_.isSafeInteger</code></h3>
+<p>Because <code>_.isInteger</code> accepts any floating-point
+representation with a remainder of zero, Lodash provides
+<code>_.isSafeInteger</code> to explicitly guard against IEEE 754
+precision degradation.</p>
+<p><code>_.isSafeInteger</code> adds a boundary constraint:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isSafeInteger</span>(value) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">isInteger</span>(value) <span class="op">&amp;&amp;</span> value <span class="op">&gt;=</span> <span class="op">-</span><span class="dv">9007199254740991</span> <span class="op">&amp;&amp;</span> value <span class="op">&lt;=</span> <span class="dv">9007199254740991</span><span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When writing systems that require absolute integer precision—such as
+handling database IDs, cryptographic nonces, or 64-bit integer
+values—<code>_.isInteger</code> alone is insufficient because it treats
+floats with lost precision as valid integers. For strict IEEE 754
+precision boundary checks, <code>_.isSafeInteger</code> must be used
+instead.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

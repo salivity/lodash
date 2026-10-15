@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixing Lodash _.merge Prototype Pollution Safely - lodash</title>
+    <meta name="description" content="Lodash&#39;s .merge method has historically posed critical security risks through Prototype Pollution vulnerabilities and unpredictable array index overwrites during deep merges. Completely resolving these issues requires upgrading to Lodash 4.17.21 or higher">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/fixing-lodash-merge-prototype-pollution-safely">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fixing Lodash _.merge Prototype Pollution Safely - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/fixing-lodash-merge-prototype-pollution-safely" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .merge method has historically posed critical security risks through Prototype Pollution vulnerabilities and unpredictable array index overwrites during deep merges. Completely resolving these issues requires upgrading to Lodash 4.17.21 or higher" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="fixing-lodash-_merge-prototype-pollution-safely">Fixing Lodash
+_.merge Prototype Pollution Safely</h1>
+<p>Lodash's <code>_.merge</code> method has historically posed critical
+security risks through Prototype Pollution vulnerabilities and
+unpredictable array index overwrites during deep merges. Completely
+resolving these issues requires upgrading to Lodash 4.17.21 or higher,
+employing <code>_.mergeWith</code> alongside an explicit customizer
+function to handle arrays safely, and hardening the runtime environment
+against recursive prototype contamination.</p>
+<h3 id="upgrading-lodash-to-patch-known-cves">Upgrading Lodash to Patch
+Known CVEs</h3>
+<p>The foundational step to eliminate known Prototype Pollution vectors
+(such as CVE-2018-16487 and CVE-2019-10744) is upgrading the library.
+Lodash versions prior to <code>4.17.21</code> improperly handled
+properties like <code>__proto__</code>, <code>constructor</code>, and
+<code>prototype</code>, enabling attackers to inject arbitrary
+properties into the global <code>Object.prototype</code>.</p>
+<p>Verify your installation and enforce the patched version in
+<code>package.json</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;dependencies&quot;</span><span class="er">:</span> <span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;lodash&quot;</span><span class="fu">:</span> <span class="st">&quot;^4.17.21&quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>This ensures the internal implementation of <code>_.merge</code>
+blocks direct assignments to prototype properties.</p>
+<h3 id="safely-handling-deep-array-merging-with-_mergewith">Safely
+Handling Deep Array Merging with <code>_.mergeWith</code></h3>
+<p>By default, <code>_.merge</code> reconciles arrays by index rather
+than replacing or concatenating them. Merging <code>['a', 'b']</code>
+with <code>['c']</code> results in <code>['c', 'b']</code>, mutating
+nested elements in ways that introduce logical flaws and security edge
+cases.</p>
+<p>To safely control array merging, replace <code>_.merge</code> with
+<code>_.mergeWith</code> and define an explicit customizer that either
+concatenates or completely overwrites target arrays:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">safeCustomizer</span>(objValue<span class="op">,</span> srcValue<span class="op">,</span> key) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Prevent prototype pollution keys manually as defense-in-depth</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (key <span class="op">===</span> <span class="st">&#39;__proto__&#39;</span> <span class="op">||</span> key <span class="op">===</span> <span class="st">&#39;constructor&#39;</span> <span class="op">||</span> key <span class="op">===</span> <span class="st">&#39;prototype&#39;</span>) {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> objValue<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Safely concatenate arrays rather than mutating index-by-index</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (_<span class="op">.</span><span class="fu">isArray</span>(objValue)) {</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> objValue<span class="op">.</span><span class="fu">concat</span>(srcValue)<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> safeMerge <span class="op">=</span> (target<span class="op">,</span> <span class="op">...</span>sources) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> _<span class="op">.</span><span class="fu">mergeWith</span>(target<span class="op">,</span> <span class="op">...</span>sources<span class="op">,</span> safeCustomizer)<span class="op">;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<p>If the desired business logic requires incoming arrays to completely
+overwrite existing ones, return <code>srcValue</code> instead of
+<code>objValue.concat(srcValue)</code>.</p>
+<h3 id="sanitizing-untrusted-inputs">Sanitizing Untrusted Inputs</h3>
+<p>Relying entirely on a third-party merge function leaves applications
+vulnerable to zero-day vectors. Validate and sanitize inputs before they
+reach the merge layer by stripping dangerous object keys:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sanitizeInput</span>(obj) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(<span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>(obj)<span class="op">,</span> (key<span class="op">,</span> value) <span class="kw">=&gt;</span> {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (key <span class="op">===</span> <span class="st">&#39;__proto__&#39;</span> <span class="op">||</span> key <span class="op">===</span> <span class="st">&#39;constructor&#39;</span> <span class="op">||</span> key <span class="op">===</span> <span class="st">&#39;prototype&#39;</span>) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Alternatively, use strict schema validation libraries such as Zod or
+Ajv to discard unmapped recursive keys prior to execution.</p>
+<h3 id="runtime-hardening">Runtime Hardening</h3>
+<p>To guarantee that no deep merge vulnerability can alter inherited
+prototypes across your application:</p>
+<ol type="1">
+<li><strong>Freeze the Prototype:</strong> Call
+<code>Object.freeze(Object.prototype)</code> during application startup
+to prevent runtime modifications.</li>
+<li><strong>Use Null-Prototype Objects:</strong> For data containers
+holding dynamic user payloads, instantiate objects using
+<code>Object.create(null)</code> or use the native <code>Map</code>
+structure, ensuring there is no prototype chain to pollute.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

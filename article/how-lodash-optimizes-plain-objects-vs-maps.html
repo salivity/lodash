@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash Optimizes Plain Objects vs Maps - lodash</title>
+    <meta name="description" content="This article explores how the Lodash library maximizes performance when iterating over plain JavaScript objects compared to native Map instances. By employing specialized internal dispatchers, Lodash avoids the overhead of generic iteration protocols, lev">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-optimizes-plain-objects-vs-maps">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash Optimizes Plain Objects vs Maps - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-optimizes-plain-objects-vs-maps" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how the Lodash library maximizes performance when iterating over plain JavaScript objects compared to native Map instances. By employing specialized internal dispatchers, Lodash avoids the overhead of generic iteration protocols, lev" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-optimizes-plain-objects-vs-maps">How Lodash Optimizes
+Plain Objects vs Maps</h1>
+<p>This article explores how the Lodash library maximizes performance
+when iterating over plain JavaScript objects compared to native
+<code>Map</code> instances. By employing specialized internal
+dispatchers, Lodash avoids the overhead of generic iteration protocols,
+leveraging optimized array-based indexed loops for plain objects while
+delegating to native iterator mechanics for <code>Map</code>
+collections.</p>
+<h3 id="type-detection-and-dispatching">Type Detection and
+Dispatching</h3>
+<p>Lodash functions such as <code>_.forEach</code> and
+<code>_.forOwn</code> first inspect the collection type using internal
+utilities like <code>getTag</code> and <code>isObjectLike</code>. Lodash
+does not treat all non-array structures equally.</p>
+<p>When a collection is passed to an iteration method, Lodash routes
+execution through internal dispatcher functions (principally
+<code>baseEach</code> and <code>baseForOwn</code>). If the collection is
+detected as a plain object, Lodash routes execution to an array-based
+key iteration pipeline. If it detects an instance of <code>Map</code>,
+it branches to dedicated Map-handling logic.</p>
+<h3 id="plain-object-iteration-strategy">Plain Object Iteration
+Strategy</h3>
+<p>Iterating over plain objects in JavaScript can incur performance
+penalties if prototype inheritance or property descriptor checks are not
+handled carefully. Lodash optimizes plain object iteration using the
+following mechanisms:</p>
+<ol type="1">
+<li><strong>Key Extraction over <code>for...in</code>:</strong> Rather
+than relying on a native <code>for...in</code> loop—which must traverse
+the prototype chain and perform repeated <code>hasOwnProperty</code>
+evaluations—Lodash extracts the object's own enumerable properties into
+an array using internal equivalents of <code>Object.keys</code>
+(<code>baseKeys</code>).</li>
+<li><strong>Optimized <code>while</code> Loops:</strong> Once an array
+of keys is generated, Lodash processes it using a fast, indexed
+<code>while</code> loop. Modern JavaScript engines optimize contiguous
+array lookups significantly better than dynamic property lookups across
+variable object shapes.</li>
+<li><strong>Index-Based Pointer Management:</strong> By iterating over
+an index counter rather than relying on iterator protocol closures,
+Lodash reduces memory allocations and function call overhead during the
+loop's execution.</li>
+</ol>
+<h3 id="map-iteration-strategy">Map Iteration Strategy</h3>
+<p>Native <code>Map</code> instances differ fundamentally from plain
+objects because keys are not bound to property descriptors, and entries
+maintain strict insertion order without prototype inheritance
+interference.</p>
+<ol type="1">
+<li><strong>Direct Protocol Delegation:</strong> Unlike plain objects, a
+<code>Map</code> cannot have its keys cleanly read via standard property
+accessors like <code>obj[key]</code>. Lodash bypasses key-array
+extraction for Maps and instead delegates directly to
+<code>Map.prototype.forEach</code> or consumes the iterator returned by
+<code>map.entries()</code>.</li>
+<li><strong>Zero Key-Array Allocation:</strong> Because generating an
+array of keys for a large <code>Map</code> would require additional
+memory allocation and garbage collection passes, Lodash iterates over
+the Map directly.</li>
+<li><strong>Absence of Guard Checks:</strong> Because <code>Map</code>
+instances do not suffer from prototype pollution where external
+properties might bleed into the key set, Lodash does not need to execute
+safety checks (such as <code>hasOwnProperty</code>), eliminating
+per-element validation costs.</li>
+</ol>
+<h3 id="summary-of-differences">Summary of Differences</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Plain Object Iteration</th>
+<th style="text-align: left;">Map Iteration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Primary Method</strong></td>
+<td style="text-align: left;">Key extraction followed by
+<code>while</code> loop</td>
+<td style="text-align: left;"><code>Map.prototype.forEach</code> or
+<code>entries()</code> iterator</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Memory Overhead</strong></td>
+<td style="text-align: left;">Allocates an intermediate array of
+keys</td>
+<td style="text-align: left;">Zero auxiliary array allocation</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Prototype Safety</strong></td>
+<td style="text-align: left;">Requires filtering
+(<code>baseKeys</code>)</td>
+<td style="text-align: left;">Inherently safe from prototype
+pollution</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Engine Optimization</strong></td>
+<td style="text-align: left;">Fast sequential array reads</td>
+<td style="text-align: left;">Native C++ iterator consumption</td>
+</tr>
+</tbody>
+</table>
+<p>Lodash optimizes plain objects by converting the operation into a
+deterministic array-indexing problem that V8 and other engines can
+inline efficiently. For Maps, it avoids unnecessary array allocations
+entirely, utilizing the runtime's native traversal mechanisms.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash isWeakSet and Weak Reference Characteristics - lodash</title>
+    <meta name="description" content="Lodash’s .isWeakSet method determines whether a given value is categorized as a WeakSet object by inspecting the internal object classification and structural constraints inherent to weak collections. This article explains how Lodash identifies these inst">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-is-weak-set-and-weak-reference-characteristics">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash isWeakSet and Weak Reference Characteristics - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-is-weak-set-and-weak-reference-characteristics" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .isWeakSet method determines whether a given value is categorized as a WeakSet object by inspecting the internal object classification and structural constraints inherent to weak collections. This article explains how Lodash identifies these inst" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-isweakset-and-weak-reference-characteristics">Lodash
+isWeakSet and Weak Reference Characteristics</h1>
+<p>Lodash’s <code>_.isWeakSet</code> method determines whether a given
+value is categorized as a <code>WeakSet</code> object by inspecting the
+internal object classification and structural constraints inherent to
+weak collections. This article explains how Lodash identifies these
+instances, the exact mechanics of <code>_.isWeakSet</code>, and the core
+constructor characteristics that enforce weak references within
+JavaScript.</p>
+<h3 id="how-lodash-detects-a-weakset">How Lodash Detects a WeakSet</h3>
+<p>In modern versions of Lodash, <code>_.isWeakSet</code> checks if a
+value is an object-like structure and matches the internal
+<code>[object WeakSet]</code> tag. The implementation utilizes
+environment-specific detection:</p>
+<ol type="1">
+<li><strong>Node.js Environment:</strong> Lodash delegates detection
+directly to the native binding <code>util.types.isWeakSet(value)</code>,
+ensuring fast and accurate identification directly from the V8
+runtime.</li>
+<li><strong>Browser/Fallback Environment:</strong> Lodash checks that
+the value is an object
+(<code>value !== null &amp;&amp; typeof value === 'object'</code>) and
+evaluates its internal <code>Symbol.toStringTag</code> via
+<code>baseGetTag(value) === '[object WeakSet]'</code>.</li>
+</ol>
+<h3
+id="constructor-characteristics-of-weak-references-in-weakset">Constructor
+Characteristics of Weak References in WeakSet</h3>
+<p>A <code>WeakSet</code> constructor defines a unique set of
+constraints that distinguish it from standard sets and dictionaries.
+These internal characteristics govern how weak referencing
+functions:</p>
+<h4 id="1-strictly-object-bound-storage">1. Strictly Object-Bound
+Storage</h4>
+<p>The <code>WeakSet</code> constructor accepts an optional iterable,
+but every member must be a non-null object (or, in modern ECMAScript
+standards, an unregistered symbol). Primitives are rejected by the
+constructor and the <code>add()</code> method with a
+<code>TypeError</code>. Because primitives do not have an independent
+memory lifecycle managed by garbage collection, they cannot be held
+weakly.</p>
+<h4 id="2-absence-of-strong-reference-roots">2. Absence of Strong
+Reference Roots</h4>
+<p>Unlike <code>Set</code>, which holds a strong reference to its
+elements, the <code>WeakSet</code> constructor instantiates an
+ephemeron-based collection. If an object stored inside a
+<code>WeakSet</code> has no remaining strong references elsewhere in the
+program, it becomes eligible for garbage collection, and its entry
+inside the <code>WeakSet</code> is silently reclaimed.</p>
+<h4 id="3-omission-of-enumeration-and-size-properties">3. Omission of
+Enumeration and Size Properties</h4>
+<p>To prevent nondeterministic behavior dependent on the timing of
+garbage collection, the <code>WeakSet</code> constructor deliberately
+omits methods and properties that allow enumeration:</p>
+<ul>
+<li>There is no <code>.size</code> property.</li>
+<li>There are no iteration protocols (no <code>.forEach()</code>,
+<code>[Symbol.iterator]</code>, <code>.keys()</code>,
+<code>.values()</code>, or <code>.entries()</code>).</li>
+<li>There is no <code>.clear()</code> method in the standard
+specification.</li>
+</ul>
+<p>Because external code cannot inspect the set's contents in bulk, the
+runtime can clean up dead references without exposing internal garbage
+collection lifecycles to user code.</p>
+<h4 id="4-minimal-mutation-and-inspection-interface">4. Minimal Mutation
+and Inspection Interface</h4>
+<p>The prototype assigned by the <code>WeakSet</code> constructor
+exposes only three primary methods:</p>
+<ul>
+<li><code>WeakSet.prototype.add(value)</code>: Appends an object
+reference weakly.</li>
+<li><code>WeakSet.prototype.has(value)</code>: Returns a boolean
+confirming membership based on reference identity.</li>
+<li><code>WeakSet.prototype.delete(value)</code>: Explicitly unlinks the
+weak reference.</li>
+</ul>
+<p>Lodash’s <code>_.isWeakSet</code> validates the existence of this
+dedicated class type, relying on runtime-level internal tags and native
+type checkers to ensure that only collections possessing these exact
+memory management behaviors evaluate to <code>true</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash pullAll Handles Object References - lodash</title>
+    <meta name="description" content="This article examines how the Lodash utility method .pullAll handles arrays containing object references. You will learn the specific equality algorithm Lodash uses, why it treats multiple instances of the same object reference identically, and how it dif">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-pull-all-handles-object-references">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash pullAll Handles Object References - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-pull-all-handles-object-references" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the Lodash utility method .pullAll handles arrays containing object references. You will learn the specific equality algorithm Lodash uses, why it treats multiple instances of the same object reference identically, and how it dif" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-pullall-handles-object-references">How Lodash pullAll
+Handles Object References</h1>
+<p>This article examines how the Lodash utility method
+<code>_.pullAll</code> handles arrays containing object references. You
+will learn the specific equality algorithm Lodash uses, why it treats
+multiple instances of the same object reference identically, and how it
+differentiates between identical memory references and structurally
+identical objects.</p>
+<h2 id="the-underlying-equality-check-samevaluezero">The Underlying
+Equality Check: SameValueZero</h2>
+<p><code>_.pullAll</code> modifies an existing array by removing all
+specified values. When comparing elements from the source array against
+the values to remove, Lodash internally uses the
+<strong>SameValueZero</strong> comparison algorithm.</p>
+<p>In JavaScript, SameValueZero behaves identically to the strict
+equality operator (<code>===</code>), with the exception that it
+considers <code>NaN</code> to be equal to <code>NaN</code>. When applied
+to JavaScript objects, this algorithm compares memory addresses rather
+than the underlying properties or contents of the objects.</p>
+<h2 id="multiple-identical-object-references">Multiple Identical Object
+References</h2>
+<p>Because <code>_.pullAll</code> relies on SameValueZero, it
+<strong>does not differentiate</strong> between multiple identical
+object references within the same array.</p>
+<p>If an array contains several elements pointing to the same memory
+reference, <code>_.pullAll</code> treats every instance identically:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sharedObject <span class="op">=</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> array <span class="op">=</span> [sharedObject<span class="op">,</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span> }<span class="op">,</span> sharedObject]<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Pulling sharedObject from the array</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">pullAll</span>(array<span class="op">,</span> [sharedObject])<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(array)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [{ id: 2 }]</span></span></code></pre></div>
+<p>During the iteration process, Lodash evaluates each element:</p>
+<ol type="1">
+<li><code>array[0] === sharedObject</code> resolves to
+<code>true</code>, so the element is removed.</li>
+<li><code>array[1] === sharedObject</code> resolves to
+<code>false</code>, so the element is kept.</li>
+<li><code>array[2] === sharedObject</code> resolves to
+<code>true</code>, so the element is removed.</li>
+</ol>
+<p>Every occurrence of the target reference is pulled from the array
+because all instances point to the exact same location in memory.</p>
+<h2 id="reference-identity-vs-structural-equality">Reference Identity
+vs. Structural Equality</h2>
+<p>A common source of confusion occurs when objects have identical
+properties but different references. <code>_.pullAll</code>
+distinguishes between objects strictly by their reference identity:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> objA <span class="op">=</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> objB <span class="op">=</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> array <span class="op">=</span> [objA]<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">pullAll</span>(array<span class="op">,</span> [objB])<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(array)<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [{ id: 1 }] (objA remains untouched)</span></span></code></pre></div>
+<p>Even though <code>objA</code> and <code>objB</code> share the exact
+same keys and values, they represent distinct objects in memory
+(<code>objA === objB</code> evaluates to <code>false</code>).
+Consequently, <code>_.pullAll</code> recognizes them as different
+entities and leaves <code>objA</code> inside the array.</p>
+<h2 id="pulling-by-deep-equality">Pulling by Deep Equality</h2>
+<p>If the goal is to differentiate or match objects based on their
+structural content rather than their exact reference,
+<code>_.pullAll</code> is not the appropriate tool. Lodash provides
+<code>_.pullAllWith</code>, which accepts a custom comparator function
+such as <code>_.isEqual</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> array <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }<span class="op">,</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span> }]<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Removes objects by matching structure and values</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">pullAllWith</span>(array<span class="op">,</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }]<span class="op">,</span> _<span class="op">.</span><span class="at">isEqual</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(array)<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [{ id: 2 }]</span></span></code></pre></div>
+<p>While <code>_.pullAllWith</code> performs deep property comparisons
+to identify matching values across separate objects, standard
+<code>_.pullAll</code> strictly targets identical memory references,
+purging all occurrences of that reference across the array.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

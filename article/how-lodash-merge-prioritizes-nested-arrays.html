@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.merge Prioritizes Nested Arrays - lodash</title>
+    <meta name="description" content="Lodash’s .merge method recursively combines properties from source objects into a destination object, but its handling of nested arrays often surprises developers. Unlike shallow copy operations or other deep-merging tools that overwrite or concatenate li">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-merge-prioritizes-nested-arrays">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.merge Prioritizes Nested Arrays - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-merge-prioritizes-nested-arrays" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .merge method recursively combines properties from source objects into a destination object, but its handling of nested arrays often surprises developers. Unlike shallow copy operations or other deep-merging tools that overwrite or concatenate li" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_merge-prioritizes-nested-arrays">How Lodash _.merge
+Prioritizes Nested Arrays</h1>
+<p>Lodash’s <code>_.merge</code> method recursively combines properties
+from source objects into a destination object, but its handling of
+nested arrays often surprises developers. Unlike shallow copy operations
+or other deep-merging tools that overwrite or concatenate lists,
+<code>_.merge</code> treats arrays as index-keyed objects. This article
+breaks down how <code>_.merge</code> processes explicit nested arrays,
+demonstrating its index-by-index priority mechanism and how it differs
+from traditional object property resolution.</p>
+<h3 id="the-index-based-merging-strategy">The Index-Based Merging
+Strategy</h3>
+<p>When <code>_.merge</code> encounters an array at a matching key in
+both the target and source objects, it does not replace the target
+array, nor does it append the new elements. Instead, it iterates through
+the indices of the source array and merges each element into the
+corresponding index of the target array.</p>
+<p>Because arrays in JavaScript are internally objects with numerical
+keys, <code>_.merge</code> treats an array like
+<code>{ '0': val1, '1': val2 }</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> target <span class="op">=</span> { <span class="dt">items</span><span class="op">:</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span>] }<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> source <span class="op">=</span> { <span class="dt">items</span><span class="op">:</span> [<span class="dv">9</span><span class="op">,</span> <span class="dv">8</span>] }<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">merge</span>(target<span class="op">,</span> source)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Result: { items: [9, 8, 3] }</span></span></code></pre></div>
+<p>In this example:</p>
+<ul>
+<li>Index <code>0</code> of the target (<code>1</code>) is overwritten
+by index <code>0</code> of the source (<code>9</code>).</li>
+<li>Index <code>1</code> of the target (<code>2</code>) is overwritten
+by index <code>1</code> of the source (<code>8</code>).</li>
+<li>Index <code>2</code> of the target (<code>3</code>) remains
+untouched because the source does not supply an element at index
+<code>2</code>.</li>
+</ul>
+<h3 id="nested-objects-inside-arrays">Nested Objects Inside Arrays</h3>
+<p>The recursive nature of <code>_.merge</code> becomes most apparent
+when nested arrays contain objects. Rather than replacing the object at
+a given index, Lodash deeply merges the source object into the target
+object residing at that same position.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> target <span class="op">=</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">users</span><span class="op">:</span> [</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Alice&quot;</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> <span class="st">&quot;User&quot;</span> }<span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Bob&quot;</span> }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> source <span class="op">=</span> {</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">users</span><span class="op">:</span> [</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    { <span class="dt">role</span><span class="op">:</span> <span class="st">&quot;Admin&quot;</span> }<span class="op">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    { <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Robert&quot;</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> <span class="st">&quot;Moderator&quot;</span> }<span class="op">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Charlie&quot;</span> }</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">merge</span>(target<span class="op">,</span> source)<span class="op">;</span></span></code></pre></div>
+<p>The resulting <code>target.users</code> evaluates to:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>[</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Alice&quot;</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> <span class="st">&quot;Admin&quot;</span> }<span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Robert&quot;</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> <span class="st">&quot;Moderator&quot;</span> }<span class="op">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Charlie&quot;</span> }</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>]</span></code></pre></div>
+<p>At index <code>0</code>, <code>role</code> is updated while
+<code>id</code> and <code>name</code> are preserved. At index
+<code>1</code>, <code>name</code> is overwritten and <code>role</code>
+is added. At index <code>2</code>, a new element is appended because the
+target did not have an existing entry at that index.</p>
+<h3 id="type-mismatches-array-vs-non-array">Type Mismatches: Array vs.
+Non-Array</h3>
+<p>When a key conflicts across source and destination with mismatched
+data types, <code>_.merge</code> prioritizes the source value:</p>
+<ul>
+<li><strong>Source is an Array, Target is a Primitive/Object:</strong>
+The target value is converted or replaced by the source array
+(recursively merged if the target was a plain object, though numeric
+keys will align).</li>
+<li><strong>Source is a Primitive/Object, Target is an Array:</strong>
+The source value completely overwrites the target array.</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> target <span class="op">=</span> { <span class="dt">data</span><span class="op">:</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span>] }<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> source <span class="op">=</span> { <span class="dt">data</span><span class="op">:</span> <span class="st">&quot;reset&quot;</span> }<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">merge</span>(target<span class="op">,</span> source)<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Result: { data: &quot;reset&quot; }</span></span></code></pre></div>
+<h3 id="customizing-array-merging-with-_mergewith">Customizing Array
+Merging with <code>_.mergeWith</code></h3>
+<p>Because index-based mutation is often not the desired behavior for
+arrays—concatenation or complete replacement is frequently
+preferred—Lodash provides <code>_.mergeWith</code>. This method accepts
+a customizer function to bypass the default array-merging logic:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">customizer</span>(objValue<span class="op">,</span> srcValue) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (_<span class="op">.</span><span class="fu">isArray</span>(objValue)) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> objValue<span class="op">.</span><span class="fu">concat</span>(srcValue)<span class="op">;</span> <span class="co">// Concatenate instead of merging by index</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> target <span class="op">=</span> { <span class="dt">tags</span><span class="op">:</span> [<span class="st">&quot;javascript&quot;</span>] }<span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> source <span class="op">=</span> { <span class="dt">tags</span><span class="op">:</span> [<span class="st">&quot;react&quot;</span>] }<span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">mergeWith</span>(target<span class="op">,</span> source<span class="op">,</span> customizer)<span class="op">;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Result: { tags: [&quot;javascript&quot;, &quot;react&quot;] }</span></span></code></pre></div>
+<p>Returning <code>undefined</code> from the customizer falls back to
+the default <code>_.merge</code> behavior, allowing fine-grained control
+over specific keys while keeping index-based merging intact for
+others.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

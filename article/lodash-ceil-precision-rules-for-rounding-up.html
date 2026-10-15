@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.ceil Precision Rules for Rounding Up - lodash</title>
+    <meta name="description" content="The .ceil method in the Lodash JavaScript library computes a number rounded up to a specified precision. While JavaScript’s native Math.ceil only rounds up to the nearest whole integer, Lodash extends this functionality by accepting an optional precision">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-ceil-precision-rules-for-rounding-up">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.ceil Precision Rules for Rounding Up - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-ceil-precision-rules-for-rounding-up" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .ceil method in the Lodash JavaScript library computes a number rounded up to a specified precision. While JavaScript’s native Math.ceil only rounds up to the nearest whole integer, Lodash extends this functionality by accepting an optional precision" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_ceil-precision-rules-for-rounding-up">Lodash _.ceil
+Precision Rules for Rounding Up</h1>
+<p>The <code>_.ceil</code> method in the Lodash JavaScript library
+computes a number rounded up to a specified precision. While
+JavaScript’s native <code>Math.ceil</code> only rounds up to the nearest
+whole integer, Lodash extends this functionality by accepting an
+optional precision argument. Depending on whether this precision
+parameter is omitted, positive, or negative, <code>_.ceil</code> applies
+distinct mathematical rules to round numbers to the nearest integer,
+decimal place, or power of ten while handling floating-point arithmetic
+errors.</p>
+<h2 id="the-syntax-of-_ceil">The Syntax of <code>_.ceil</code></h2>
+<p>The function signature for <code>_.ceil</code> is defined as:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">ceil</span>(number<span class="op">,</span> [precision<span class="op">=</span><span class="dv">0</span>])</span></code></pre></div>
+<ul>
+<li><strong><code>number</code></strong> <em>(number)</em>: The number
+to round up.</li>
+<li><strong><code>[precision=0]</code></strong> <em>(number)</em>: The
+precision to which to round up. Defaults to <code>0</code> if
+omitted.</li>
+</ul>
+<hr />
+<h2 id="precision-rules-applied-by-_ceil">Precision Rules Applied by
+<code>_.ceil</code></h2>
+<h3 id="1-default-precision-precision--0">1. Default Precision
+(<code>precision = 0</code>)</h3>
+<p>When the <code>precision</code> parameter is omitted or set to
+<code>0</code>, <code>_.ceil</code> behaves identically to standard
+<code>Math.ceil</code>. It rounds the number up to the next highest
+integer.</p>
+<ul>
+<li><code>_.ceil(4.006)</code> returns <code>5</code></li>
+<li><code>_.ceil(6.0)</code> returns <code>6</code></li>
+<li><code>_.ceil(-4.2)</code> returns <code>-4</code></li>
+</ul>
+<h3 id="2-positive-precision-precision--0">2. Positive Precision
+(<code>precision &gt; 0</code>)</h3>
+<p>When a positive integer is passed as the precision,
+<code>_.ceil</code> rounds up to the specified number of digits to the
+<strong>right of the decimal point</strong> (fractional digits).</p>
+<p>A precision of <code>n</code> rounds the number up to the nearest
+multiple of <span class="math inline">\(10^{-n}\)</span>.</p>
+<ul>
+<li><code>_.ceil(6.004, 2)</code> returns <code>6.01</code></li>
+<li><code>_.ceil(6.012, 1)</code> returns <code>6.1</code></li>
+<li><code>_.ceil(0.12345, 4)</code> returns <code>0.1235</code></li>
+</ul>
+<h3 id="3-negative-precision-precision--0">3. Negative Precision
+(<code>precision &lt; 0</code>)</h3>
+<p>When a negative integer is used, <code>_.ceil</code> rounds up to the
+specified place to the <strong>left of the decimal point</strong>,
+targeting powers of ten (tens, hundreds, thousands, etc.).</p>
+<p>A precision of <code>-n</code> rounds the number up to the nearest
+multiple of <span class="math inline">\(10^n\)</span>.</p>
+<ul>
+<li><code>_.ceil(6040, -2)</code> rounds to the nearest hundred: returns
+<code>6100</code></li>
+<li><code>_.ceil(1234, -1)</code> rounds to the nearest ten: returns
+<code>1240</code></li>
+<li><code>_.ceil(450, -3)</code> rounds to the nearest thousand: returns
+<code>1000</code></li>
+</ul>
+<h3 id="4-precision-normalization-and-coercion">4. Precision
+Normalization and Coercion</h3>
+<p>Lodash coerces the <code>precision</code> argument to an integer
+using internal integer conversion (<code>toInteger</code>). If a
+floating-point number is provided as the precision:</p>
+<ul>
+<li>It is truncated to its integer representation before calculating the
+rounding offset.</li>
+<li><code>_.ceil(4.1234, 2.8)</code> treats the precision as
+<code>2</code>, returning <code>4.13</code>.</li>
+</ul>
+<p>If <code>precision</code> is <code>NaN</code>, <code>null</code>, or
+undefined, it defaults to <code>0</code>.</p>
+<hr />
+<h2 id="floating-point-precision-handling">Floating-Point Precision
+Handling</h2>
+<p>A common issue in standard JavaScript calculations is binary
+floating-point representation error (for example,
+<code>1.005 * 100 = 100.49999999999999</code>).</p>
+<p>To avoid the inaccuracies caused by standard multiplication and
+division scaling, Lodash handles precision internally using exponential
+notation conversion:</p>
+<ol type="1">
+<li>The value is converted into scientific exponential notation
+(<code>value + 'e' + precision</code>).</li>
+<li><code>Math.ceil</code> is applied to this adjusted value.</li>
+<li>The number is converted back by reversing the exponent
+(<code>value + 'e-' + precision</code>).</li>
+</ol>
+<p>This ensures that values on rounding boundaries are not shifted into
+inaccurate rounding directions by standard IEEE 754 precision
+limits.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

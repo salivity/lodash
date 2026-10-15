@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Build Immutable Reducers with Lodash FP - lodash</title>
+    <meta name="description" content="This article explores how developers achieve strictly immutable, pure state transformations in reducers using the functional programming variant of Lodash (lodash/fp). You will learn the specific architectural mechanics of lodash/fp, why standard Lodash f">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-to-build-immutable-reducers-with-lodash-fp">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Build Immutable Reducers with Lodash FP - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-to-build-immutable-reducers-with-lodash-fp" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how developers achieve strictly immutable, pure state transformations in reducers using the functional programming variant of Lodash (lodash/fp). You will learn the specific architectural mechanics of lodash/fp, why standard Lodash f" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-build-immutable-reducers-with-lodash-fp">How to Build
+Immutable Reducers with Lodash FP</h1>
+<p>This article explores how developers achieve strictly immutable, pure
+state transformations in reducers using the functional programming
+variant of Lodash (<code>lodash/fp</code>). You will learn the specific
+architectural mechanics of <code>lodash/fp</code>, why standard Lodash
+falls short of immutability, and how functions like <code>fp.set</code>
+and <code>fp.update</code> cleanly enforce functional purity when
+managing complex application state.</p>
+<hr />
+<h3 id="the-mechanism-lodashfp">The Mechanism: Lodash/fp</h3>
+<p>Vanilla Lodash (<code>lodash</code>) is inherently mutable for
+path-based operations. Methods like <code>_.set</code> or
+<code>_.merge</code> mutate the source object directly, making them
+unsuitable for pure state management patterns such as Redux
+reducers.</p>
+<p>To strictly enforce immutability using only Lodash, you must use the
+functional programming submodule:
+<strong><code>lodash/fp</code></strong>.</p>
+<p><code>lodash/fp</code> alters the core behavior of the library in
+three fundamental ways:</p>
+<ol type="1">
+<li><strong>Immutable by Default</strong>: Methods create structural
+shallow-to-deep clones of altered paths instead of modifying the target
+object.</li>
+<li><strong>Data-Last Architecture</strong>: The target data object is
+always the final argument, enabling effortless functional
+composition.</li>
+<li><strong>Auto-Curried</strong>: Every method is curried
+automatically, allowing path definitions and transformation logic to be
+pre-configured.</li>
+</ol>
+<hr />
+<h3 id="key-functions-for-immutable-reducers">Key Functions for
+Immutable Reducers</h3>
+<p>The primary functions in <code>lodash/fp</code> that enforce pure
+updates are:</p>
+<ul>
+<li><strong><code>fp.set(path, value, object)</code></strong>: Returns a
+new object reference with the value at the specified path updated,
+preserving the original object's reference and unchanged branches.</li>
+<li><strong><code>fp.update(path, updaterFunction, object)</code></strong>:
+Accepts an updater callback to transform the existing value at a nested
+path into a new value without direct reassignment.</li>
+<li><strong><code>fp.unset(path, object)</code></strong>: Returns a copy
+of the object with the specified property removed.</li>
+<li><strong><code>fp.flow(...fns)</code></strong>: Composes multiple
+state modifications sequentially, passing the updated state from one
+pure function to the next.</li>
+</ul>
+<hr />
+<h3 id="implementing-an-immutable-reducer">Implementing an Immutable
+Reducer</h3>
+<p>Below is an example of a reducer utilizing <code>lodash/fp</code> to
+guarantee that all updates remain purely functional and dynamically
+mapped.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> fp <span class="im">from</span> <span class="st">&#39;lodash/fp&#39;</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> initialState <span class="op">=</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">users</span><span class="op">:</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">byId</span><span class="op">:</span> {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;user-1&#39;</span><span class="op">:</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span><span class="op">,</span> <span class="dt">active</span><span class="op">:</span> <span class="kw">false</span> }</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">allIds</span><span class="op">:</span> [<span class="st">&#39;user-1&#39;</span>]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">meta</span><span class="op">:</span> {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">lastUpdated</span><span class="op">:</span> <span class="kw">null</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">function</span> <span class="fu">userReducer</span>(state <span class="op">=</span> initialState<span class="op">,</span> action) {</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">switch</span> (action<span class="op">.</span><span class="at">type</span>) {</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="st">&#39;ACTIVATE_USER&#39;</span><span class="op">:</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Dynamically paths into nested properties and returns a fresh object reference</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> fp<span class="op">.</span><span class="fu">flow</span>(</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        fp<span class="op">.</span><span class="fu">set</span>([<span class="st">&#39;users&#39;</span><span class="op">,</span> <span class="st">&#39;byId&#39;</span><span class="op">,</span> action<span class="op">.</span><span class="at">payload</span><span class="op">.</span><span class="at">id</span><span class="op">,</span> <span class="st">&#39;active&#39;</span>]<span class="op">,</span> <span class="kw">true</span>)<span class="op">,</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        fp<span class="op">.</span><span class="fu">set</span>([<span class="st">&#39;meta&#39;</span><span class="op">,</span> <span class="st">&#39;lastUpdated&#39;</span>]<span class="op">,</span> action<span class="op">.</span><span class="at">payload</span><span class="op">.</span><span class="at">timestamp</span>)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>      )(state)<span class="op">;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="st">&#39;UPDATE_USER_NAME&#39;</span><span class="op">:</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Dynamically updates an existing value cleanly via transformation logic</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> fp<span class="op">.</span><span class="fu">update</span>(</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>        [<span class="st">&#39;users&#39;</span><span class="op">,</span> <span class="st">&#39;byId&#39;</span><span class="op">,</span> action<span class="op">.</span><span class="at">payload</span><span class="op">.</span><span class="at">id</span><span class="op">,</span> <span class="st">&#39;name&#39;</span>]<span class="op">,</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>        () <span class="kw">=&gt;</span> action<span class="op">.</span><span class="at">payload</span><span class="op">.</span><span class="at">newName</span><span class="op">,</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>        state</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>      )<span class="op">;</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="st">&#39;REMOVE_USER&#39;</span><span class="op">:</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> fp<span class="op">.</span><span class="fu">flow</span>(</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>        fp<span class="op">.</span><span class="fu">unset</span>([<span class="st">&#39;users&#39;</span><span class="op">,</span> <span class="st">&#39;byId&#39;</span><span class="op">,</span> action<span class="op">.</span><span class="at">payload</span><span class="op">.</span><span class="at">id</span>])<span class="op">,</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>        fp<span class="op">.</span><span class="fu">update</span>([<span class="st">&#39;users&#39;</span><span class="op">,</span> <span class="st">&#39;allIds&#39;</span>]<span class="op">,</span> (ids) <span class="kw">=&gt;</span> ids<span class="op">.</span><span class="fu">filter</span>(id <span class="kw">=&gt;</span> id <span class="op">!==</span> action<span class="op">.</span><span class="at">payload</span><span class="op">.</span><span class="at">id</span>))</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>      )(state)<span class="op">;</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">default</span><span class="op">:</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> state<span class="op">;</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<hr />
+<h3 id="why-this-enforces-strict-purity">Why This Enforces Strict
+Purity</h3>
+<ol type="1">
+<li><strong>Structural Sharing</strong>: <code>lodash/fp</code> copies
+only the nodes along the path being altered while retaining unmodified
+object references, satisfying the performance requirements of pure
+components and change-detection systems.</li>
+<li><strong>Zero In-Place Side Effects</strong>: The original
+<code>state</code> passed to the reducer is never touched. Calling
+<code>Object.is(state, newState)</code> evaluates to <code>false</code>
+when an action produces a mutation, and <code>true</code> when the
+default branch returns the previous state.</li>
+<li><strong>Pointfree Composition</strong>: By pairing
+<code>fp.flow</code> with curried path functions, actions apply multiple
+deep transformations without maintaining intermediary local variables,
+eliminating risks of accidental in-place reassignments.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

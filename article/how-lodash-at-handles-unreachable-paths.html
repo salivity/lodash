@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.at Handles Unreachable Paths - lodash</title>
+    <meta name="description" content="The Lodash method .at extracts values from an object corresponding to specified paths and returns them as a new array. This article examines the internal architecture of .at, focusing on how it normalizes property paths, navigates nested structures using">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-at-handles-unreachable-paths">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.at Handles Unreachable Paths - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-at-handles-unreachable-paths" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash method .at extracts values from an object corresponding to specified paths and returns them as a new array. This article examines the internal architecture of .at, focusing on how it normalizes property paths, navigates nested structures using" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_at-handles-unreachable-paths">How Lodash _.at
+Handles Unreachable Paths</h1>
+<p>The Lodash method <code>_.at</code> extracts values from an object
+corresponding to specified paths and returns them as a new array. This
+article examines the internal architecture of <code>_.at</code>,
+focusing on how it normalizes property paths, navigates nested
+structures using safe internal getters, and systematically produces an
+array containing <code>undefined</code> elements when encountering
+unreachable deep paths without throwing runtime errors.</p>
+<h3 id="path-collection-and-mapping-via-baseat">Path Collection and
+Mapping via <code>baseAt</code></h3>
+<p>At its entry point, <code>_.at</code> accepts an object and one or
+more paths (supplied either as individual arguments or as a flattened
+array). The method delegates the core extraction logic to an internal
+function named <code>baseAt</code>.</p>
+<p>The <code>baseAt</code> function determines the length of the
+resulting array based directly on the number of paths requested. It
+iterates sequentially over each path argument, ensuring a strict 1-to-1
+positional correspondence between the input paths and the output
+elements. For each path in the iteration, <code>baseAt</code> executes a
+safe retrieval operation to obtain the value, directly assigning
+whatever value is returned—including <code>undefined</code>—to the
+current index of the output array.</p>
+<h3 id="path-normalization-with-castpath">Path Normalization with
+<code>castPath</code></h3>
+<p>Before navigating the object, each path must be converted into a
+standardized sequence of property keys. Lodash executes
+<code>castPath</code>, which checks if the path is already an array of
+keys. If the path is a string (such as
+<code>'user.profile.address.zip'</code> or <code>'items[0].id'</code>),
+Lodash passes it to <code>stringToPath</code>.</p>
+<p><code>stringToPath</code> utilizes a regular expression to tokenize
+the string into individual property names and array indexes, returning
+an array of string keys. This internal parser is memoized to avoid
+redundant regular expression processing across repeated calls.</p>
+<h3 id="traversal-and-short-circuiting-with-baseget">Traversal and
+Short-Circuiting with <code>baseGet</code></h3>
+<p>Once the path is decomposed into a key array, the resolution is
+handed off to <code>baseGet</code>, the same internal engine powering
+<code>_.get</code>. The <code>baseGet</code> function executes a
+standard <code>while</code> loop that advances through the path segments
+sequentially:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseGet</span>(object<span class="op">,</span> path) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  path <span class="op">=</span> <span class="fu">castPath</span>(path<span class="op">,</span> object)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> index <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> length <span class="op">=</span> path<span class="op">.</span><span class="at">length</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (object <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> index <span class="op">&lt;</span> length) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    object <span class="op">=</span> object[<span class="fu">toKey</span>(path[index<span class="op">++</span>])]<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (index <span class="op">&amp;&amp;</span> index <span class="op">==</span> length) <span class="op">?</span> object <span class="op">:</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The systematic generation of <code>undefined</code> hinges on the
+condition <code>object != null</code>:</p>
+<ol type="1">
+<li><strong>Active Traversal:</strong> As long as the current
+<code>object</code> is not <code>null</code> or <code>undefined</code>,
+the loop reads the next property:
+<code>object[toKey(path[index++])]</code>.</li>
+<li><strong>Short-Circuiting:</strong> If any intermediate property in
+the chain is non-existent, <code>null</code>, or <code>undefined</code>,
+the loop evaluates <code>object != null</code> as <code>false</code> and
+terminates immediately.</li>
+<li><strong>Guard Against TypeErrors:</strong> Because the loop breaks
+prior to reading subsequent keys, the JavaScript engine never attempts
+to access a property on <code>null</code> or <code>undefined</code>,
+avoiding native <code>TypeError</code> exceptions.</li>
+<li><strong>Final Check:</strong> After loop termination,
+<code>baseGet</code> checks if the traversal reached the end of the path
+(<code>index == length</code>). If the loop exited prematurely due to an
+unreachable intermediate segment, the condition evaluates to
+<code>false</code>, and <code>baseGet</code> explicitly returns
+<code>undefined</code>.</li>
+</ol>
+<h3 id="generating-the-output-array">Generating the Output Array</h3>
+<p>Because <code>baseAt</code> pushes the result of <code>baseGet</code>
+for every requested path into the destination array, any broken,
+missing, or unreachable chain evaluates cleanly to
+<code>undefined</code>.</p>
+<p>If three paths are provided and all three point to unreachable nested
+properties, <code>baseAt</code> runs three distinct <code>baseGet</code>
+operations. Each operation terminates safely at the first missing link
+and yields <code>undefined</code>, producing a fully populated array of
+<code>[undefined, undefined, undefined]</code> matching the exact length
+and order of the requested paths.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

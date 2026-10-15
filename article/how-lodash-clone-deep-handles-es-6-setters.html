@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash cloneDeep Handles ES6 Setters - lodash</title>
+    <meta name="description" content="Lodash’s .cloneDeep is designed to recursively copy values across nested arrays and plain objects, but it does not preserve ES6 property descriptors such as dynamically assigned setters or getters. When processing an object containing accessors, .cloneDee">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-clone-deep-handles-es-6-setters">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash cloneDeep Handles ES6 Setters - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-clone-deep-handles-es-6-setters" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .cloneDeep is designed to recursively copy values across nested arrays and plain objects, but it does not preserve ES6 property descriptors such as dynamically assigned setters or getters. When processing an object containing accessors, .cloneDee" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-clonedeep-handles-es6-setters">How Lodash cloneDeep
+Handles ES6 Setters</h1>
+<p>Lodash’s <code>_.cloneDeep</code> is designed to recursively copy
+values across nested arrays and plain objects, but it does not preserve
+ES6 property descriptors such as dynamically assigned setters or
+getters. When processing an object containing accessors,
+<code>_.cloneDeep</code> invokes the getter to extract the current
+primitive or reference value and assigns that result as a standard data
+property on the target clone. This article details the internal behavior
+of <code>_.cloneDeep</code> with dynamic ES6 setters, demonstrates the
+resulting state of cloned properties, and explains how to preserve
+descriptors when deep cloning.</p>
+<h2 id="the-mechanism-behind-_clonedeep-and-accessors">The Mechanism
+Behind <code>_.cloneDeep</code> and Accessors</h2>
+<p>JavaScript objects distinguish between <em>data properties</em>
+(which store an actual value) and <em>accessor properties</em> (which
+define <code>get</code> and <code>set</code> methods).</p>
+<p>Under the hood, Lodash's cloning mechanism uses internal methods such
+as <code>baseClone</code> and standard property iteration to duplicate
+enumerable properties. It does not inspect or transfer property
+descriptors defined via <code>Object.defineProperty</code> or
+<code>Object.defineProperties</code>.</p>
+<p>When <code>_.cloneDeep</code> encounters a property backed by an ES6
+setter:</p>
+<ol type="1">
+<li><strong>Evaluation:</strong> It attempts to read the property via
+standard member access (<code>source[key]</code>). If a getter
+accompanies the setter, the getter executes and returns a value. If only
+a setter exists, reading the property returns
+<code>undefined</code>.</li>
+<li><strong>Assignment:</strong> Lodash recursively clones the evaluated
+value and assigns it directly to the new object using standard
+assignment (<code>target[key] = clonedValue</code>).</li>
+<li><strong>Loss of Descriptor:</strong> The cloned object receives a
+standard data property containing the evaluated value. The original
+setter function is discarded.</li>
+</ol>
+<h2 id="code-example-dynamic-setters-in-action">Code Example: Dynamic
+Setters in Action</h2>
+<p>Consider an object where an ES6 setter is assigned dynamically at
+runtime:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> original <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> internalValue <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="fu">defineProperty</span>(original<span class="op">,</span> <span class="st">&#39;computedProp&#39;</span><span class="op">,</span> {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">enumerable</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">configurable</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">get</span>() {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> internalValue<span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">set</span>(val) {</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    internalValue <span class="op">=</span> val <span class="op">*</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co">// Mutate via setter</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>original<span class="op">.</span><span class="at">computedProp</span> <span class="op">=</span> <span class="dv">5</span><span class="op">;</span> <span class="co">// internalValue becomes 10</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="co">// Clone using Lodash</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> cloned <span class="op">=</span> _<span class="op">.</span><span class="fu">cloneDeep</span>(original)<span class="op">;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="co">// Inspect cloned object</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(cloned<span class="op">.</span><span class="at">computedProp</span>)<span class="op">;</span> <span class="co">// Outputs: 10</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co">// Attempt to invoke the setter on the clone</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>cloned<span class="op">.</span><span class="at">computedProp</span> <span class="op">=</span> <span class="dv">5</span><span class="op">;</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(cloned<span class="op">.</span><span class="at">computedProp</span>)<span class="op">;</span> <span class="co">// Outputs: 5 (setter did not execute)</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="bu">Object</span><span class="op">.</span><span class="fu">getOwnPropertyDescriptor</span>(cloned<span class="op">,</span> <span class="st">&#39;computedProp&#39;</span>))<span class="op">;</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="co">// { value: 5, writable: true, enumerable: true, configurable: true }</span></span></code></pre></div>
+<p>In this scenario:</p>
+<ul>
+<li>The getter executed during cloning, evaluating
+<code>original.computedProp</code> to <code>10</code>.</li>
+<li>The clone received a flat, writable data descriptor
+<code>{ value: 10, ... }</code>.</li>
+<li>Subsequent assignments to <code>cloned.computedProp</code> operate
+as simple value reassignments, completely bypassing the original custom
+setter logic.</li>
+</ul>
+<h3 id="behavior-with-write-only-setters">Behavior with Write-Only
+Setters</h3>
+<p>If an object contains a dynamically assigned setter without a paired
+getter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> writeOnlyObj <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="fu">defineProperty</span>(writeOnlyObj<span class="op">,</span> <span class="st">&#39;setterOnly&#39;</span><span class="op">,</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">enumerable</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">configurable</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">set</span>(val) {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">_val</span> <span class="op">=</span> val<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> clonedWriteOnly <span class="op">=</span> _<span class="op">.</span><span class="fu">cloneDeep</span>(writeOnlyObj)<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(clonedWriteOnly<span class="op">.</span><span class="at">setterOnly</span>)<span class="op">;</span> <span class="co">// Outputs: undefined</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="bu">Object</span><span class="op">.</span><span class="fu">getOwnPropertyDescriptor</span>(clonedWriteOnly<span class="op">,</span> <span class="st">&#39;setterOnly&#39;</span>))<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">// { value: undefined, writable: true, enumerable: true, configurable: true }</span></span></code></pre></div>
+<p>Because there is no getter to return a value,
+<code>_.cloneDeep</code> reads <code>undefined</code> and statically
+defines the property with a value of <code>undefined</code>.</p>
+<h2 id="how-to-preserve-dynamic-es6-setters">How to Preserve Dynamic ES6
+Setters</h2>
+<p>To duplicate an object while maintaining dynamic accessors, you must
+clone property descriptors directly using native ES6 reflection methods
+rather than relying on Lodash's value-based cloning.</p>
+<p>A shallow descriptor-preserving clone can be implemented using
+<code>Object.getOwnPropertyDescriptors</code> and
+<code>Object.create</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">cloneWithDescriptors</span>(obj) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (obj <span class="op">===</span> <span class="kw">null</span> <span class="op">||</span> <span class="kw">typeof</span> obj <span class="op">!==</span> <span class="st">&#39;object&#39;</span>) {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> obj<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> descriptors <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">getOwnPropertyDescriptors</span>(obj)<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> prototype <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">getPrototypeOf</span>(obj)<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">create</span>(prototype<span class="op">,</span> descriptors)<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>If deep-cloning values within the descriptors is required, you can
+combine descriptor enumeration with <code>_.cloneDeep</code> by
+selectively applying <code>_.cloneDeep</code> to
+<code>descriptor.value</code> while leaving <code>descriptor.get</code>
+and <code>descriptor.set</code> intact before defining them on the
+target object.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

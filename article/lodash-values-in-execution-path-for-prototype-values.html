@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash valuesIn Execution Path for Prototype Values - lodash</title>
+    <meta name="description" content="This article traces the internal execution path Lodash traverses when resolving and mapping prototype property values using .valuesIn. It details the step-by-step lifecycle from the public API call through key discovery, prototype-chain enumeration, and d">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-values-in-execution-path-for-prototype-values">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash valuesIn Execution Path for Prototype Values - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-values-in-execution-path-for-prototype-values" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article traces the internal execution path Lodash traverses when resolving and mapping prototype property values using .valuesIn. It details the step-by-step lifecycle from the public API call through key discovery, prototype-chain enumeration, and d" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-valuesin-execution-path-for-prototype-values">Lodash
+valuesIn Execution Path for Prototype Values</h1>
+<p>This article traces the internal execution path Lodash traverses when
+resolving and mapping prototype property values using
+<code>_.valuesIn</code>. It details the step-by-step lifecycle from the
+public API call through key discovery, prototype-chain enumeration, and
+dynamic property access, showing precisely how inherited properties are
+gathered and returned.</p>
+<h3 id="the-entry-point-valuesin">The Entry Point:
+<code>valuesIn</code></h3>
+<p>When <code>_.valuesIn(object)</code> is called, Lodash begins by
+validating the target argument. If the target is <code>null</code> or
+<code>undefined</code>, the method immediately returns an empty array.
+If the target is a valid object or primitive wrapper,
+<code>valuesIn</code> delegates to two internal routines:
+<code>baseValues</code> and <code>keysIn</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">valuesIn</span>(object) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> object <span class="op">==</span> <span class="kw">null</span> <span class="op">?</span> [] <span class="op">:</span> <span class="fu">baseValues</span>(object<span class="op">,</span> <span class="fu">keysIn</span>(object))<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The execution path splits into two distinct phases: discovering all
+enumerable property identifiers (both own and inherited) via
+<code>keysIn</code>, and dynamically projecting those identifiers to
+their respective values via <code>baseValues</code>.</p>
+<h3 id="enumeration-path-keysin-and-basekeysin">Enumeration Path:
+<code>keysIn</code> and <code>baseKeysIn</code></h3>
+<p>To access inherited prototype properties, Lodash must inspect the
+prototype chain. The <code>keysIn</code> utility invokes
+<code>baseKeysIn(object)</code>, which implements the traversal
+logic:</p>
+<ol type="1">
+<li><p><strong>Object Type Validation:</strong> Lodash verifies that the
+argument is an object using <code>isObject(object)</code>. Primitives
+are converted to objects using <code>Object(object)</code> to permit
+safe prototype inspection.</p></li>
+<li><p><strong>Prototype Edge Case Check:</strong> Lodash determines
+whether the input itself is a prototype object via
+<code>isPrototype(object)</code>. If it is, the runtime skips standard
+constructor keys to prevent accidental pollution or circular
+references.</p></li>
+<li><p><strong>Dynamic Chain Traversal:</strong> <code>baseKeysIn</code>
+executes a JavaScript <code>for...in</code> statement:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">const</span> key <span class="kw">in</span> object) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  result<span class="op">.</span><span class="fu">push</span>(key)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because the ECMAScript specification dictates that
+<code>for...in</code> walks the target's entire
+<code>[[Prototype]]</code> chain, this loop dynamically captures all
+enumerable keys residing on upstream prototypes up to, but not
+including, <code>Object.prototype</code>.</p></li>
+</ol>
+<h3 id="dynamic-mapping-basevalues">Dynamic Mapping:
+<code>baseValues</code></h3>
+<p>Once <code>baseKeysIn</code> returns the accumulated array of own and
+prototype keys, execution transfers to <code>baseValues</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseValues</span>(object<span class="op">,</span> props) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">arrayMap</span>(props<span class="op">,</span> (key) <span class="kw">=&gt;</span> object[key])<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Inside <code>baseValues</code>, Lodash passes the discovered keys to
+<code>arrayMap</code>. For every key in the <code>props</code> array,
+dynamic property access (<code>object[key]</code>) is triggered.</p>
+<p>When JavaScript evaluates <code>object[key]</code>, the engine first
+looks for an own property on <code>object</code>. If the property does
+not exist directly on the instance, the V8/JavaScript engine walks the
+internal <code>[[Prototype]]</code> link dynamically until it resolves
+the value on the ancestor prototype where it was defined.</p>
+<h3 id="isolating-strictly-prototype-values">Isolating Strictly
+Prototype Values</h3>
+<p>Because <code>_.valuesIn</code> aggregates both own properties and
+prototype properties into a single output, strictly prototype values are
+those associated with keys where
+<code>Object.prototype.hasOwnProperty.call(object, key)</code> evaluates
+to <code>false</code>.</p>
+<p>In Lodash's full execution path:</p>
+<ol type="1">
+<li><code>keysIn</code> dynamically harvests own and prototype keys via
+<code>baseKeysIn</code> using <code>for...in</code>.</li>
+<li>Inherited keys resolve strictly up the prototype chain.</li>
+<li><code>baseValues</code> iterates the combined keys, querying the
+instance.</li>
+<li>The JavaScript runtime’s internal <code>[[Get]]</code> operation
+executes for each key, dynamically retrieving the corresponding value
+from the prototype.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

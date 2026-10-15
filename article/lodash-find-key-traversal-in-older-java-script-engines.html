@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash findKey Traversal in Older JavaScript Engines - lodash</title>
+    <meta name="description" content="This article examines how the Lodash method .findKey navigates object properties across legacy, non-ES6 JavaScript runtimes compared to modern ECMAScript environments. Because .findKey short-circuits upon locating the first property that satisfies a predi">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-find-key-traversal-in-older-java-script-engines">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash findKey Traversal in Older JavaScript Engines - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-find-key-traversal-in-older-java-script-engines" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the Lodash method .findKey navigates object properties across legacy, non-ES6 JavaScript runtimes compared to modern ECMAScript environments. Because .findKey short-circuits upon locating the first property that satisfies a predi" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-findkey-traversal-in-older-javascript-engines">Lodash
+findKey Traversal in Older JavaScript Engines</h1>
+<p>This article examines how the Lodash method <code>_.findKey</code>
+navigates object properties across legacy, non-ES6 JavaScript runtimes
+compared to modern ECMAScript environments. Because
+<code>_.findKey</code> short-circuits upon locating the first property
+that satisfies a predicate, structural variations in underlying property
+enumeration, fallback shims, and legacy engine quirks directly alter the
+sequence of inspection and can lead to different keys being
+returned.</p>
+<h3 id="mechanism-of-_findkey">Mechanism of <code>_.findKey</code></h3>
+<p>At its core, Lodash implements <code>_.findKey</code> by delegating
+to an internal traversal helper—typically <code>baseForOwn</code> or
+<code>baseFindKey</code>. The function evaluates properties sequentially
+and halts execution immediately when a predicate returns a truthy
+value:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">findKey</span>(object<span class="op">,</span> <span class="kw">function</span>(value<span class="op">,</span> key) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">===</span> target<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Because traversal stops at the first match, the structural order in
+which keys are accessed determines the outcome when multiple properties
+satisfy the condition.</p>
+<h3 id="engine-enumeration-order-es6-vs-pre-es6">Engine Enumeration
+Order: ES6 vs. Pre-ES6</h3>
+<p>The primary structural divergence originates from how object
+enumeration order is defined across ECMAScript specifications.</p>
+<ul>
+<li><strong>ES6 (ECMAScript 2015) and Later:</strong> Iteration follows
+a well-defined, deterministic order: integer indices in ascending
+numerical order, followed by other string keys in chronological
+insertion order, followed by symbols.</li>
+<li><strong>Pre-ES6 Engines:</strong> ECMAScript 5 and earlier standards
+left property enumeration order implementation-dependent. Browsers and
+standalone engines (such as older versions of V8, SpiderMonkey, and
+Microsoft’s Chakra/JScript) resolved property access through their
+internal hash table or hidden class memory layouts.</li>
+</ul>
+<p>Consequently, in pre-ES6 engines, properties were not guaranteed to
+be inspected in insertion order. An object with a mix of numeric and
+string keys might yield different traversal paths in an older browser,
+causing <code>_.findKey</code> to evaluate properties out of expected
+chronological order.</p>
+<h3 id="the-jscript-dontenum-bug-and-property-buffering">The JScript
+<code>DontEnum</code> Bug and Property Buffering</h3>
+<p>In older environments—notably Internet Explorer 6 through 8 running
+JScript—an engine defect known as the <code>DontEnum</code> bug
+prevented <code>for...in</code> loops from enumerating non-native
+properties if they shared names with non-enumerable properties on
+<code>Object.prototype</code> (such as <code>toString</code>,
+<code>valueOf</code>, <code>isPrototypeOf</code>, or
+<code>hasOwnProperty</code>).</p>
+<p>To maintain consistent behavior in these non-ES6 environments, Lodash
+utilized internal polyfills (<code>baseKeys</code> falling back to shims
+like <code>shimKeys</code>):</p>
+<ol type="1">
+<li><strong>Standard <code>for...in</code> Sweep:</strong> The engine
+iterated over properties using standard <code>for...in</code>, filtering
+via <code>Object.prototype.hasOwnProperty</code>.</li>
+<li><strong>Shadowed Key Inspection:</strong> Lodash maintained a static
+array of standard non-enumerable property names
+(<code>nonEnumerableProps</code>). After completing the main iteration
+loop, Lodash explicitly checked whether the object owned any of these
+shadowed properties.</li>
+<li><strong>Appended Traversal:</strong> Any found shadowed properties
+were appended to the end of the keys collection.</li>
+</ol>
+<p>This mechanism structurally segregated property evaluation: standard
+properties were checked first, while overridden prototype names (e.g.,
+an own property named <code>toString</code>) were evaluated strictly at
+the end of the cycle, regardless of when they were added to the
+object.</p>
+<h3 id="internal-array-pre-allocation-vs-direct-iteration">Internal
+Array Pre-allocation vs. Direct Iteration</h3>
+<p>Modern Lodash optimizations on ES6 runtimes can iterate keys via
+native <code>Object.keys()</code> or modern internal iterators that
+interact directly with contiguous memory layouts.</p>
+<p>In legacy environments lacking native <code>Object.keys()</code>,
+Lodash had to manually construct an intermediate array of keys via its
+custom shim before executing <code>_.findKey</code>, or rely on a
+<code>for...in</code> loop wrapped inside <code>baseFor</code>. When an
+intermediate array was constructed, property mutations during iteration
+were isolated differently than in engines supporting live, native
+reflection.</p>
+<h3 id="practical-implications">Practical Implications</h3>
+<p>When running <code>_.findKey</code> in pre-ES6 engines:</p>
+<ul>
+<li><strong>Ambiguous Matches Yield Different Keys:</strong> If more
+than one property matches the predicate, differences in engine-level
+hash ordering determine which key is returned first.</li>
+<li><strong>Shadowed Property Lag:</strong> Properties sharing names
+with <code>Object.prototype</code> members are consistently evaluated
+last due to the <code>DontEnum</code> workaround.</li>
+<li><strong>Integer Order Discrepancies:</strong> Older engines that did
+not prioritize numerical indices will process numeric-like keys
+according to their vendor-specific iteration logic rather than ascending
+numeric order.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

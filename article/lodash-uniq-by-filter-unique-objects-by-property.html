@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash uniqBy: Filter Unique Objects by Property - lodash</title>
+    <meta name="description" content="Managing duplicate data in JavaScript arrays is a common challenge, especially when dealing with collections of objects representing database records or API responses. This article explains how the Lodash utility library&#39;s .uniqBy method operates, detaili">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-uniq-by-filter-unique-objects-by-property">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash uniqBy: Filter Unique Objects by Property - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-uniq-by-filter-unique-objects-by-property" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Managing duplicate data in JavaScript arrays is a common challenge, especially when dealing with collections of objects representing database records or API responses. This article explains how the Lodash utility library&#39;s .uniqBy method operates, detaili" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-uniqby-filter-unique-objects-by-property">Lodash uniqBy:
+Filter Unique Objects by Property</h1>
+<p>Managing duplicate data in JavaScript arrays is a common challenge,
+especially when dealing with collections of objects representing
+database records or API responses. This article explains how the Lodash
+utility library's <code>_.uniqBy</code> method operates, detailing how
+it evaluates object uniqueness through property keys or custom iteratee
+functions, keeps the first occurrence of each unique value, and returns
+a deduplicated array without mutating the original data.</p>
+<h3 id="understanding-_uniqby">Understanding <code>_.uniqBy</code></h3>
+<p>The <code>_.uniqBy</code> method creates a duplicate-free version of
+an array. Unlike standard deduplication methods that compare primitive
+values or object references directly (such as
+<code>new Set(array)</code> or Lodash's <code>_.uniq</code>),
+<code>_.uniqBy</code> accepts an "iteratee." This iteratee defines the
+criteria used to compute the uniqueness of each item in the array.</p>
+<p>The syntax for the method is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">uniqBy</span>(array<span class="op">,</span> [iteratee<span class="op">=</span>_<span class="op">.</span><span class="at">identity</span>])</span></code></pre></div>
+<ul>
+<li><strong><code>array</code></strong>: The array to inspect.</li>
+<li><strong><code>iteratee</code></strong>: The criterion invoked per
+element to generate the criterion by which uniqueness is computed. It
+can be a property name string, a path, or a custom callback
+function.</li>
+</ul>
+<h3 id="filtering-by-property-name-string-shorthand">Filtering by
+Property Name (String Shorthand)</h3>
+<p>The most common use case for <code>_.uniqBy</code> is filtering an
+array of objects based on a specific key, such as an <code>id</code> or
+<code>code</code>. You provide the property name as a string for the
+iteratee parameter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> users <span class="op">=</span> [</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> }<span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Bob&#39;</span> }<span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice Duplicate&#39;</span> }<span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Charlie&#39;</span> }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> uniqueUsers <span class="op">=</span> _<span class="op">.</span><span class="fu">uniqBy</span>(users<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(uniqueUsers)<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Output:</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">// [</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">//   { id: 1, name: &#39;Alice&#39; },</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">//   { id: 2, name: &#39;Bob&#39; },</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">//   { id: 3, name: &#39;Charlie&#39; }</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">// ]</span></span></code></pre></div>
+<p>When iterating through <code>users</code>, <code>_.uniqBy</code>
+extracts the value of <code>id</code> for each object. It stores the
+generated keys internally and preserves only the first object
+encountered with that key. The object
+<code>{ id: 1, name: 'Alice Duplicate' }</code> is omitted because an
+item with <code>id: 1</code> was already processed.</p>
+<h3 id="filtering-with-a-custom-function">Filtering with a Custom
+Function</h3>
+<p>When uniqueness depends on computed logic, transformations, or nested
+properties, you can pass a function as the iteratee:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> measurements <span class="op">=</span> [</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">value</span><span class="op">:</span> <span class="fl">4.2</span><span class="op">,</span> <span class="dt">unit</span><span class="op">:</span> <span class="st">&#39;px&#39;</span> }<span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">value</span><span class="op">:</span> <span class="fl">4.8</span><span class="op">,</span> <span class="dt">unit</span><span class="op">:</span> <span class="st">&#39;px&#39;</span> }<span class="op">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">value</span><span class="op">:</span> <span class="fl">5.1</span><span class="op">,</span> <span class="dt">unit</span><span class="op">:</span> <span class="st">&#39;px&#39;</span> }</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Deduplicate based on the floored value</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> uniqueMeasurements <span class="op">=</span> _<span class="op">.</span><span class="fu">uniqBy</span>(measurements<span class="op">,</span> (item) <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(item<span class="op">.</span><span class="at">value</span>))<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(uniqueMeasurements)<span class="op">;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Output:</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">// [</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">//   { value: 4.2, unit: &#39;px&#39; },</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">//   { value: 5.1, unit: &#39;px&#39; }</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">// ]</span></span></code></pre></div>
+<p>You can also combine multiple properties to establish compound
+uniqueness:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> products <span class="op">=</span> [</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">category</span><span class="op">:</span> <span class="st">&#39;shoes&#39;</span><span class="op">,</span> <span class="dt">size</span><span class="op">:</span> <span class="dv">10</span> }<span class="op">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">category</span><span class="op">:</span> <span class="st">&#39;shoes&#39;</span><span class="op">,</span> <span class="dt">size</span><span class="op">:</span> <span class="dv">11</span> }<span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">category</span><span class="op">:</span> <span class="st">&#39;shoes&#39;</span><span class="op">,</span> <span class="dt">size</span><span class="op">:</span> <span class="dv">10</span> }</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> uniqueProducts <span class="op">=</span> _<span class="op">.</span><span class="fu">uniqBy</span>(products<span class="op">,</span> (p) <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>p<span class="op">.</span><span class="at">category</span><span class="sc">}</span><span class="vs">-</span><span class="sc">${</span>p<span class="op">.</span><span class="at">size</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(uniqueProducts)<span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Output:</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">// [</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">//   { category: &#39;shoes&#39;, size: 10 },</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">//   { category: &#39;shoes&#39;, size: 11 }</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">// ]</span></span></code></pre></div>
+<h3 id="key-behaviors-of-_uniqby">Key Behaviors of
+<code>_.uniqBy</code></h3>
+<ul>
+<li><strong>First Occurrence Preference</strong>: The order of result
+values is determined by the order they occur in the array. Only the
+first element that produces a given iteratee value is kept; subsequent
+matches are discarded.</li>
+<li><strong>Immutability</strong>: <code>_.uniqBy</code> is a pure
+function. It does not modify the input array; instead, it returns a new
+array containing the filtered references.</li>
+<li><strong>Performance</strong>: Internally, Lodash uses hash maps and
+sets to check for duplicates, providing efficient <span
+class="math inline">\(O(n)\)</span> time complexity for large
+datasets.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

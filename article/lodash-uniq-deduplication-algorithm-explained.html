@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.uniq Deduplication Algorithm Explained - lodash</title>
+    <meta name="description" content="The .uniq method in the Lodash JavaScript library creates a duplicate-free version of an array by filtering values through an internal function called baseUniq. Rather than relying on a single static algorithm, Lodash dynamically chooses between a linear">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-uniq-deduplication-algorithm-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.uniq Deduplication Algorithm Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-uniq-deduplication-algorithm-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .uniq method in the Lodash JavaScript library creates a duplicate-free version of an array by filtering values through an internal function called baseUniq. Rather than relying on a single static algorithm, Lodash dynamically chooses between a linear" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_uniq-deduplication-algorithm-explained">Lodash _.uniq
+Deduplication Algorithm Explained</h1>
+<p>The <code>_.uniq</code> method in the Lodash JavaScript library
+creates a duplicate-free version of an array by filtering values through
+an internal function called <code>baseUniq</code>. Rather than relying
+on a single static algorithm, Lodash dynamically chooses between a
+linear search approach and a hash-set-based approach depending on the
+array's size and the runtime environment's capabilities. This hybrid
+strategy allows Lodash to balance memory allocation overhead with
+execution speed, achieving an optimal <span
+class="math inline">\(O(n)\)</span> average time complexity for large
+datasets while minimizing initialization costs for small arrays.</p>
+<h3 id="the-core-implementation-baseuniq">The Core Implementation:
+<code>baseUniq</code></h3>
+<p>When <code>_.uniq(array)</code> is called, it passes the input array
+to the internal <code>baseUniq</code> utility without a custom iteratee
+or comparator. The function processes the array sequentially, checking
+each item against previously encountered items before appending it to a
+newly allocated results array.</p>
+<h3 id="optimization-strategy-based-on-array-size">Optimization Strategy
+Based on Array Size</h3>
+<p>Lodash utilizes an internal threshold—traditionally set to 200
+elements—to determine the deduplication strategy:</p>
+<ol type="1">
+<li><p><strong>Small Arrays (Length &lt; 200): Linear Scanning (<span
+class="math inline">\(O(n^2)\)</span>)</strong> For small arrays, the
+performance overhead of instantiating advanced data structures outweighs
+the cost of sequential iteration. Lodash iterates through the input
+elements and performs an array scan (similar to
+<code>Array.prototype.indexOf</code> or <code>includes</code>) against
+the result array. Because the collection is small, this nested loop runs
+rapidly in memory without incurring garbage collection or allocation
+overhead from hash maps.</p></li>
+<li><p><strong>Large Arrays (Length &gt;= 200): Hash-Set Lookup (<span
+class="math inline">\(O(n)\)</span>)</strong> When the array size meets
+or exceeds 200 elements, nested iteration becomes inefficient. Lodash
+switches to a caching structure called <code>SetCache</code>. It
+converts the accumulated values into a hash-backed set, reducing
+duplicate lookups from <span class="math inline">\(O(n)\)</span> to
+<span class="math inline">\(O(1)\)</span>. Consequently, the overall
+deduplication process runs in <span class="math inline">\(O(n)\)</span>
+linear time.</p></li>
+</ol>
+<h3 id="the-role-of-setcache-and-native-set">The Role of
+<code>SetCache</code> and Native <code>Set</code></h3>
+<p>In modern JavaScript environments, <code>SetCache</code> relies
+directly on the native ECMAScript 6 <code>Set</code> primitive. If
+native <code>Set</code> is supported and no custom comparator is used,
+<code>baseUniq</code> optimizes the process by passing the array values
+directly into a <code>Set</code> or utilizing the native structure for
+instant existence checks (<code>set.has(value)</code>).</p>
+<p>In older legacy environments lacking native <code>Set</code> support,
+<code>SetCache</code> falls back to an internal hash map implementation
+that groups primitive values (strings, numbers, booleans) by type and
+keys to simulate set functionality.</p>
+<h3 id="equality-semantics-samevaluezero">Equality Semantics:
+<code>SameValueZero</code></h3>
+<p>Lodash's deduplication algorithm does not use strict equality
+(<code>===</code>). Instead, it implements the
+<code>SameValueZero</code> comparison algorithm defined by ECMAScript
+specifications. This ensures distinct edge-case behaviors:</p>
+<ul>
+<li><strong><code>NaN</code> Handling:</strong> In strict equality,
+<code>NaN === NaN</code> evaluates to <code>false</code>. Under
+<code>SameValueZero</code>, <code>NaN</code> values are considered
+equal, meaning multiple <code>NaN</code> entries in an array are reduced
+to a single instance.</li>
+<li><strong>Signed Zeros:</strong> Both <code>+0</code> and
+<code>-0</code> are evaluated as identical values.</li>
+</ul>
+<h3 id="summary-of-complexity">Summary of Complexity</h3>
+<ul>
+<li><strong>Time Complexity:</strong> <span
+class="math inline">\(O(n)\)</span> on average for arrays with 200 or
+more items via <code>SetCache</code>; <span
+class="math inline">\(O(n^2)\)</span> worst-case for small arrays where
+the absolute execution time remains negligible.</li>
+<li><strong>Space Complexity:</strong> <span
+class="math inline">\(O(n)\)</span> auxiliary space to store the unique
+result array and the hash lookup set.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash sortedUniq Internal Data Structure Explained - lodash</title>
+    <meta name="description" content="This article explores the internal mechanics of the .sortedUniq function in the Lodash JavaScript library, examining how it handles consecutive duplicates and revealing the underlying data structures used during execution. While developers often expect me">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-sorted-uniq-internal-data-structure-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash sortedUniq Internal Data Structure Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-sorted-uniq-internal-data-structure-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores the internal mechanics of the .sortedUniq function in the Lodash JavaScript library, examining how it handles consecutive duplicates and revealing the underlying data structures used during execution. While developers often expect me" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-sorteduniq-internal-data-structure-explained">Lodash
+sortedUniq Internal Data Structure Explained</h1>
+<p>This article explores the internal mechanics of the
+<code>_.sortedUniq</code> function in the Lodash JavaScript library,
+examining how it handles consecutive duplicates and revealing the
+underlying data structures used during execution. While developers often
+expect methods that filter duplicates to map elements into hash tables
+or sets, <code>_.sortedUniq</code> relies on a much simpler, highly
+optimized linear array approach that takes advantage of pre-sorted
+data.</p>
+<h2 id="the-underlying-structure-native-arrays-and-scalar-tracking">The
+Underlying Structure: Native Arrays and Scalar Tracking</h2>
+<p>Unlike Lodash's standard <code>_.uniq</code> method—which may
+construct a native <code>Set</code> or an internal hash map to track
+previously seen values across unsorted
+collections—<code>_.sortedUniq</code> does not map values to any complex
+associative data structure.</p>
+<p>Internally, <code>_.sortedUniq</code> delegates its work to an
+internal helper function called <code>baseSortedUniq</code>. The
+underlying data structures mapped during this process are:</p>
+<ol type="1">
+<li><strong>A Single Result Array (<code>[]</code>):</strong> A
+standard, linear JavaScript Array allocated to store the unique
+values.</li>
+<li><strong>A Scalar Register (<code>seen</code>):</strong> A single
+primitive or reference pointer variable that stores only the most
+recently processed unique item.</li>
+</ol>
+<p>Because the input array is already sorted, all identical elements
+appear sequentially. This eliminates the need for hash lookups, binary
+search trees, or Set allocations.</p>
+<h2 id="how-basesorteduniq-operates-internally">How
+<code>baseSortedUniq</code> Operates Internally</h2>
+<p>The core implementation in Lodash processes the input sequentially
+using an index-based <code>while</code> loop:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseSortedUniq</span>(array<span class="op">,</span> iteratee) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> seen</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> index <span class="op">=</span> <span class="op">-</span><span class="dv">1</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> resIndex <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> { length } <span class="op">=</span> array</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> result <span class="op">=</span> []</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="op">++</span>index <span class="op">&lt;</span> length) {</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> value <span class="op">=</span> array[index]<span class="op">,</span> computed <span class="op">=</span> iteratee <span class="op">?</span> <span class="fu">iteratee</span>(value) <span class="op">:</span> value</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>index <span class="op">||</span> <span class="op">!</span><span class="fu">eq</span>(computed<span class="op">,</span> seen)) {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>      seen <span class="op">=</span> computed</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>      result[resIndex<span class="op">++</span>] <span class="op">=</span> value</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Instead of querying a lookup table to see if an element has appeared
+before, Lodash only evaluates whether the current element is identical
+to the value stored in the <code>seen</code> variable using the
+<code>eq</code> utility (an implementation of the SameValueZero
+algorithm).</p>
+<p>When a new unique element is encountered:</p>
+<ul>
+<li>The scalar variable <code>seen</code> is overwritten with the
+current item's computed value.</li>
+<li>The element is assigned to <code>result[resIndex++]</code>, pushing
+it into the output array by direct index assignment rather than calling
+<code>Array.prototype.push</code>.</li>
+</ul>
+<h2 id="performance-and-memory-implications">Performance and Memory
+Implications</h2>
+<p>By avoiding hash maps and auxiliary set allocations,
+<code>_.sortedUniq</code> achieves significant performance advantages
+over unsorted deduplication:</p>
+<ul>
+<li><strong>Time Complexity:</strong> Strict <span
+class="math inline">\(\mathcal{O}(n)\)</span> time complexity, as each
+element is evaluated exactly once in a single linear pass.</li>
+<li><strong>Auxiliary Space Complexity:</strong> <span
+class="math inline">\(\mathcal{O}(1)\)</span> auxiliary memory beyond
+the output array itself, as only index counters and a single tracking
+pointer are retained in memory.</li>
+<li><strong>Garbage Collection Efficiency:</strong> Since no
+intermediary lookup objects, hashes, or node structures are
+instantiated, memory churn is minimized, reducing overhead on the
+JavaScript engine's garbage collector.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

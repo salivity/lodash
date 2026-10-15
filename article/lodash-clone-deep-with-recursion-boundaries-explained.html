@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash cloneDeepWith Recursion Boundaries Explained - lodash</title>
+    <meta name="description" content="While Lodash’s .cloneDeepWith allows customized recursive cloning and manipulation of complex objects, attempting to deeply freeze massive object graphs runs into strict engine-level and architectural constraints. These barriers stem from V8&#39;s execution c">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-clone-deep-with-recursion-boundaries-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash cloneDeepWith Recursion Boundaries Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-clone-deep-with-recursion-boundaries-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="While Lodash’s .cloneDeepWith allows customized recursive cloning and manipulation of complex objects, attempting to deeply freeze massive object graphs runs into strict engine-level and architectural constraints. These barriers stem from V8&#39;s execution c" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-clonedeepwith-recursion-boundaries-explained">Lodash
+cloneDeepWith Recursion Boundaries Explained</h1>
+<p>While Lodash’s <code>_.cloneDeepWith</code> allows customized
+recursive cloning and manipulation of complex objects, attempting to
+deeply freeze massive object graphs runs into strict engine-level and
+architectural constraints. These barriers stem from V8's execution call
+stack limits, the recursive nature of the underlying
+<code>baseClone</code> implementation, the pre-order invocation
+lifecycle of the customizer function, and internal heap-allocated caches
+for circular reference management.</p>
+<h3 id="call-stack-depth-limitations">Call Stack Depth Limitations</h3>
+<p>The primary boundary preventing <code>_.cloneDeepWith</code> from
+handling extremely deep structures is the JavaScript engine's maximum
+call stack limit. Lodash implements <code>_.cloneDeepWith</code> through
+an internal recursive function called <code>baseClone</code>. Because
+<code>baseClone</code> does not use an iterative approach (such as an
+explicit stack or trampoline), each nested object property adds a new
+stack frame. When traversing an object hierarchy that exceeds the
+engine's call stack ceiling (typically around 10,000 to 25,000 nested
+frames in modern engines like V8), the execution halts with a fatal
+<code>RangeError: Maximum call stack size exceeded</code>.</p>
+<h3 id="customizer-lifecycle-and-traversal-termination">Customizer
+Lifecycle and Traversal Termination</h3>
+<p>When applying <code>Object.freeze</code> via the customizer callback,
+developers encounter a structural constraint in how Lodash delegates
+traversal:</p>
+<ol type="1">
+<li><strong>Pre-Order Execution:</strong>
+<code>customizer(value, key, object, stack)</code> is evaluated at the
+start of each node's cloning process, before its descendants are
+inspected.</li>
+<li><strong>Early Exit on Return Values:</strong> If the customizer
+returns anything other than <code>undefined</code>,
+<code>baseClone</code> assumes the developer has fully handled the
+cloning of that entire subtree. Returning
+<code>Object.freeze(value)</code> or a frozen shallow copy immediately
+aborts further recursion down that branch, leaving nested children
+unfrozen.</li>
+<li><strong>Post-Order Freezing Requirement:</strong> Deeply freezing a
+graph requires post-order traversal (leaf nodes must be frozen before or
+after their parents). Because <code>cloneDeepWith</code> does not
+provide an after-traversal hook, achieving deep immutability requires
+running an independent freezing pass or writing an external wrapper,
+doubling the traversal overhead.</li>
+</ol>
+<h3
+id="immutability-conflicts-with-circular-reference-resolution">Immutability
+Conflicts with Circular Reference Resolution</h3>
+<p>Lodash relies on deferred property assignment to handle circular
+graphs. When encountering cyclic nodes:</p>
+<ul>
+<li>It initializes a target reference and stores it in an internal
+lookup stack (<code>StackCache</code>).</li>
+<li>It recursively resolves child properties.</li>
+<li>It sets properties on the initialized object.</li>
+</ul>
+<p>If a customizer freezes an object before its circular children have
+resolved, subsequent attempts by <code>baseClone</code> to attach
+properties to the frozen parent will throw a <code>TypeError</code> in
+strict mode because the object is no longer extensible.</p>
+<h3 id="memory-overhead-from-reference-caching">Memory Overhead from
+Reference Caching</h3>
+<p>To resolve circular references, Lodash maintains an internal cache
+throughout the lifetime of <code>baseClone</code>. For small structures,
+it uses an array-backed <code>ListCache</code>, which upgrades to a
+<code>MapCache</code> as the number of tracked objects grows. On
+extremely large graphs containing millions of interconnected nodes, the
+simultaneous retention of both the source and cloned node references in
+the cache prevents garbage collection, potentially pushing the process
+beyond its maximum heap limit before traversal finishes.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

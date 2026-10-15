@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash repeat Memory Allocation for Large Strings - lodash</title>
+    <meta name="description" content="This article examines how the Lodash utility .repeat orchestrates string expansion and memory allocation when dealing with extremely large string blocks. It details the interaction between Lodash’s binary exponentiation algorithm, native engine delegation">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-repeat-memory-allocation-for-large-strings">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash repeat Memory Allocation for Large Strings - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-repeat-memory-allocation-for-large-strings" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the Lodash utility .repeat orchestrates string expansion and memory allocation when dealing with extremely large string blocks. It details the interaction between Lodash’s binary exponentiation algorithm, native engine delegation" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-repeat-memory-allocation-for-large-strings">Lodash repeat
+Memory Allocation for Large Strings</h1>
+<p>This article examines how the Lodash utility <code>_.repeat</code>
+orchestrates string expansion and memory allocation when dealing with
+extremely large string blocks. It details the interaction between
+Lodash’s binary exponentiation algorithm, native engine delegation, and
+low-level V8 memory representations like sequential flat buffers and
+concatenated string trees.</p>
+<h3 id="native-delegation-and-algorithmic-doubling">Native Delegation
+and Algorithmic Doubling</h3>
+<p>At the API boundary, Lodash's <code>_.repeat</code> evaluates whether
+the host JavaScript environment provides a compliant native
+<code>String.prototype.repeat</code>. In modern ECMAScript runtimes,
+Lodash delegates the operation directly to the native implementation.
+When delegation occurs, the JavaScript engine (such as V8, SpiderMonkey,
+or JavaScriptCore) calculates the target byte length up front and
+allocates a contiguous memory buffer sized to the exact byte-width
+required for the final product, completely avoiding intermediate
+JavaScript-heap object allocations.</p>
+<p>When falling back to its internal implementation
+(<code>baseRepeat</code>), Lodash manages allocations programmatically
+via an exponentiation-by-squaring algorithm:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseRepeat</span>(string<span class="op">,</span> n) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">var</span> result <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>string <span class="op">||</span> n <span class="op">&lt;</span> <span class="dv">1</span> <span class="op">||</span> n <span class="op">&gt;</span> <span class="cn">MAX_SAFE_INTEGER</span>) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">do</span> {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (n <span class="op">%</span> <span class="dv">2</span>) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      result <span class="op">+=</span> string<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(n <span class="op">/</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (n) {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>      string <span class="op">+=</span> string<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">while</span> (n)<span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Instead of performing linear allocations—which would require copying
+characters <span class="math inline">\(N\)</span> times across <span
+class="math inline">\(N\)</span> distinct memory instances—the doubling
+approach scales exponentially. The algorithm generates <span
+class="math inline">\(O(\log n)\)</span> intermediate string allocations
+by doubling the source block (<code>string += string</code>) and
+appending to the accumulator (<code>result += string</code>) based on
+the lowest significant bit of the remaining multiplier.</p>
+<h3
+id="low-level-memory-structures-consstrings-vs-flat-buffers">Low-Level
+Memory Structures: ConsStrings vs. Flat Buffers</h3>
+<p>JavaScript primitives do not expose raw pointers or manual memory
+managers, meaning Lodash cannot construct a dedicated C++-level buffer
+directly. Instead, it relies on how engines handle string concatenation
+internally:</p>
+<ol type="1">
+<li><strong>Tree-Structured Allocation (ConsStrings):</strong> During
+sequential concatenation in <code>baseRepeat</code>, modern engines
+avoid copying bytes immediately. In engines like V8, appending strings
+produces a <code>ConsString</code>—a structural node with two pointers
+referencing the left and right string operands. As
+<code>string += string</code> and <code>result += string</code> execute,
+the engine builds an internal directed acyclic graph rather than
+reallocating and copying continuous character arrays.</li>
+<li><strong>Buffer Compaction (Flattening):</strong> When the amplified
+string is subsequently consumed (for instance, via hashing, regular
+expression parsing, slicing, or specific character indexing), the engine
+converts the deeply nested <code>ConsString</code> tree into a flat
+sequential buffer. It allocates a single, unified block of memory
+matching the combined length and copies the leaf chunks into it,
+balancing memory footprint during iterative generation with contiguous
+access performance during consumption.</li>
+</ol>
+<h3 id="string-encoding-and-memory-footprint">String Encoding and Memory
+Footprint</h3>
+<p>The physical memory footprint allocated per character depends on
+runtime character analysis:</p>
+<ul>
+<li><strong>One-Byte Strings (Latin-1):</strong> If the input string
+consists entirely of characters within the ISO-8859-1 range, the engine
+provisions a 1-byte-per-character allocation buffer.</li>
+<li><strong>Two-Byte Strings (UTF-16):</strong> If a single character
+requires code points beyond 8-bit representation, the engine escalates
+the allocation to a 2-byte-per-character UTF-16 representation,
+immediately doubling the required buffer space for the entire resulting
+sequence.</li>
+</ul>
+<h3 id="structural-limits-and-memory-faults">Structural Limits and
+Memory Faults</h3>
+<p>When generating massive blocks, Lodash guards against numerical
+overflow by verifying that the repetition factor does not exceed
+<code>MAX_SAFE_INTEGER</code> (<span class="math inline">\(2^{53} -
+1\)</span>). However, the physical memory allocation threshold is
+bounded much lower by the host engine's hard maximum string length
+(often <span class="math inline">\(2^{29} - 24\)</span> characters in
+64-bit V8, roughly 512 MB to 1 GB of memory).</p>
+<p>If the combined structural tree or flat allocation crosses the
+runtime's upper string bound, the operation will throw a
+<code>RangeError: Invalid string length</code> prior to memory
+exhaustion, halting further heap expansion before reaching system-level
+segmentation faults.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.floor vs Math.floor in JavaScript - lodash</title>
+    <meta name="description" content="While both Lodash’s .floor and JavaScript’s native Math.floor round numbers down to the nearest value, their primary difference lies in precision handling. Native Math.floor strictly rounds down to the nearest whole integer and accepts only a single argum">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-floor-vs-math-floor-in-java-script">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.floor vs Math.floor in JavaScript - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-floor-vs-math-floor-in-java-script" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="While both Lodash’s .floor and JavaScript’s native Math.floor round numbers down to the nearest value, their primary difference lies in precision handling. Native Math.floor strictly rounds down to the nearest whole integer and accepts only a single argum" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_floor-vs-mathfloor-in-javascript">Lodash _.floor vs
+Math.floor in JavaScript</h1>
+<p>While both Lodash’s <code>_.floor</code> and JavaScript’s native
+<code>Math.floor</code> round numbers down to the nearest value, their
+primary difference lies in precision handling. Native
+<code>Math.floor</code> strictly rounds down to the nearest whole
+integer and accepts only a single argument. In contrast, Lodash’s
+<code>_.floor</code> includes an optional second parameter that allows
+developers to specify decimal precision, supporting rounding down to
+specific decimal places or powers of ten.</p>
+<h3 id="1-the-precision-parameter">1. The Precision Parameter</h3>
+<p>The standard <code>Math.floor()</code> function accepts only one
+argument:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(<span class="fl">4.567</span>)<span class="op">;</span> <span class="co">// Returns 4</span></span></code></pre></div>
+<p>To round down to two decimal places using vanilla JavaScript, you
+must manually multiply and divide:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(<span class="fl">4.567</span> <span class="op">*</span> <span class="dv">100</span>) <span class="op">/</span> <span class="dv">100</span><span class="op">;</span> <span class="co">// Returns 4.56</span></span></code></pre></div>
+<p>Lodash simplifies this by accepting an optional
+<code>precision</code> parameter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">floor</span>(<span class="fl">4.567</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span> <span class="co">// Returns 4.56</span></span></code></pre></div>
+<h3 id="2-negative-precision-for-rounding-large-numbers">2. Negative
+Precision for Rounding Large Numbers</h3>
+<p>Lodash’s <code>_.floor</code> also supports negative precision,
+allowing you to round down to tens, hundreds, thousands, or any other
+power of ten:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">floor</span>(<span class="dv">4120</span><span class="op">,</span> <span class="op">-</span><span class="dv">2</span>)<span class="op">;</span> <span class="co">// Returns 4100</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">floor</span>(<span class="dv">4999</span><span class="op">,</span> <span class="op">-</span><span class="dv">3</span>)<span class="op">;</span> <span class="co">// Returns 4000</span></span></code></pre></div>
+<p>Achieving this natively requires similar mathematical scaling:
+<code>Math.floor(4120 / 100) * 100</code>.</p>
+<h3 id="3-floating-point-arithmetic-accuracy">3. Floating-Point
+Arithmetic Accuracy</h3>
+<p>Manual multiplication and division with <code>Math.floor</code> can
+occasionally cause floating-point rounding errors common to IEEE 754
+arithmetic in JavaScript (such as <code>1.005 * 100</code> resulting in
+<code>100.49999999999999</code>).</p>
+<p>Lodash mitigates these issues internally by converting the number to
+exponential notation before applying the floor calculation, ensuring
+more reliable decimal truncation.</p>
+<h3 id="4-performance-and-dependencies">4. Performance and
+Dependencies</h3>
+<ul>
+<li><strong>Native <code>Math.floor</code>:</strong> Built directly into
+the JavaScript engine. It executes significantly faster and requires
+zero external dependencies, making it the ideal choice for
+performance-critical tasks and standard integer rounding.</li>
+<li><strong>Lodash <code>_.floor</code>:</strong> Requires importing a
+library or individual module. It introduces a small amount of function
+overhead, making it slightly slower than the native implementation, but
+it provides cleaner syntax and fewer floating-point pitfalls when
+decimal precision is needed.</li>
+</ul>
+<h3 id="when-to-use-which">When to Use Which</h3>
+<p>Use native <code>Math.floor</code> when you only need to truncate
+floating-point numbers to integers. Choose Lodash’s <code>_.floor</code>
+when working with decimal places, financial displays, or
+negative-exponent rounding where convenience and floating-point safety
+outweigh the negligible overhead of a utility library.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

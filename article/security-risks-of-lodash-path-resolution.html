@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Risks of Lodash Path Resolution - lodash</title>
+    <meta name="description" content="Using the Lodash JavaScript library to dynamically resolve object paths introduces critical security vulnerabilities if dynamic inputs are not strictly validated. Functions such as .get, .set, .has, and .unset evaluate string or array paths to traverse ob">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/security-risks-of-lodash-path-resolution">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Security Risks of Lodash Path Resolution - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/security-risks-of-lodash-path-resolution" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Using the Lodash JavaScript library to dynamically resolve object paths introduces critical security vulnerabilities if dynamic inputs are not strictly validated. Functions such as .get, .set, .has, and .unset evaluate string or array paths to traverse ob" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="security-risks-of-lodash-path-resolution">Security Risks of
+Lodash Path Resolution</h1>
+<p>Using the Lodash JavaScript library to dynamically resolve object
+paths introduces critical security vulnerabilities if dynamic inputs are
+not strictly validated. Functions such as <code>_.get</code>,
+<code>_.set</code>, <code>_.has</code>, and <code>_.unset</code>
+evaluate string or array paths to traverse object graphs, which can
+allow attackers to manipulate application behavior. This article
+examines the primary risks associated with dynamic path resolution in
+Lodash—including prototype pollution, information disclosure, and denial
+of service—and details effective mitigation strategies.</p>
+<h3 id="prototype-pollution">Prototype Pollution</h3>
+<p>Prototype pollution is the most severe vulnerability associated with
+dynamic path manipulation in Lodash, particularly when using functions
+like <code>_.set</code> or <code>_.setWith</code>. When an application
+allows untrusted input to specify object property paths, attackers can
+provide payload segments such as <code>__proto__</code>,
+<code>constructor</code>, or <code>prototype</code>.</p>
+<p>If a dynamic path injects values into the base JavaScript
+<code>Object.prototype</code>, those injected properties become globally
+accessible across all objects in the runtime environment. This can alter
+control flows, bypass authorization checks, or trigger gadget chains
+that escalate to Remote Code Execution (RCE) in Node.js environments.
+Although modern versions of Lodash include patches against common
+prototype pollution vectors, passing completely arbitrary or nested
+user-controlled paths can still expose unpatched or improperly
+configured execution contexts to risk.</p>
+<h3 id="unauthorized-property-access-and-data-exposure">Unauthorized
+Property Access and Data Exposure</h3>
+<p>The <code>_.get</code> method simplifies accessing nested properties
+safely without causing <code>TypeError</code> exceptions. However, when
+users control the path argument, they can traverse parts of the object
+graph never intended for public access.</p>
+<p>If an application passes request parameters, session contexts, or
+configuration states to <code>_.get</code>, an attacker can extract
+sensitive metadata. For instance, paths navigating into private
+properties, database connection instances, hidden system flags, or API
+credentials can leak sensitive application state directly to the user
+interface or API response payloads.</p>
+<h3 id="denial-of-service-dos">Denial of Service (DoS)</h3>
+<p>Malicious path inputs can cause denial-of-service conditions in
+several ways:</p>
+<ul>
+<li><strong>Deep Property Creation:</strong> Passing paths with extreme
+nesting depths into <code>_.set</code> can force the runtime into heavy
+recursive allocation, exhausting memory resources.</li>
+<li><strong>Method Overwriting:</strong> Overwriting or polluting
+standard methods like <code>toString</code>, <code>valueOf</code>, or
+<code>toJSON</code> with non-function types will cause subsequent
+standard operations to throw uncaught exceptions, crashing Node.js
+processes.</li>
+<li><strong>Garbage Collection Pressure:</strong> Repeatedly generating
+large, deeply nested sparse structures through arbitrary dynamic path
+assignments places heavy overhead on the garbage collector, causing
+latency spikes and system unresponsiveness.</li>
+</ul>
+<h3 id="mitigation-strategies">Mitigation Strategies</h3>
+<p>To secure dynamic path resolution when using Lodash, implement the
+following defenses:</p>
+<ul>
+<li><strong>Strict Path Whitelisting:</strong> Validate dynamic keys
+against a predefined list of allowed paths. Never accept open-ended
+strings directly from user input.</li>
+<li><strong>Path Sanitization:</strong> Reject or strip dangerous
+keywords—such as <code>__proto__</code>, <code>constructor</code>, and
+<code>prototype</code>—before passing any path string or array into
+Lodash utilities.</li>
+<li><strong>Adopt Native JavaScript Features:</strong> Replace
+<code>_.get</code> with native optional chaining (<code>?.</code>) and
+nullish coalescing (<code>??</code>) whenever possible, as native syntax
+prevents arbitrary runtime path evaluations.</li>
+<li><strong>Immutable and Prototype-less Objects:</strong> Create
+context-specific data stores using <code>Object.create(null)</code> to
+avoid inheriting from <code>Object.prototype</code>, or enforce
+immutability with <code>Object.freeze()</code>.</li>
+<li><strong>Maintain Dependencies:</strong> Keep Lodash updated to the
+latest stable version to ensure all known prototype pollution CVE
+patches are present in the codebase.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

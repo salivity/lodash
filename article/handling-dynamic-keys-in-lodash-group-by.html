@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handling Dynamic Keys in Lodash groupBy - lodash</title>
+    <meta name="description" content="Lodash’s .groupBy method processes a collection by executing an iteratee function for each element, aggregating the results into an object where each key represents a group. When dealing with dynamic object keys—such as computed property names, varying ke">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/handling-dynamic-keys-in-lodash-group-by">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Handling Dynamic Keys in Lodash groupBy - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/handling-dynamic-keys-in-lodash-group-by" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .groupBy method processes a collection by executing an iteratee function for each element, aggregating the results into an object where each key represents a group. When dealing with dynamic object keys—such as computed property names, varying ke" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="handling-dynamic-keys-in-lodash-groupby">Handling Dynamic Keys
+in Lodash groupBy</h1>
+<p>Lodash’s <code>_.groupBy</code> method processes a collection by
+executing an iteratee function for each element, aggregating the results
+into an object where each key represents a group. When dealing with
+dynamic object keys—such as computed property names, varying keys across
+elements, or keys mutated at runtime—the iteratee resolves these values
+strictly on an item-by-item basis at the precise moment of execution.
+This article examines how the iteratee resolves dynamic properties, how
+JavaScript's evaluation model impacts grouping results, and the best
+practices for handling mutating or inconsistent object keys.</p>
+<h2 id="synchronous-evaluation-and-execution-context">Synchronous
+Evaluation and Execution Context</h2>
+<p>Lodash executes <code>_.groupBy</code> synchronously over the
+collection. For every item, the iteratee function receives
+<code>(value)</code>. If your data structure relies on dynamic keys, the
+iteratee must resolve the target property dynamically rather than using
+Lodash's string property shorthand (like
+<code>_.groupBy(collection, 'key')</code>).</p>
+<p>When passing a custom function as the iteratee, the dynamic key can
+be read using bracket notation:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> dynamicKey <span class="op">=</span> <span class="fu">getActiveKeyName</span>()<span class="op">;</span> <span class="co">// returns a string dynamically, e.g., &#39;category_2024&#39;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> grouped <span class="op">=</span> _<span class="op">.</span><span class="fu">groupBy</span>(items<span class="op">,</span> (item) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> item[dynamicKey]<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Because the iteratee is called once per item, any change to the
+variable holding the key name inside the iteratee or within the outer
+scope affects subsequent items. The key assigned in the returned output
+object is determined entirely by the return value of that specific
+call.</p>
+<h2 id="handling-varying-keys-across-heterogeneous-objects">Handling
+Varying Keys Across Heterogeneous Objects</h2>
+<p>In datasets where objects do not share uniform schemas, the target
+key might change from one element to the next. The iteratee can compute
+or locate the relevant key dynamically per object:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> data <span class="op">=</span> [</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">typeA_id</span><span class="op">:</span> <span class="st">&#39;alpha&#39;</span><span class="op">,</span> <span class="dt">value</span><span class="op">:</span> <span class="dv">10</span> }<span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">typeB_id</span><span class="op">:</span> <span class="st">&#39;beta&#39;</span><span class="op">,</span> <span class="dt">value</span><span class="op">:</span> <span class="dv">20</span> }<span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">typeA_id</span><span class="op">:</span> <span class="st">&#39;alpha&#39;</span><span class="op">,</span> <span class="dt">value</span><span class="op">:</span> <span class="dv">30</span> }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> grouped <span class="op">=</span> _<span class="op">.</span><span class="fu">groupBy</span>(data<span class="op">,</span> (item) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Dynamically resolve which identifier key exists on the object</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> dynamicKey <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">keys</span>(item)<span class="op">.</span><span class="fu">find</span>(k <span class="kw">=&gt;</span> k<span class="op">.</span><span class="fu">endsWith</span>(<span class="st">&#39;_id&#39;</span>))<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> item[dynamicKey]<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>In this scenario:</p>
+<ol type="1">
+<li>The iteratee inspects the keys of the current
+<code>item</code>.</li>
+<li>It extracts the value associated with the matching dynamic property
+name.</li>
+<li>Lodash places the element in the bucket labeled by that resolved
+value (e.g., <code>'alpha'</code> or <code>'beta'</code>).</li>
+</ol>
+<h2 id="mutation-during-iteration">Mutation During Iteration</h2>
+<p>Lodash does not deep-clone collections before processing. If an
+asynchronous process, side effect, or the iteratee itself mutates an
+object's keys while <code>_.groupBy</code> is running, the grouping
+reflects the object's state at the exact time it was evaluated:</p>
+<ul>
+<li><strong>Pre-iteration changes:</strong> If an object’s key is
+modified before the loop reaches that object, the iteratee reads the
+updated property.</li>
+<li><strong>Post-iteration changes:</strong> Modifying an object after
+it has been categorized will not move it to a different group. The
+output object maintains references to the original objects in their
+already-assigned arrays.</li>
+<li><strong>Missing or deleted keys:</strong> If dynamic key resolution
+yields <code>undefined</code>, Lodash converts <code>undefined</code> to
+the string key <code>'undefined'</code> in the output object.</li>
+</ul>
+<h2 id="type-coercion-of-group-keys">Type Coercion of Group Keys</h2>
+<p>All return values from the iteratee are coerced to strings to serve
+as object keys in the final output dictionary. If dynamic logic produces
+non-string identifiers (such as numbers, booleans, or objects), standard
+JavaScript string coercion rules apply:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span> }<span class="op">,</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span> }]<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> grouped <span class="op">=</span> _<span class="op">.</span><span class="fu">groupBy</span>(items<span class="op">,</span> (item) <span class="kw">=&gt;</span> item<span class="op">.</span><span class="at">id</span>)<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Resulting keys will be strings: { &quot;1&quot;: [...], &quot;2&quot;: [...] }</span></span></code></pre></div>
+<p>When relying on dynamically changing keys, ensure the iteratee
+outputs a deterministic primitive value to prevent unintended collisions
+under generic keys like <code>'[object Object]'</code> or
+<code>'undefined'</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

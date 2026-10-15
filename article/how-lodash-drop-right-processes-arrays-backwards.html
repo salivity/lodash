@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.dropRight Processes Arrays Backwards - lodash</title>
+    <meta name="description" content="The Lodash .dropRight method creates a slice of an array by excluding a specified number of elements starting from the end. This article breaks down the internal mechanics of how .dropRight calculates array boundaries, demonstrates how it safely extracts">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-drop-right-processes-arrays-backwards">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.dropRight Processes Arrays Backwards - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-drop-right-processes-arrays-backwards" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .dropRight method creates a slice of an array by excluding a specified number of elements starting from the end. This article breaks down the internal mechanics of how .dropRight calculates array boundaries, demonstrates how it safely extracts" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_dropright-processes-arrays-backwards">How Lodash
+_.dropRight Processes Arrays Backwards</h1>
+<p>The Lodash <code>_.dropRight</code> method creates a slice of an
+array by excluding a specified number of elements starting from the end.
+This article breaks down the internal mechanics of how
+<code>_.dropRight</code> calculates array boundaries, demonstrates how
+it safely extracts data from right to left without modifying the
+original array, and examines its behavior across standard and edge-case
+scenarios.</p>
+<h3 id="syntax-and-parameters">Syntax and Parameters</h3>
+<p>The basic syntax for <code>_.dropRight</code> is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">dropRight</span>(array<span class="op">,</span> [n<span class="op">=</span><span class="dv">1</span>])</span></code></pre></div>
+<ul>
+<li><strong><code>array</code></strong>: The array to query.</li>
+<li><strong><code>n</code></strong>: The number of elements to drop from
+the tail end. Defaults to <code>1</code> if omitted.</li>
+</ul>
+<h3 id="internal-processing-the-slice-boundary-calculation">Internal
+Processing: The Slice Boundary Calculation</h3>
+<p>Although conceptually described as "dropping elements from the
+right," Lodash does not iterate backwards and remove elements one by
+one. Mutating the array or popping elements would be computationally
+inefficient. Instead, it computes a new upper boundary for the array
+using standard length arithmetic:</p>
+<p><span class="math display">\[\text{endIndex} = \max(\text{length} -
+n, 0)\]</span></p>
+<p>Internally, Lodash achieves this using its internal
+<code>baseSlice</code> helper function:</p>
+<ol type="1">
+<li><strong>Length Check</strong>: Lodash determines the length of the
+input array. If the array is empty or
+<code>null</code>/<code>undefined</code>, it immediately returns an
+empty array (<code>[]</code>).</li>
+<li><strong>Boundary Normalization</strong>: It evaluates
+<code>length - n</code>.
+<ul>
+<li>If <code>n</code> is greater than or equal to the array length, the
+end index clamps to <code>0</code>.</li>
+<li>If <code>n</code> is negative or zero, the end index remains equal
+to the full length of the array.</li>
+</ul></li>
+<li><strong>Array Slicing</strong>: Lodash creates a new array copy
+containing the elements from index <code>0</code> up to the computed
+<code>endIndex</code>.</li>
+</ol>
+<h3 id="code-example">Code Example</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="dv">10</span><span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">40</span><span class="op">,</span> <span class="dv">50</span>]<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Default drop (drops 1 element from the right)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">dropRight</span>(numbers)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; [10, 20, 30, 40]</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Explicit drop of 3 elements</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">dropRight</span>(numbers<span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; [10, 20]</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Dropping more elements than the array contains</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">dropRight</span>(numbers<span class="op">,</span> <span class="dv">7</span>)<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; []</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">// Dropping 0 elements</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">dropRight</span>(numbers<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; [10, 20, 30, 40, 50]</span></span></code></pre></div>
+<h3 id="immutability-and-performance">Immutability and Performance</h3>
+<p>Because <code>_.dropRight</code> calculates an offset rather than
+calling mutating operations like <code>Array.prototype.pop()</code> or
+<code>Array.prototype.splice()</code>, the original array remains
+completely intact. The operation runs in <span
+class="math inline">\(O(k)\)</span> time—where <span
+class="math inline">\(k\)</span> is the number of retained elements
+(<span class="math inline">\(length - n\)</span>)—allocating only enough
+memory for the newly returned slice.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

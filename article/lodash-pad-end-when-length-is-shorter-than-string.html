@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash padEnd When Length Is Shorter Than String - lodash</title>
+    <meta name="description" content="When working with string manipulation in Lodash, developers often need to ensure strings meet a specific minimum length using .padEnd. This article explains the exact behavior of Lodash’s .padEnd method when the specified target length is shorter than the">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-pad-end-when-length-is-shorter-than-string">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash padEnd When Length Is Shorter Than String - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-pad-end-when-length-is-shorter-than-string" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When working with string manipulation in Lodash, developers often need to ensure strings meet a specific minimum length using .padEnd. This article explains the exact behavior of Lodash’s .padEnd method when the specified target length is shorter than the" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-padend-when-length-is-shorter-than-string">Lodash padEnd
+When Length Is Shorter Than String</h1>
+<p>When working with string manipulation in Lodash, developers often
+need to ensure strings meet a specific minimum length using
+<code>_.padEnd</code>. This article explains the exact behavior of
+Lodash’s <code>_.padEnd</code> method when the specified target length
+is shorter than the source string's actual length, detailing the
+internal logic, providing code examples, and comparing it to native
+JavaScript alternatives.</p>
+<h2 id="the-short-answer">The Short Answer</h2>
+<p>When the desired length passed to <code>_.padEnd</code> is less than
+or equal to the length of the target string, Lodash returns the original
+string completely unchanged. It does <strong>not</strong> truncate,
+slice, or throw an error.</p>
+<h2 id="code-example">Code Example</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> text <span class="op">=</span> <span class="st">&#39;JavaScript&#39;</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Target length (5) is shorter than string length (10)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">padEnd</span>(text<span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result)<span class="op">;</span> </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;JavaScript&#39;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result<span class="op">.</span><span class="at">length</span>)<span class="op">;</span> </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: 10</span></span></code></pre></div>
+<p>Even if you provide custom padding characters, they are ignored
+because the condition for adding characters is not met:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> resultWithChars <span class="op">=</span> _<span class="op">.</span><span class="fu">padEnd</span>(<span class="st">&#39;Database&#39;</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="st">&#39;_&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(resultWithChars)<span class="op">;</span> </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &#39;Database&#39;</span></span></code></pre></div>
+<h2 id="how-lodash-handles-the-logic-internally">How Lodash Handles the
+Logic Internally</h2>
+<p>The <code>_.padEnd</code> method operates by calculating how much
+padding is required to reach the target length:</p>
+<p><span class="math display">\[\text{paddingNeeded} =
+\text{targetLength} - \text{string.length}\]</span></p>
+<ol type="1">
+<li>If <code>paddingNeeded</code> is greater than <code>0</code>, Lodash
+creates a padding string using the specified characters (or spaces by
+default) and appends it to the end of the input.</li>
+<li>If <code>paddingNeeded</code> is <code>0</code> or a negative
+number, no padding is generated, and the method directly returns the
+original string converted to string format.</li>
+</ol>
+<p>Because <code>_.padEnd</code> is strictly a padding utility and not a
+truncation utility, it never shortens strings.</p>
+<h2 id="truncating-strings-when-shorter-lengths-are-required">Truncating
+Strings When Shorter Lengths Are Required</h2>
+<p>If you require a strict string length where shorter strings are
+padded and longer strings are trimmed, you must combine
+<code>_.padEnd</code> with a truncation method.</p>
+<h3 id="using-native-javascript-slice">Using Native JavaScript
+<code>.slice()</code></h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">fitString</span>(str<span class="op">,</span> length<span class="op">,</span> padChar <span class="op">=</span> <span class="st">&#39; &#39;</span>) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> str<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> length </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">?</span> str<span class="op">.</span><span class="fu">slice</span>(<span class="dv">0</span><span class="op">,</span> length) </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> str<span class="op">.</span><span class="fu">padEnd</span>(length<span class="op">,</span> padChar)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">fitString</span>(<span class="st">&#39;Supercalifragilistic&#39;</span><span class="op">,</span> <span class="dv">5</span>))<span class="op">;</span> <span class="co">// &#39;Super&#39;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">fitString</span>(<span class="st">&#39;Hi&#39;</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="st">&#39;!&#39;</span>))<span class="op">;</span>              <span class="co">// &#39;Hi!!!&#39;</span></span></code></pre></div>
+<h3 id="using-lodash-_truncate">Using Lodash
+<code>_.truncate</code></h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">formatExact</span>(str<span class="op">,</span> length) {</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (str<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> length) {</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> _<span class="op">.</span><span class="fu">truncate</span>(str<span class="op">,</span> { <span class="dt">length</span><span class="op">:</span> length<span class="op">,</span> <span class="dt">omission</span><span class="op">:</span> <span class="st">&#39;&#39;</span> })<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> _<span class="op">.</span><span class="fu">padEnd</span>(str<span class="op">,</span> length)<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="alignment-with-native-javascript">Alignment with Native
+JavaScript</h2>
+<p>Lodash's implementation matches the ECMAScript standard for native
+<code>String.prototype.padEnd()</code>. According to the specification,
+if <code>targetLength</code> is less than or equal to the string length,
+the native method also returns the original string without
+modification.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

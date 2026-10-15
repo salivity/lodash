@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Set Polyfill Garbage Collection and Security - lodash</title>
+    <meta name="description" content="This article examines how Lodash implements its internal Set mechanisms—primarily through SetCache and MapCache—to maintain memory safety, facilitate efficient garbage collection, and prevent security vulnerabilities. By isolating key-value storage, avoid">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-set-polyfill-garbage-collection-and-security">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Set Polyfill Garbage Collection and Security - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-set-polyfill-garbage-collection-and-security" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how Lodash implements its internal Set mechanisms—primarily through SetCache and MapCache—to maintain memory safety, facilitate efficient garbage collection, and prevent security vulnerabilities. By isolating key-value storage, avoid" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-set-polyfill-garbage-collection-and-security">Lodash Set
+Polyfill Garbage Collection and Security</h1>
+<p>This article examines how Lodash implements its internal Set
+mechanisms—primarily through <code>SetCache</code> and
+<code>MapCache</code>—to maintain memory safety, facilitate efficient
+garbage collection, and prevent security vulnerabilities. By isolating
+key-value storage, avoiding global state retention, and actively
+neutralizing prototype pollution risks, Lodash ensures that temporary
+collections are safely allocated and swiftly reclaimed by the JavaScript
+runtime's garbage collector.</p>
+<h3 id="architecture-of-lodashs-internal-set">Architecture of Lodash's
+Internal Set</h3>
+<p>Rather than polyfilling the global <code>window.Set</code> or
+<code>global.Set</code>, Lodash encapsulates unique-value collections
+inside internal classes named <code>SetCache</code> and
+<code>MapCache</code>. A <code>SetCache</code> wraps around
+<code>MapCache</code>, which dynamically chooses between different
+storage mechanisms depending on the data types and dataset size:</p>
+<ul>
+<li><strong>ListCache:</strong> Used for smaller sets (typically under
+200 elements), performing linear scans over an array of key-value
+pairs.</li>
+<li><strong>Hash:</strong> Used for large sets of primitive keys,
+utilizing plain JavaScript objects as lookup tables.</li>
+<li><strong>Map:</strong> Utilized directly if the native JavaScript
+<code>Map</code> is supported by the execution environment.</li>
+</ul>
+<p>This tiered system ensures optimal lookup performance while managing
+the memory footprint dynamically.</p>
+<h3 id="ephemeral-lifecycles-and-scoped-garbage-collection">Ephemeral
+Lifecycles and Scoped Garbage Collection</h3>
+<p>The primary mechanism Lodash uses to ensure clean garbage collection
+is strict lifecycle scoping. Functions that require uniqueness
+checks—such as <code>_.uniq</code>, <code>_.difference</code>, and
+<code>_.intersection</code>—create a <code>SetCache</code> locally
+within the execution frame of the function call.</p>
+<p>Because the cache exists only within the function's local scope, it
+is dropped as soon as the function returns its transformed output. The
+JavaScript engine’s mark-and-sweep garbage collector quickly identifies
+that there are no remaining reference paths from the root context to the
+cache. Consequently, both the cache structure and the references it held
+become immediately eligible for memory reclamation.</p>
+<h3 id="reference-severing-via-explicit-clear-methods">Reference
+Severing via Explicit Clear Methods</h3>
+<p>In instances where caches persist across multiple operations (such as
+in memoized functions), Lodash avoids memory leaks through built-in
+cache-clearing mechanisms. Each cache abstraction implements a
+<code>clear()</code> method that resets internal state:</p>
+<ul>
+<li><code>ListCache.prototype.clear</code> drops its internal
+<code>__data__</code> array by assigning it to a fresh, empty array
+(<code>this.__data__ = []</code>).</li>
+<li><code>MapCache.prototype.clear</code> reinitializes its sub-caches
+(<code>hash</code>, <code>map</code>, and <code>string</code>).</li>
+<li><code>Hash.prototype.clear</code> assigns a fresh dictionary created
+with no prototype
+(<code>this.__data__ = Object.create ? Object.create(null) : {}</code>).</li>
+</ul>
+<p>Reassigning these internal properties unlinks previously stored
+object references. Severing these pointers prevents stale object graphs
+from remaining pinned in heap memory, allowing the garbage collector to
+reclaim unreachable instances.</p>
+<h3 id="prototype-pollution-defense-and-memory-isolation">Prototype
+Pollution Defense and Memory Isolation</h3>
+<p>A critical security vulnerability in JavaScript object-based sets is
+prototype pollution. If user-controlled input contains keys such as
+<code>__proto__</code>, <code>constructor</code>, or
+<code>prototype</code>, writing them directly to a standard object
+(<code>{}</code>) can alter the global <code>Object.prototype</code>.
+This can introduce security exploits and cause memory leaks, as modified
+prototype chains permanently retain references in the global scope.</p>
+<p>Lodash mitigates this within its <code>Hash</code> cache by creating
+storage containers via <code>Object.create(null)</code> when supported.
+Because these objects do not inherit from <code>Object.prototype</code>,
+properties like <code>toString</code> or <code>__proto__</code> are
+treated as normal string keys rather than special object accessors.</p>
+<p>For environments lacking <code>Object.create(null)</code>, Lodash
+uses a prefixing or separate handling mechanism for sensitive keys. By
+preventing prototype pollution, Lodash ensures that keys are confined to
+the instance and cannot leak into root-level objects, preserving both
+runtime security and predictable garbage collection behavior.</p>
+<h3 id="type-segregated-key-storage">Type-Segregated Key Storage</h3>
+<p>Lodash separates internal storage by type to avoid hash collision
+issues and unexpected string coercion. Object references, primitive
+strings, and other primitive types are routed to their respective
+sub-caches inside <code>MapCache</code>.</p>
+<p>Complex objects are retained as distinct references rather than
+stringified representations. When native <code>Map</code> or
+<code>Set</code> implementations are present, Lodash delegates to them
+directly. This allows the host V8 or JavaScriptCore engine to handle
+reference counts and collection passes at the native C++ layer, ensuring
+that objects held by the cache do not outlive their utility.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

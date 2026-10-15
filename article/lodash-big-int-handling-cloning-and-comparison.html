@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash BigInt Handling: Cloning and Comparison - lodash</title>
+    <meta name="description" content="Lodash handles modern JavaScript BigInt primitives seamlessly in standard cloning and comparison operations, treating them as immutable values much like standard numbers or strings. However, because Lodash v4 predates the official release of ECMAScript 20">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-big-int-handling-cloning-and-comparison">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash BigInt Handling: Cloning and Comparison - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-big-int-handling-cloning-and-comparison" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash handles modern JavaScript BigInt primitives seamlessly in standard cloning and comparison operations, treating them as immutable values much like standard numbers or strings. However, because Lodash v4 predates the official release of ECMAScript 20" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-bigint-handling-cloning-and-comparison">Lodash BigInt
+Handling: Cloning and Comparison</h1>
+<p>Lodash handles modern JavaScript <code>BigInt</code> primitives
+seamlessly in standard cloning and comparison operations, treating them
+as immutable values much like standard numbers or strings. However,
+because Lodash v4 predates the official release of ECMAScript 2020,
+nuances arise when dealing with wrapped <code>BigInt</code> objects
+(<code>Object(10n)</code>) or operations involving serialization. This
+article details how Lodash functions like <code>clone</code>,
+<code>cloneDeep</code>, and <code>isEqual</code> process
+<code>BigInt</code> primitives and their corresponding object
+wrappers.</p>
+<h3 id="cloning-bigint-primitives">Cloning BigInt Primitives</h3>
+<p>When using shallow cloning via <code>_.clone()</code> or recursive
+copying via <code>_.cloneDeep()</code>, Lodash evaluates input values to
+check if they are complex objects. Because primitive <code>BigInt</code>
+values (for example, <code>100n</code>) are primitive types, they return
+<code>false</code> for <code>_.isObject()</code>.</p>
+<p>Lodash bypasses deep traversal for primitives and directly returns
+the original value. Because primitive <code>BigInt</code> values in
+JavaScript are immutable, retaining the reference by value is standard
+and safe:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> original <span class="op">=</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">100</span>n<span class="op">,</span> <span class="dt">nested</span><span class="op">:</span> { <span class="dt">count</span><span class="op">:</span> <span class="dv">500</span>n } }<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> cloned <span class="op">=</span> _<span class="op">.</span><span class="fu">cloneDeep</span>(original)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(cloned<span class="op">.</span><span class="at">id</span> <span class="op">===</span> original<span class="op">.</span><span class="at">id</span>)<span class="op">;</span> <span class="co">// true</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="kw">typeof</span> cloned<span class="op">.</span><span class="at">nested</span><span class="op">.</span><span class="at">count</span>)<span class="op">;</span> <span class="co">// &quot;bigint&quot;</span></span></code></pre></div>
+<p>In any nested data structure, <code>_.cloneDeep()</code> will
+traverse the surrounding plain objects or arrays and leave the
+<code>BigInt</code> leaves intact without converting them to standard
+numbers or throwing type errors.</p>
+<h3 id="cloning-bigint-object-wrappers">Cloning BigInt Object
+Wrappers</h3>
+<p>JavaScript allows primitives to be wrapped inside an object using
+<code>Object(100n)</code>. Lodash relies on internal tag classification
+(such as <code>[object Number]</code> or <code>[object String]</code>)
+via <code>Object.prototype.toString.call()</code> to copy wrapped
+primitives.</p>
+<p>Because Lodash 4 does not include an explicit case for
+<code>[object BigInt]</code>, invoking <code>_.clone()</code> or
+<code>_.cloneDeep()</code> on an <code>Object(100n)</code> instance
+treats it as a general object. This results in an empty plain object
+<code>{}</code> rather than a properly cloned <code>BigInt</code> object
+instance:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> wrapped <span class="op">=</span> <span class="bu">Object</span>(<span class="dv">100</span>n)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> clonedWrapped <span class="op">=</span> _<span class="op">.</span><span class="fu">cloneDeep</span>(wrapped)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(clonedWrapped)<span class="op">;</span> <span class="co">// {}</span></span></code></pre></div>
+<p>Applications should avoid wrapping <code>BigInt</code> inside object
+wrappers when relying on Lodash for deep cloning.</p>
+<h3 id="comparing-bigints-with-_isequal">Comparing BigInts with
+<code>_.isEqual</code></h3>
+<p>Lodash’s <code>_.isEqual()</code> performs deep comparisons using a
+variation of the <code>SameValueZero</code> equality algorithm for
+primitive values:</p>
+<ol type="1">
+<li><p><strong>Primitive-to-Primitive:</strong> Comparing identical
+<code>BigInt</code> primitives returns <code>true</code>.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isEqual</span>(<span class="dv">42</span>n<span class="op">,</span> <span class="dv">42</span>n)<span class="op">;</span> <span class="co">// true</span></span></code></pre></div></li>
+<li><p><strong>Type Discrepancies:</strong> Comparing a
+<code>BigInt</code> to a standard JavaScript <code>Number</code> of the
+same mathematical value returns <code>false</code> because strict type
+equality is enforced.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">isEqual</span>(<span class="dv">42</span>n<span class="op">,</span> <span class="dv">42</span>)<span class="op">;</span> <span class="co">// false</span></span></code></pre></div></li>
+<li><p><strong>Wrapped Objects:</strong> Comparing wrapped
+<code>BigInt</code> objects (<code>Object(42n)</code>) with primitive
+<code>BigInt</code> values returns <code>false</code>. When comparing
+two separate wrapped objects (<code>Object(42n)</code> vs.
+<code>Object(42n)</code>), Lodash fails to match their internal values
+due to the missing <code>[object BigInt]</code> tag handler, resulting
+in unexpected <code>true</code> comparisons between differing wrapped
+values if both possess no enumerable properties.</p></li>
+</ol>
+<h3 id="summary-of-behavior">Summary of Behavior</h3>
+<ul>
+<li><strong>Primitive <code>BigInt</code> (<code>10n</code>):</strong>
+Fully supported. <code>_.clone</code> and <code>_.cloneDeep</code> copy
+them intact by value; <code>_.isEqual</code> compares them strictly by
+value and type.</li>
+<li><strong>Wrapped <code>BigInt</code> Objects
+(<code>Object(10n)</code>):</strong> Unsupported. Deep cloning will
+convert them to <code>{}</code> and equality checks will yield
+inaccurate results.</li>
+<li><strong>Serialization Warning:</strong> While Lodash functions clone
+<code>BigInt</code> properly, any custom clones that fallback to
+<code>JSON.stringify()</code> elsewhere in a pipeline will fail, as
+<code>BigInt</code> is not JSON-serializable by default.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

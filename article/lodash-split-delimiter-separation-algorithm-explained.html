@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Split Delimiter Separation Algorithm Explained - lodash</title>
+    <meta name="description" content="This article explores the internal architecture and algorithmic rules governing delimiter separation within the .split method of the Lodash JavaScript library. Readers will gain a clear understanding of how Lodash sanitizes incoming types, orchestrates bo">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-split-delimiter-separation-algorithm-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Split Delimiter Separation Algorithm Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-split-delimiter-separation-algorithm-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores the internal architecture and algorithmic rules governing delimiter separation within the .split method of the Lodash JavaScript library. Readers will gain a clear understanding of how Lodash sanitizes incoming types, orchestrates bo" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-split-delimiter-separation-algorithm-explained">Lodash
+Split Delimiter Separation Algorithm Explained</h1>
+<p>This article explores the internal architecture and algorithmic rules
+governing delimiter separation within the <code>_.split</code> method of
+the Lodash JavaScript library. Readers will gain a clear understanding
+of how Lodash sanitizes incoming types, orchestrates boundary detection,
+safeguards Unicode surrogate pairs, and applies array truncation to
+produce deterministic, cross-engine split operations.</p>
+<h2 id="1-type-normalization-and-nil-handling">1. Type Normalization and
+Nil Handling</h2>
+<p>Before evaluating delimiters, <code>_.split</code> executes
+structural normalization on inputs to prevent standard runtime crashes
+associated with native JavaScript string methods:</p>
+<ul>
+<li><strong>String Coercion (<code>baseToString</code>):</strong> If the
+input target is <code>null</code> or <code>undefined</code>, the
+function returns an empty array immediately or normalizes the value to
+an empty string <code>""</code>. Primitive numbers, symbols, and objects
+are converted into string representations through internal helper
+utilities.</li>
+<li><strong>Limit Sanitization:</strong> The third argument,
+<code>limit</code>, undergoes conversion to an unsigned 32-bit integer
+(<code>toUint32</code>). If the limit is explicitly
+<code>undefined</code>, Lodash defaults to the maximum possible index
+(<code>MAX_ARRAY_LENGTH = 4294967295</code>).</li>
+</ul>
+<h2 id="2-separator-branching-logic">2. Separator Branching Logic</h2>
+<p>Lodash determines the traversal strategy based on the delimiter’s
+type:</p>
+<ul>
+<li><strong>Regular Expression Delimiters:</strong> When the delimiter
+is a <code>RegExp</code>, Lodash relies directly on
+<code>RegExp.prototype[Symbol.split]</code> or native
+<code>String.prototype.split</code>, passing the compiled pattern
+directly to the engine's internal matching routine.</li>
+<li><strong>String Delimiters:</strong> For standard character
+sequences, direct string index scanning occurs via engine
+primitives.</li>
+<li><strong>Empty Separator (<code>""</code>):</strong> When the
+delimiter is an empty string, traditional native splitting frequently
+corrupts astral symbols (such as emojis or complex modifier sequences)
+by splitting surrogate pairs. Lodash intercepts empty separators to
+safely map individual Unicode symbols via <code>hasUnicode</code> and
+<code>stringToArray</code> helpers.</li>
+</ul>
+<h2 id="3-unicode-and-surrogate-pair-awareness">3. Unicode and Surrogate
+Pair Awareness</h2>
+<p>JavaScript strings are UTF-16 code unit sequences. A character
+outside the Basic Multilingual Plane (BMP) spans two 16-bit code units.
+Lodash applies specific algorithmic checks:</p>
+<ol type="1">
+<li><strong>Detection:</strong> Lodash executes regular expression
+checks targeting astral symbols (<code>\ud800-\udfff</code>).</li>
+<li><strong>Segmentation:</strong> If Unicode symbols exist and the
+delimiter is empty, the string is converted via regex matching on
+grapheme boundaries rather than code unit indices.</li>
+<li><strong>Preservation:</strong> Surrogates remain paired, avoiding
+structural data degradation during character-by-character structural
+mapping.</li>
+</ol>
+<h2 id="4-native-delegation-and-the-castslice-pipeline">4. Native
+Delegation and the <code>castSlice</code> Pipeline</h2>
+<p>To maintain optimal execution speed, Lodash delegates standard
+non-Unicode splits directly to
+<code>String.prototype.split.call(string, separator)</code>. However,
+native implementations across disparate JavaScript runtimes have
+historically exhibited inconsistencies regarding how the
+<code>limit</code> argument truncates captured capture groups or empty
+boundary matches.</p>
+<p>Lodash normalizes this behavior with the following pipeline:</p>
+<ol type="1">
+<li><strong>Unbounded Execution:</strong> The string is split across all
+instances of the delimiter.</li>
+<li><strong>Buffer Extraction via <code>castSlice</code>:</strong>
+Instead of relying entirely on native limit engines, Lodash applies an
+internal slicing utility
+(<code>castSlice(array, 0, limit &gt;&gt;&gt; 0)</code>).</li>
+<li><strong>Memory Optimization:</strong> <code>castSlice</code> avoids
+copying operations if the resulting array length is already smaller than
+or equal to the sanitized limit, directly returning the original split
+reference.</li>
+</ol>
+<h2 id="5-algorithmic-execution-sequence">5. Algorithmic Execution
+Sequence</h2>
+<p>The complete structural path inside <code>_.split</code> executes
+systematically:</p>
+<pre class="text"><code>[Input Target, Delimiter, Limit]
+              │
+              ▼
+   [Sanitize &amp; Type Check]
+   ├─ string = baseToString(string)
+   └─ limit = limit === undefined ? MAX_ARRAY_LENGTH : toUint32(limit)
+              │
+              ▼
+    [Delimiter Analysis]
+   ├─ Is Delimiter Empty (&quot;&quot;) and String has Unicode?
+   │      └─ Parse with stringToArray(string)
+   └─ Standard Separator (RegExp / String)?
+          └─ Execute String.prototype.split(separator)
+              │
+              ▼
+     [Boundary Slicing]
+   └─ Apply castSlice(result, 0, limit)
+              │
+              ▼
+   [Return Segmented Array]</code></pre>
+<p>This sequence guarantees deterministic string separation across all
+supported environments, eliminating runtime exceptions from unexpected
+primitives while cleanly maintaining Unicode integrity.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

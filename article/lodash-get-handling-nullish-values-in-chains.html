@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.get: Handling Nullish Values in Chains - lodash</title>
+    <meta name="description" content="Lodash&#39;s .get method provides a fail-safe mechanism for retrieving deeply nested values in JavaScript objects without throwing runtime errors. When traversing a path where intermediate properties are null or undefined, the function safely short-circuits t">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-get-handling-nullish-values-in-chains">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.get: Handling Nullish Values in Chains - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-get-handling-nullish-values-in-chains" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .get method provides a fail-safe mechanism for retrieving deeply nested values in JavaScript objects without throwing runtime errors. When traversing a path where intermediate properties are null or undefined, the function safely short-circuits t" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_get-handling-nullish-values-in-chains">Lodash _.get:
+Handling Nullish Values in Chains</h1>
+<p>Lodash's <code>_.get</code> method provides a fail-safe mechanism for
+retrieving deeply nested values in JavaScript objects without throwing
+runtime errors. When traversing a path where intermediate properties are
+<code>null</code> or <code>undefined</code>, the function safely
+short-circuits the evaluation and either returns <code>undefined</code>
+or a user-defined fallback value. This article explains the internal
+mechanics of how <code>_.get</code> parses paths, navigates object
+graphs, and gracefully terminates evaluation upon encountering nullish
+values.</p>
+<h3 id="the-problem-with-native-traversal">The Problem with Native
+Traversal</h3>
+<p>In standard JavaScript prior to optional chaining, traversing an
+object path like <code>user.profile.address.city</code> when
+<code>profile</code> is <code>null</code> or <code>undefined</code>
+triggers an uncaught exception:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Throws: TypeError: Cannot read properties of undefined (reading &#39;address&#39;)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> city <span class="op">=</span> user<span class="op">.</span><span class="at">profile</span><span class="op">.</span><span class="at">address</span><span class="op">.</span><span class="at">city</span><span class="op">;</span></span></code></pre></div>
+<p>Handling this natively required verbose guard clauses or deeply
+nested ternary operations.</p>
+<h3 id="internal-path-normalization">Internal Path Normalization</h3>
+<p>When you invoke <code>_.get(object, path, defaultValue)</code>, the
+method begins by standardizing the property path. Lodash accepts paths
+formatted as dot-notation strings (<code>'a.b.c'</code>),
+bracket-notation strings (<code>'a[0].b'</code>), or arrays of keys
+(<code>['a', 0, 'b']</code>).</p>
+<p>Lodash utilizes an internal function called <code>castPath</code> to
+transform any string path into a linear array of string keys. For
+example, <code>'user.posts[0].title'</code> is converted into
+<code>['user', 'posts', '0', 'title']</code>.</p>
+<h3 id="sequential-step-by-step-traversal">Sequential Step-by-Step
+Traversal</h3>
+<p>Once the path is converted into an array, <code>_.get</code>
+iteratively accesses each segment using an internal loop, moving one
+level deeper with each iteration:</p>
+<ol type="1">
+<li><strong>Base Check:</strong> The function maintains an internal
+pointer referencing the current object, starting with the root object
+provided in the first argument.</li>
+<li><strong>Nullish Guard:</strong> At the start of each step in the
+loop, <code>_.get</code> checks whether the current pointer is
+<code>null</code> or <code>undefined</code>.</li>
+<li><strong>Short-Circuiting:</strong> If the pointer evaluates to a
+nullish value at any point before the end of the path is reached, the
+iteration halts immediately. It does not attempt to access properties on
+that nullish reference.</li>
+<li><strong>Advancement:</strong> If the current value is valid
+(non-nullish), Lodash retrieves the next key via bracket access
+(<code>current = current[key]</code>) and advances to the next
+segment.</li>
+</ol>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> order <span class="op">=</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">id</span><span class="op">:</span> <span class="dv">101</span><span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">customer</span><span class="op">:</span> <span class="kw">null</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Halts at &#39;customer&#39; because it is null, avoiding an error on &#39;email&#39;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> email <span class="op">=</span> _<span class="op">.</span><span class="fu">get</span>(order<span class="op">,</span> <span class="st">&#39;customer.email&#39;</span>)<span class="op">;</span> </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Result: undefined</span></span></code></pre></div>
+<h3 id="resolving-to-default-values">Resolving to Default Values</h3>
+<p>A critical aspect of <code>_.get</code> is its handling of default
+values. The fallback value is only returned under specific
+conditions:</p>
+<ul>
+<li>If the traversal short-circuits due to a <code>null</code> or
+<code>undefined</code> parent, the final computed value is considered
+<code>undefined</code>.</li>
+<li>If the path successfully resolves to an explicit
+<code>undefined</code>, the fallback triggers.</li>
+<li>If the path resolves to an explicit <code>null</code>, the default
+value <strong>does not</strong> trigger by default, because
+<code>null</code> is considered an intentional value in JavaScript.</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">name</span><span class="op">:</span> <span class="st">&quot;Alex&quot;</span><span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">preferences</span><span class="op">:</span> <span class="kw">null</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">// 1. Unreachable property due to null parent -&gt; returns default</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">get</span>(user<span class="op">,</span> <span class="st">&#39;preferences.theme&#39;</span><span class="op">,</span> <span class="st">&#39;dark&#39;</span>)<span class="op">;</span> <span class="co">// Returns: &#39;dark&#39;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">// 2. Property explicitly exists as null -&gt; returns null, not default</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">get</span>(user<span class="op">,</span> <span class="st">&#39;preferences&#39;</span><span class="op">,</span> <span class="st">&#39;default_preferences&#39;</span>)<span class="op">;</span> <span class="co">// Returns: null</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">// 3. Property does not exist -&gt; returns default</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">get</span>(user<span class="op">,</span> <span class="st">&#39;settings.notifications&#39;</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span> <span class="co">// Returns: true</span></span></code></pre></div>
+<p>By decomposing the path into atomic segments and enforcing strict
+nullish checks before every individual property access,
+<code>_.get</code> ensures safe navigation through incomplete, dynamic,
+or unpredictable data structures.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

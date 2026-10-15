@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash assignInWith Custom Conflict Resolution - lodash</title>
+    <meta name="description" content="The Lodash .assignInWith method offers a flexible way to merge objects by copying both own and inherited enumerable string-keyed properties from source objects to a destination object, while allowing developers to resolve property collisions using a custo">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-assign-in-with-custom-conflict-resolution">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash assignInWith Custom Conflict Resolution - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-assign-in-with-custom-conflict-resolution" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .assignInWith method offers a flexible way to merge objects by copying both own and inherited enumerable string-keyed properties from source objects to a destination object, while allowing developers to resolve property collisions using a custo" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-assigninwith-custom-conflict-resolution">Lodash
+assignInWith Custom Conflict Resolution</h1>
+<p>The Lodash <code>_.assignInWith</code> method offers a flexible way
+to merge objects by copying both own and inherited enumerable
+string-keyed properties from source objects to a destination object,
+while allowing developers to resolve property collisions using a
+customizer function. When standard shallow copying or simple overrides
+fall short, this method provides complete control over how conflicting
+keys are evaluated, merged, or discarded.</p>
+<h2 id="how-_assigninwith-works">How _.assignInWith Works</h2>
+<p><code>_.assignInWith</code> extends the functionality of
+<code>_.assignIn</code> (which behaves like <code>Object.assign</code>,
+but includes inherited prototype properties) by accepting an additional
+callback function, traditionally named <code>customizer</code>.</p>
+<p>The syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">assignInWith</span>(object<span class="op">,</span> sources<span class="op">,</span> [customizer])</span></code></pre></div>
+<ul>
+<li><strong><code>object</code></strong>: The destination target
+object.</li>
+<li><strong><code>sources</code></strong>: One or more source objects
+containing properties to assign.</li>
+<li><strong><code>customizer</code></strong>: The function invoked to
+produce the assigned values.</li>
+</ul>
+<h2 id="the-customizer-function">The Customizer Function</h2>
+<p>Whenever <code>_.assignInWith</code> iterates through a property from
+a source object, it invokes the <code>customizer</code> function before
+making an assignment. The <code>customizer</code> receives five
+arguments:</p>
+<ol type="1">
+<li><code>objValue</code>: The current property value in the destination
+object.</li>
+<li><code>srcValue</code>: The property value in the source object
+attempting to overwrite it.</li>
+<li><code>key</code>: The key name of the property being assigned.</li>
+<li><code>object</code>: The destination object.</li>
+<li><code>source</code>: The source object currently being read.</li>
+</ol>
+<p>By inspecting these parameters, you can intercept any key collision
+and determine the outcome based on custom business logic.</p>
+<h2 id="resolving-conflicts-with-examples">Resolving Conflicts with
+Examples</h2>
+<p>By default, without a customizer, standard assignment replaces
+<code>objValue</code> with <code>srcValue</code>. With
+<code>_.assignInWith</code>, returning a value from the customizer sets
+that returned value on the destination key.</p>
+<h3 id="example-merging-arrays-instead-of-overwriting">Example: Merging
+Arrays Instead of Overwriting</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">customizer</span>(objValue<span class="op">,</span> srcValue) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="bu">Array</span><span class="op">.</span><span class="fu">isArray</span>(objValue)) {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> objValue<span class="op">.</span><span class="fu">concat</span>(srcValue)<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> defaults <span class="op">=</span> { <span class="dt">tags</span><span class="op">:</span> [<span class="st">&#39;javascript&#39;</span>]<span class="op">,</span> <span class="dt">settings</span><span class="op">:</span> { <span class="dt">theme</span><span class="op">:</span> <span class="st">&#39;dark&#39;</span> } }<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> userConfig <span class="op">=</span> { <span class="dt">tags</span><span class="op">:</span> [<span class="st">&#39;webdev&#39;</span>]<span class="op">,</span> <span class="dt">settings</span><span class="op">:</span> { <span class="dt">theme</span><span class="op">:</span> <span class="st">&#39;light&#39;</span> } }<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">assignInWith</span>({}<span class="op">,</span> defaults<span class="op">,</span> userConfig<span class="op">,</span> customizer)<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result<span class="op">.</span><span class="at">tags</span>)<span class="op">;</span> </span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [&#39;javascript&#39;, &#39;webdev&#39;]</span></span></code></pre></div>
+<p>In this scenario, rather than <code>userConfig.tags</code> replacing
+<code>defaults.tags</code>, the collision is detected, and the arrays
+are concatenated.</p>
+<h3 id="example-conditional-overrides-based-on-key">Example: Conditional
+Overrides Based on Key</h3>
+<p>You can target specific keys directly using the <code>key</code>
+parameter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">resolveConflicts</span>(objValue<span class="op">,</span> srcValue<span class="op">,</span> key) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (key <span class="op">===</span> <span class="st">&#39;score&#39;</span>) {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Keep the higher score during a merge</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">max</span>(objValue <span class="op">||</span> <span class="dv">0</span><span class="op">,</span> srcValue)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> playerState <span class="op">=</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alex&#39;</span><span class="op">,</span> <span class="dt">score</span><span class="op">:</span> <span class="dv">50</span> }<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> checkpoint <span class="op">=</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alex&#39;</span><span class="op">,</span> <span class="dt">score</span><span class="op">:</span> <span class="dv">35</span> }<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">assignInWith</span>(playerState<span class="op">,</span> checkpoint<span class="op">,</span> resolveConflicts)<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(playerState<span class="op">.</span><span class="at">score</span>)<span class="op">;</span> </span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: 50</span></span></code></pre></div>
+<h2 id="the-fallback-to-default-assignment">The Fallback to Default
+Assignment</h2>
+<p>If the <code>customizer</code> function returns
+<code>undefined</code>, Lodash falls back to its default assignment
+behavior, which simply overwrites <code>objValue</code> with
+<code>srcValue</code>. This design eliminates the need to write
+exhaustive <code>switch</code> or <code>if/else</code> statements for
+every single property; you only need to return values for the specific
+conflicts you wish to handle.</p>
+<h2 id="handling-inherited-properties">Handling Inherited
+Properties</h2>
+<p>Because <code>_.assignInWith</code> traverses the prototype chain, it
+inspects properties inherited through prototypes on the source objects.
+If an inherited property on a source object conflicts with an own
+property on the destination object, the <code>customizer</code> will
+still fire, giving you the ability to prevent or accept prototype
+pollution and unintended overrides dynamically.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

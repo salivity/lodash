@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.after Restricts Execution Timing - lodash</title>
+    <meta name="description" content="The .after function in the Lodash JavaScript library is a higher-order utility that restricts a callback function from running until it has been invoked a specified number of times. By maintaining an internal counter through a closure, it acts as an execu">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-after-restricts-execution-timing">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.after Restricts Execution Timing - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-after-restricts-execution-timing" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .after function in the Lodash JavaScript library is a higher-order utility that restricts a callback function from running until it has been invoked a specified number of times. By maintaining an internal counter through a closure, it acts as an execu" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_after-restricts-execution-timing">How Lodash _.after
+Restricts Execution Timing</h1>
+<p>The <code>_.after</code> function in the Lodash JavaScript library is
+a higher-order utility that restricts a callback function from running
+until it has been invoked a specified number of times. By maintaining an
+internal counter through a closure, it acts as an execution gate. This
+pattern allows developers to synchronize asynchronous operations, handle
+event thresholds, and guarantee that dependent logic only triggers once
+all prerequisite actions have finished.</p>
+<h3 id="how-_after-works-under-the-hood">How <code>_.after</code> Works
+Under the Hood</h3>
+<p>The method takes two arguments: an integer <code>n</code>
+representing the threshold count, and <code>func</code>, the function to
+execute once that threshold is reached.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> done <span class="op">=</span> _<span class="op">.</span><span class="fu">after</span>(<span class="dv">3</span><span class="op">,</span> () <span class="kw">=&gt;</span> <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;All tasks complete!&#39;</span>))<span class="op">;</span></span></code></pre></div>
+<p>Internally, Lodash creates a closure around the <code>n</code>
+parameter. Each time the returned wrapper function is invoked, it
+decrements this internal counter. If the counter is greater than zero,
+the function returns <code>undefined</code> and prevents
+<code>func</code> from running. Once the counter reaches zero on the
+<span class="math inline">\(n\)</span>-th invocation, <code>func</code>
+is finally evaluated, receiving the arguments and context
+(<code>this</code> binding) of that triggering call.</p>
+<h3 id="execution-behavior-after-the-threshold">Execution Behavior After
+the Threshold</h3>
+<p>A key detail in how <code>_.after</code> restricts timing is what
+happens after the threshold is met:</p>
+<ul>
+<li><strong>Before <span class="math inline">\(n\)</span>
+calls:</strong> The target function is completely suppressed.</li>
+<li><strong>On the <span class="math inline">\(n\)</span>-th
+call:</strong> The target function executes for the first time.</li>
+<li><strong>After <span class="math inline">\(n\)</span> calls:</strong>
+Every subsequent call to the wrapped function continues to execute
+<code>func</code>.</li>
+</ul>
+<p>This differs from a one-time trigger; <code>_.after</code> does not
+permanently lock the function after one execution, but instead removes
+the restriction permanently once the minimum count is cleared.</p>
+<h3 id="primary-use-cases">Primary Use Cases</h3>
+<ol type="1">
+<li><strong>Aggregating Asynchronous Responses:</strong> Before
+<code>Promise.all</code> became standard, <code>_.after</code> was the
+primary tool for coordinating parallel callbacks. If three files are
+loading simultaneously, passing the <code>_.after</code> callback to
+each completion handler ensures the final processing step runs only
+after the third file finishes.</li>
+<li><strong>Event Thresholds:</strong> It restricts actions until a user
+interacts a set number of times, such as displaying a tutorial hint only
+after a button has been clicked three times.</li>
+<li><strong>Stream and Event Synchronization:</strong> When dealing with
+Node.js streams or event emitters that do not natively return promises,
+<code>_.after</code> guarantees a cleanup or finalization task runs only
+after a fixed set of events emit.</li>
+</ol>
+<h3 id="edge-cases-and-timing-modifiers">Edge Cases and Timing
+Modifiers</h3>
+<p>If <code>n</code> is set to <code>0</code> or a negative number,
+<code>_.after</code> applies no restriction, and the provided function
+executes immediately on the first call and every call thereafter.</p>
+<p>Unlike timing mechanisms such as <code>_.debounce</code> or
+<code>_.throttle</code>, which restrict execution across intervals of
+milliseconds, <code>_.after</code> restricts execution purely based on
+call frequency. It turns invocation quantity into an execution
+condition, allowing predictable control flow in multi-step asynchronous
+environments.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

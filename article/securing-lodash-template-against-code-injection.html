@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Securing Lodash _.template Against Code Injection - lodash</title>
+    <meta name="description" content="This article examines how Lodash’s .template function executes dynamic templates, analyzes the risks associated with dynamic code injection, and details the specific mechanisms used to constrain and secure execution contexts. By understanding Lodash&#39;s int">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/securing-lodash-template-against-code-injection">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Securing Lodash _.template Against Code Injection - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/securing-lodash-template-against-code-injection" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how Lodash’s .template function executes dynamic templates, analyzes the risks associated with dynamic code injection, and details the specific mechanisms used to constrain and secure execution contexts. By understanding Lodash&#39;s int" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="securing-lodash-_template-against-code-injection">Securing
+Lodash _.template Against Code Injection</h1>
+<p>This article examines how Lodash’s <code>_.template</code> function
+executes dynamic templates, analyzes the risks associated with dynamic
+code injection, and details the specific mechanisms used to constrain
+and secure execution contexts. By understanding Lodash's internal
+compilation to the JavaScript <code>Function</code> constructor,
+developers can implement strict sandboxing, delimiter constraints, and
+variable scoping to neutralize malicious execution dynamically.</p>
+<h3 id="the-mechanics-of-_template">The Mechanics of
+<code>_.template</code></h3>
+<p>Lodash’s <code>_.template</code> utility converts a template string
+into an executable JavaScript function. Internally, Lodash parses the
+string using regular expressions that identify three distinct
+syntactical delimiters:</p>
+<ul>
+<li><strong>Interpolate (<code>&lt;%= %&gt;</code>)</strong>: Evaluates
+expressions and outputs raw values.</li>
+<li><strong>Escape (<code>&lt;%- %&gt;</code>)</strong>: Evaluates
+expressions and outputs HTML-escaped values.</li>
+<li><strong>Evaluate (<code>&lt;% %&gt;</code>)</strong>: Executes
+arbitrary JavaScript logic, such as loops or conditionals.</li>
+</ul>
+<p>During compilation, Lodash builds a dynamic string representing the
+function body and instantiates it via <code>new Function(...)</code>.
+Because this dynamically generated string is evaluated directly by the
+JavaScript runtime engine, introducing untrusted user input into the
+template definition—rather than the data object—creates a critical
+dynamic template injection vulnerability that can lead to Remote Code
+Execution (RCE).</p>
+<h3 id="eliminating-scope-leakage-with-optionsvariable">Eliminating
+Scope Leakage with <code>options.variable</code></h3>
+<p>By default, Lodash compiles templates using a JavaScript
+<code>with (obj || {}) { ... }</code> block to allow direct access to
+properties passed within the data object. The <code>with</code>
+statement dynamically alters the lexical scope, which introduces
+performance penalties and enables scope-chain traversal exploits if
+dynamic input reaches object properties.</p>
+<p>To mitigate strictly dynamic scope injection, Lodash provides the
+<code>options.variable</code> configuration. Specifying an explicit
+variable name:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> compiled <span class="op">=</span> _<span class="op">.</span><span class="fu">template</span>(templateString<span class="op">,</span> { <span class="dt">variable</span><span class="op">:</span> <span class="st">&#39;data&#39;</span> })<span class="op">;</span></span></code></pre></div>
+<p>This configuration disables the generation of the <code>with</code>
+statement entirely. Lodash transforms internal property access to
+explicit lookups against the specified parameter (e.g.,
+<code>data.user</code> instead of <code>user</code>). This restricts the
+template’s execution context, preventing dynamic variables from leaking
+into or overriding higher-order execution scopes.</p>
+<h3 id="restricting-delimiters-dynamically">Restricting Delimiters
+Dynamically</h3>
+<p>A primary vector for injection is delimiter breakout, where an
+attacker injects closing delimiters (like <code>%&gt;</code>) to
+prematurely close an interpolation block and append unauthorized
+JavaScript statements.</p>
+<p>Lodash allows programmatic overriding of its default regular
+expressions (<code>_.templateSettings.interpolate</code>,
+<code>_.templateSettings.escape</code>, and
+<code>_.templateSettings.evaluate</code>). To prevent dynamic
+injection:</p>
+<ol type="1">
+<li><p><strong>Disable Evaluation</strong>: Nullify the
+<code>evaluate</code> setting dynamically if code execution is not
+strictly required:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> safeSettings <span class="op">=</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">evaluate</span><span class="op">:</span> <span class="ss">/</span><span class="sc">(?</span><span class="ss">!</span><span class="sc">)</span><span class="ss">GenericImpossibleRegex/</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div></li>
+<li><p><strong>Strict Delimiter Enforcement</strong>: Use rigid regex
+boundaries that ensure delimiters only capture anticipated alphanumeric
+or safe character formats, disallowing dynamic payload strings
+containing quotes, semicolons, or execution operators.</p></li>
+</ol>
+<h3
+id="addressing-sourceurl-and-dynamic-payload-sanitization">Addressing
+SourceURL and Dynamic Payload Sanitization</h3>
+<p>In earlier versions of Lodash, dynamic properties like
+<code>options.sourceURL</code> could be exploited to escape template
+definitions via newline injection (such as CVE-2021-23337). Lodash
+addressed this by applying strict sanitization to internal options
+passed during template creation.</p>
+<p>Lodash dynamically sanitizes internal strings by escaping control
+characters, carriage returns (<code>\r</code>), line feeds
+(<code>\n</code>), and backslashes before concatenating them into the
+executable string passed to the <code>Function</code> constructor. This
+prevents attackers from terminating dynamic string literals within the
+generated function body.</p>
+<h3 id="enforcement-of-context-isolation">Enforcement of Context
+Isolation</h3>
+<p>While Lodash provides internal escaping through its HTML entity map
+(<code>_.escape</code>), secure execution in multi-tenant or dynamic
+runtime environments requires strict boundaries:</p>
+<ul>
+<li><strong>Separate Template from Data</strong>: Untrusted input must
+only ever be passed as the runtime data object, never as the template
+definition itself.</li>
+<li><strong>Object Freezing</strong>: Lock down
+<code>_.templateSettings</code> using <code>Object.freeze()</code> to
+prevent prototype pollution attacks from dynamically modifying template
+delimiters across the entire Node.js process.</li>
+<li><strong>Runtime Sandboxing</strong>: When user-defined templates
+must be executed, isolate the generated template function within an
+isolated virtual machine or environment (such as
+<code>isolated-vm</code>) to restrict access to global objects like
+<code>process</code>, <code>require</code>, or
+<code>globalThis</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constraints of Lodash Default Map Cache - lodash</title>
+    <meta name="description" content="Lodash utilizes an internal caching mechanism for its memoization utilities, defaulting to a Map-based implementation when ES6 is available. While this default cache provides fast lookups and basic functionality out of the box, it comes with specific oper">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/constraints-of-lodash-default-map-cache">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Constraints of Lodash Default Map Cache - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/constraints-of-lodash-default-map-cache" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash utilizes an internal caching mechanism for its memoization utilities, defaulting to a Map-based implementation when ES6 is available. While this default cache provides fast lookups and basic functionality out of the box, it comes with specific oper" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="constraints-of-lodash-default-map-cache">Constraints of Lodash
+Default Map Cache</h1>
+<p>Lodash utilizes an internal caching mechanism for its memoization
+utilities, defaulting to a <code>Map</code>-based implementation when
+ES6 is available. While this default cache provides fast lookups and
+basic functionality out of the box, it comes with specific operational
+constraints regarding argument resolution, memory management, garbage
+collection, and key comparison that developers must manage to prevent
+performance degradation and memory leaks.</p>
+<h3 id="1-single-argument-key-resolution-by-default">1. Single-Argument
+Key Resolution by Default</h3>
+<p>The most common constraint encountered with Lodash’s memoization
+(<code>_.memoize</code>) is its key generation strategy. By default,
+Lodash only uses the first argument passed to the memoized function as
+the cache key:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> add <span class="op">=</span> (a<span class="op">,</span> b) <span class="kw">=&gt;</span> a <span class="op">+</span> b<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> memoizedAdd <span class="op">=</span> _<span class="op">.</span><span class="fu">memoize</span>(add)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">memoizedAdd</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span> <span class="co">// Evaluates add(2, 3) -&gt; 5</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">memoizedAdd</span>(<span class="dv">2</span><span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span> <span class="co">// Returns cached 5 because it only evaluated the first argument (2)</span></span></code></pre></div>
+<p>To use multiple arguments as a compound key, you must provide an
+explicit <code>resolver</code> function that serializes or combines all
+arguments.</p>
+<h3 id="2-unbounded-growth-and-lack-of-eviction-policies">2. Unbounded
+Growth and Lack of Eviction Policies</h3>
+<p>The default cache does not enforce a maximum size limit, nor does it
+implement an eviction strategy such as Least Recently Used (LRU), First
+In First Out (FIFO), or Time To Live (TTL) expiration.</p>
+<p>Every unique key passed to the memoized function remains in memory
+indefinitely unless the cache is manually cleared. In long-running
+processes, such as Node.js servers, functions called with a high
+cardinality of unique arguments will continuously consume memory,
+eventually leading to <code>OutOfMemory</code> errors.</p>
+<h3 id="3-strong-references-and-garbage-collection">3. Strong References
+and Garbage Collection</h3>
+<p>The default cache holds strong references to both the keys and the
+cached return values. Because it does not use a <code>WeakMap</code>,
+objects used as keys will not be eligible for garbage collection even if
+all other external references to them have been destroyed.</p>
+<p>If you pass large objects or DOM nodes as keys, they will remain
+retained in the cache indefinitely, preventing memory reclamation.</p>
+<h3 id="4-reference-equality-for-non-primitive-keys">4. Reference
+Equality for Non-Primitive Keys</h3>
+<p>Lodash’s <code>Map</code> cache uses the <code>SameValueZero</code>
+algorithm for key comparison (identical to standard JavaScript
+<code>Map</code> behavior).</p>
+<p>When passing objects or arrays as keys without a custom resolver:</p>
+<ul>
+<li>Lookups evaluate identity by reference, not structural
+equality.</li>
+<li>Passing two distinct objects with identical properties
+(<code>{ id: 1 }</code> and <code>{ id: 1 }</code>) results in two
+separate cache entries.</li>
+<li>Re-evaluations occur whenever an object literal or reconstructed
+object is passed, defeating the memoization logic.</li>
+</ul>
+<h3 id="5-overriding-constraints">5. Overriding Constraints</h3>
+<p>To address these limitations, Lodash allows you to replace
+<code>_.memoize.Cache</code> globally or instantiate a customized cache
+per function call:</p>
+<ul>
+<li><strong>For compound arguments:</strong> Pass a custom resolver
+function:
+<code>_.memoize(fn, (...args) =&gt; JSON.stringify(args))</code>.</li>
+<li><strong>For size limits and TTL:</strong> Replace the default cache
+constructor with an LRU cache implementation that conforms to the
+<code>Map</code> interface (<code>has</code>, <code>get</code>,
+<code>set</code>, <code>delete</code>, and <code>clear</code>
+methods).</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

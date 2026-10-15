@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Floor vs Bitwise Shift for Negative Numbers - lodash</title>
+    <meta name="description" content="While both Lodash&#39;s .floor and JavaScript bitwise shifting can eliminate fractional values, they handle negative numbers with opposing logic. The core difference lies in the direction of rounding: .floor performs true mathematical flooring by rounding dow">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-floor-vs-bitwise-shift-for-negative-numbers">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Floor vs Bitwise Shift for Negative Numbers - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-floor-vs-bitwise-shift-for-negative-numbers" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="While both Lodash&#39;s .floor and JavaScript bitwise shifting can eliminate fractional values, they handle negative numbers with opposing logic. The core difference lies in the direction of rounding: .floor performs true mathematical flooring by rounding dow" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-floor-vs-bitwise-shift-for-negative-numbers">Lodash Floor
+vs Bitwise Shift for Negative Numbers</h1>
+<p>While both Lodash's <code>_.floor</code> and JavaScript bitwise
+shifting can eliminate fractional values, they handle negative numbers
+with opposing logic. The core difference lies in the direction of
+rounding: <code>_.floor</code> performs true mathematical flooring by
+rounding downward toward negative infinity, whereas bitwise shift
+operations perform truncation by discarding the fractional part and
+rounding toward zero. This guide breaks down the functional differences,
+mechanics, and edge cases when applying both methods to negative
+values.</p>
+<h3 id="direction-of-rounding">Direction of Rounding</h3>
+<p>The mathematical definition of a floor operation requires rounding
+down to the nearest less-than-or-equal integer. Lodash’s
+<code>_.floor</code> mirrors JavaScript's native
+<code>Math.floor</code>, moving left on the number line.</p>
+<p>Bitwise shifts (such as the zero-fill right shift
+<code>&gt;&gt;&gt; 0</code>, right shift <code>&gt;&gt; 0</code>, or
+left shift <code>&lt;&lt; 0</code>) convert their operands into 32-bit
+integers. During this conversion (specifically the ECMAScript
+<code>ToInt32</code> operation), the JavaScript engine simply drops the
+fractional digits, pulling negative numbers rightward toward zero.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Using Lodash _.floor (rounds toward -Infinity)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">floor</span>(<span class="op">-</span><span class="fl">5.2</span>)<span class="op">;</span> <span class="co">// =&gt; -6</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">floor</span>(<span class="op">-</span><span class="fl">5.9</span>)<span class="op">;</span> <span class="co">// =&gt; -6</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Using Bitwise Shift (truncates toward 0)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="op">-</span><span class="fl">5.2</span> <span class="op">&gt;&gt;</span> <span class="dv">0</span><span class="op">;</span>     <span class="co">// =&gt; -5</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">-</span><span class="fl">5.9</span> <span class="op">&gt;&gt;</span> <span class="dv">0</span><span class="op">;</span>     <span class="co">// =&gt; -5</span></span></code></pre></div>
+<h3 id="comparison-with-native-methods">Comparison with Native
+Methods</h3>
+<p>To put this distinction into native JavaScript terminology:</p>
+<ul>
+<li><code>_.floor(x)</code> behaves identically to
+<code>Math.floor(x)</code>.</li>
+<li><code>x &gt;&gt; 0</code> behaves identically to
+<code>Math.trunc(x)</code> for numbers within the 32-bit signed integer
+range.</li>
+</ul>
+<p>For positive numbers, both operations produce the same result (e.g.,
+<code>_.floor(5.7)</code> is <code>5</code>, and
+<code>5.7 &gt;&gt; 0</code> is <code>5</code>). The divergence occurs
+exclusively when the operand is negative.</p>
+<h3 id="32-bit-integer-constraints">32-Bit Integer Constraints</h3>
+<p>Another critical difference when using bitwise shifts instead of
+<code>_.floor</code> is integer overflow.</p>
+<ul>
+<li><strong><code>_.floor</code></strong>: Operates on standard 64-bit
+double-precision floating-point numbers. It correctly processes safe
+integers up to <code>Number.MAX_SAFE_INTEGER</code> (<span
+class="math inline">\(2^{53} - 1\)</span>) and down to
+<code>Number.MIN_SAFE_INTEGER</code> (<span
+class="math inline">\(-2^{53} + 1\)</span>).</li>
+<li><strong>Bitwise Shifting</strong>: Forces numbers into a signed
+32-bit integer representation (ranging from <span
+class="math inline">\(-2,147,483,648\)</span> to <span
+class="math inline">\(2,147,483,647\)</span>). Any negative number
+exceeding this boundary wraps around due to two's complement arithmetic,
+causing data corruption.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// A large negative number</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> val <span class="op">=</span> <span class="op">-</span><span class="fl">3000000000.7</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">floor</span>(val)<span class="op">;</span> <span class="co">// =&gt; -3000000001 (correct)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>val <span class="op">&gt;&gt;</span> <span class="dv">0</span><span class="op">;</span>     <span class="co">// =&gt; 1294967295 (overflow/wrapped to positive)</span></span></code></pre></div>
+<h3 id="summary-of-differences">Summary of Differences</h3>
+<ul>
+<li><strong>Direction for Negative Inputs</strong>:
+<code>_.floor(-x.y)</code> decreases the value to <code>-x - 1</code>.
+Bitwise shift <code>-x.y &gt;&gt; 0</code> increases the value to
+<code>-x</code>.</li>
+<li><strong>Precision and Range</strong>: <code>_.floor</code> supports
+precision parameters (e.g., <code>_.floor(x, 2)</code>) and accommodates
+the full standard floating-point range. Bitwise shifts are strictly
+limited to the 32-bit integer domain and only strip all decimals without
+configurable precision.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

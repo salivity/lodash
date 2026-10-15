@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>When Lodash isArrayLikeObject Rejects a NodeList - lodash</title>
+    <meta name="description" content="By default, the Lodash utility method .isArrayLikeObject returns true when evaluated against a standard DOM NodeList because it is a non-null object featuring an integer-based length property. For .isArrayLikeObject to reject a NodeList and return false,">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/when-lodash-is-array-like-object-rejects-a-node-list">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="When Lodash isArrayLikeObject Rejects a NodeList - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/when-lodash-is-array-like-object-rejects-a-node-list" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="By default, the Lodash utility method .isArrayLikeObject returns true when evaluated against a standard DOM NodeList because it is a non-null object featuring an integer-based length property. For .isArrayLikeObject to reject a NodeList and return false," />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="when-lodash-isarraylikeobject-rejects-a-nodelist">When Lodash
+isArrayLikeObject Rejects a NodeList</h1>
+<p>By default, the Lodash utility method
+<code>_.isArrayLikeObject</code> returns <code>true</code> when
+evaluated against a standard DOM <code>NodeList</code> because it is a
+non-null object featuring an integer-based <code>length</code> property.
+For <code>_.isArrayLikeObject</code> to reject a <code>NodeList</code>
+and return <code>false</code>, the instance must fail either Lodash's
+internal <code>isObjectLike</code> check or its <code>isArrayLike</code>
+check. Below are the precise technical conditions required for
+rejection.</p>
+<h2 id="how-_isarraylikeobject-evaluates-values">How _.isArrayLikeObject
+Evaluates Values</h2>
+<p>Lodash defines <code>_.isArrayLikeObject</code> as:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isArrayLikeObject</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">isObjectLike</span>(value) <span class="op">&amp;&amp;</span> <span class="fu">isArrayLike</span>(value)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>A standard <code>NodeList</code> normally satisfies both
+prerequisites:</p>
+<ul>
+<li><code>isObjectLike(value)</code> ensures
+<code>typeof value === 'object'</code> and
+<code>value !== null</code>.</li>
+<li><code>isArrayLike(value)</code> ensures <code>value !== null</code>,
+<code>typeof value !== 'function'</code>, and
+<code>isLength(value.length)</code> is <code>true</code>.</li>
+</ul>
+<h2 id="explicit-rejection-conditions">Explicit Rejection
+Conditions</h2>
+<p>For a DOM <code>NodeList</code> to return <code>false</code>, one of
+the following explicit conditions must be met:</p>
+<h3 id="1-the-length-property-fails-islength-validation">1. The
+<code>length</code> Property Fails <code>isLength</code> Validation</h3>
+<p>Lodash validates the <code>length</code> property using the internal
+<code>isLength(value)</code> predicate. A <code>NodeList</code> will be
+rejected if its <code>.length</code> property is tampered with or
+corrupted so that it violates any of the following constraints:</p>
+<ul>
+<li><strong>Non-Integer Values:</strong> The <code>.length</code>
+property is modified to a floating-point number (e.g.,
+<code>nodeList.length = 2.5</code>), failing the
+<code>length % 1 === 0</code> integer check.</li>
+<li><strong>Negative Values:</strong> The <code>.length</code> property
+is set to a negative number (<code>length &lt; 0</code>).</li>
+<li><strong>Values Exceeding Safe Limits:</strong> The
+<code>.length</code> property exceeds the maximum safe integer limit
+(<code>nodeList.length &gt; Number.MAX_SAFE_INTEGER</code>, or
+<code>9007199254740991</code>).</li>
+<li><strong>Non-Numeric Types:</strong> The <code>.length</code>
+property is deleted or assigned a non-number type, such as a string,
+boolean, object, or <code>undefined</code>.</li>
+<li><strong>Not a Number (NaN) or Infinity:</strong> The
+<code>.length</code> property is set to <code>NaN</code>,
+<code>Infinity</code>, or <code>-Infinity</code>.</li>
+</ul>
+<h3 id="2-the-typeof-evaluation-returns-function">2. The
+<code>typeof</code> Evaluation Returns <code>'function'</code></h3>
+<p>Lodash explicitly rejects any value where
+<code>typeof value === 'function'</code>, even if that value possesses a
+valid <code>.length</code> property.</p>
+<ul>
+<li>In non-standard JavaScript runtimes, legacy browser engines, or
+polyfilled DOM environments where host objects or callable instances
+return <code>typeof nodeList === 'function'</code>,
+<code>_.isArrayLikeObject</code> will immediately evaluate to
+<code>false</code>.</li>
+<li>Wrapping the <code>NodeList</code> inside a Proxy or custom callable
+structure that mimics a function causes the same rejection.</li>
+</ul>
+<h3 id="3-the-reference-is-null-or-fails-object-classification">3. The
+Reference Is <code>null</code> or Fails Object Classification</h3>
+<p>The <code>isObjectLike</code> check requires the value to be both
+non-null and typed as an object:</p>
+<ul>
+<li><strong>Null Reference:</strong> If the DOM query (such as
+<code>document.querySelectorAll</code>) returns <code>null</code> or the
+reference variable is cleared to <code>null</code>, it fails
+<code>isObjectLike</code>.</li>
+<li><strong>Prototype Corruption / Coercion:</strong> If the
+<code>NodeList</code> instance is converted or coerced into a primitive
+(such as an empty string or symbol), it fails the
+<code>typeof value === 'object'</code> check.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

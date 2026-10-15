@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.isArray vs Array.isArray Polyfill - lodash</title>
+    <meta name="description" content="In modern JavaScript development, Lodash&#39;s .isArray and the native Array.isArray method are often treated interchangeably, but understanding how Lodash implements its fallback polyfill reveals important distinctions. While current versions of Lodash bind">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-is-array-vs-array-is-array-polyfill">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.isArray vs Array.isArray Polyfill - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-is-array-vs-array-is-array-polyfill" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In modern JavaScript development, Lodash&#39;s .isArray and the native Array.isArray method are often treated interchangeably, but understanding how Lodash implements its fallback polyfill reveals important distinctions. While current versions of Lodash bind" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_isarray-vs-arrayisarray-polyfill">Lodash _.isArray vs
+Array.isArray Polyfill</h1>
+<p>In modern JavaScript development, Lodash's <code>_.isArray</code> and
+the native <code>Array.isArray</code> method are often treated
+interchangeably, but understanding how Lodash implements its fallback
+polyfill reveals important distinctions. While current versions of
+Lodash bind directly to the native <code>Array.isArray</code> when
+available, its internal fallback mechanism differs from the native
+implementation in how it verifies object types, handles cross-realm
+objects, protects against ES6 <code>Symbol.toStringTag</code> spoofing,
+and resolves JavaScript proxies.</p>
+<h2 id="the-direct-reference-vs-fallback-mechanism">The Direct Reference
+vs. Fallback Mechanism</h2>
+<p>In modern Lodash environments (Lodash v4 and later),
+<code>_.isArray</code> is defined simply as:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> isArray <span class="op">=</span> <span class="bu">Array</span><span class="op">.</span><span class="at">isArray</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>module<span class="op">.</span><span class="at">exports</span> <span class="op">=</span> isArray<span class="op">;</span></span></code></pre></div>
+<p>When running in an environment with full ECMAScript 5+ support,
+<code>_.isArray</code> is an exact reference to native
+<code>Array.isArray</code>. However, in legacy builds, standalone
+implementations, or environments where native support is absent, Lodash
+falls back to an internal polyfill (often structured around
+<code>baseIsArray</code>).</p>
+<p>The standard polyfill implementation relies on string tag
+inspection:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isArray</span>(value) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">isObjectLike</span>(value) <span class="op">&amp;&amp;</span> <span class="fu">baseGetTag</span>(value) <span class="op">==</span> <span class="st">&#39;[object Array]&#39;</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="internal-slot-verification-vs-tag-checking">Internal Slot
+Verification vs. Tag Checking</h2>
+<p>The fundamental difference between the native method and the polyfill
+lies in how the runtime determines that an entity is an array:</p>
+<ul>
+<li><strong>Native <code>Array.isArray</code>:</strong> Checks for the
+presence of the internal <code>[[DefineOwnProperty]]</code> exotic array
+behavior or internal slots in the JavaScript engine. It does not inspect
+prototype strings.</li>
+<li><strong>Lodash Fallback:</strong> Checks that the value is an object
+(non-null and <code>typeof</code> is <code>'object'</code>) and
+evaluates its internal tag via
+<code>Object.prototype.toString.call(value)</code>.</li>
+</ul>
+<h2 id="resistance-to-symboltostringtag-spoofing">Resistance to
+<code>Symbol.toStringTag</code> Spoofing</h2>
+<p>In ECMAScript 2015 (ES6) and later, developers can customize object
+tag representations using <code>Symbol.toStringTag</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> fakeArray <span class="op">=</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  [<span class="bu">Symbol</span><span class="op">.</span><span class="at">toStringTag</span>]<span class="op">:</span> <span class="st">&#39;Array&#39;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<p>A rudimentary polyfill using
+<code>Object.prototype.toString.call(fakeArray)</code> evaluates to
+<code>'[object Array]'</code>, falsely identifying a plain object as an
+array.</p>
+<ul>
+<li><strong>Native <code>Array.isArray</code>:</strong> Completely
+ignores <code>Symbol.toStringTag</code> because it inspects internal
+engine slots, correctly identifying <code>fakeArray</code> as
+<code>false</code>.</li>
+<li><strong>Lodash Polyfill:</strong> Uses a specialized internal
+utility (<code>baseGetTag</code>) that detects whether an object has an
+own <code>Symbol.toStringTag</code> property. If present, it temporarily
+conceals or unmasks the symbol to read the true internal
+<code>[[Class]]</code>, minimizing the risk of spoofing before comparing
+the result to <code>'[object Array]'</code>.</li>
+</ul>
+<h2 id="cross-realm-and-proxy-behavior">Cross-Realm and Proxy
+Behavior</h2>
+<p>Both native <code>Array.isArray</code> and Lodash's polyfill
+successfully identify arrays created across different execution
+contexts, such as an <code>&lt;iframe&gt;</code> or Node.js
+<code>vm</code> module. Because separate realms possess different
+<code>Array.prototype</code> instances, <code>instanceof Array</code>
+fails, but both <code>Array.isArray</code> and
+<code>Object.prototype.toString.call</code> return true.</p>
+<p>However, Proxy handling differs:</p>
+<ul>
+<li><strong>Native <code>Array.isArray</code>:</strong> Automatically
+unwraps a <code>Proxy</code> object recursively to evaluate whether the
+underlying target is an array. If a proxy targets an array, native
+<code>Array.isArray(proxy)</code> evaluates to <code>true</code>.</li>
+<li><strong>Userland Polyfills:</strong> If a Proxy traps property
+access or prototype lookups, a pure JavaScript polyfill may not properly
+access the underlying target if proxy traps interfere with
+<code>Object.prototype.toString</code>.</li>
+</ul>
+<h2 id="execution-performance">Execution Performance</h2>
+<p>Native <code>Array.isArray</code> is implemented at the engine level
+(C++ in V8 and SpiderMonkey) and is recognized by JIT compilers as an
+intrinsic operation. It compiles down to efficient machine code
+instructions.</p>
+<p>The polyfill approach requires multiple userland steps:</p>
+<ol type="1">
+<li>Checking if the value is object-like.</li>
+<li>Handling null and undefined checks.</li>
+<li>Invoking <code>Object.prototype.toString</code> (or Lodash's
+<code>baseGetTag</code>).</li>
+<li>Allocating and comparing strings.</li>
+</ol>
+<p>While the modern <code>_.isArray</code> method executes with native
+speed by aliasing <code>Array.isArray</code>, Lodash's internal polyfill
+logic provides a defensive, tag-scrubbing fallback designed for legacy
+compatibility.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

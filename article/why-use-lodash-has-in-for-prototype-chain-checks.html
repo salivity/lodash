@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Use Lodash _.hasIn for Prototype Chain Checks - lodash</title>
+    <meta name="description" content="In modern JavaScript development, verifying whether an object contains a specific property is a routine task, but standard methods often fail when properties reside on the object&#39;s prototype rather than the instance itself. The Lodash library provides two">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/why-use-lodash-has-in-for-prototype-chain-checks">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Use Lodash _.hasIn for Prototype Chain Checks - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/why-use-lodash-has-in-for-prototype-chain-checks" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In modern JavaScript development, verifying whether an object contains a specific property is a routine task, but standard methods often fail when properties reside on the object&#39;s prototype rather than the instance itself. The Lodash library provides two" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-use-lodash-_hasin-for-prototype-chain-checks">Why Use Lodash
+_.hasIn for Prototype Chain Checks</h1>
+<p>In modern JavaScript development, verifying whether an object
+contains a specific property is a routine task, but standard methods
+often fail when properties reside on the object's prototype rather than
+the instance itself. The Lodash library provides two distinct functions
+for property detection: <code>_.has</code>, which only checks an
+object's direct (own) properties, and <code>_.hasIn</code>, which
+traverses the entire prototype chain. Developers use
+<code>_.hasIn</code> primarily to verify the existence of inherited
+methods, class behaviors, and properties in deeply nested structures
+without triggering runtime errors or writing verbose fallback
+checks.</p>
+<h2 id="the-core-difference-_has-vs-_hasin">The Core Difference:
+<code>_.has</code> vs. <code>_.hasIn</code></h2>
+<p>To understand why <code>_.hasIn</code> is necessary, you must
+distinguish between "own" properties and inherited properties.</p>
+<ul>
+<li><strong><code>_.has(object, path)</code></strong>: Behaves like
+<code>Object.prototype.hasOwnProperty()</code>. It checks only the
+direct properties assigned specifically to that target object.</li>
+<li><strong><code>_.hasIn(object, path)</code></strong>: Behaves like
+JavaScript's native <code>in</code> operator. It checks the target
+object, and if the property is not found, it continues up the prototype
+chain until it either finds the property or reaches the end of the chain
+(<code>null</code>).</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> parent <span class="op">=</span> { <span class="dt">inheritedProp</span><span class="op">:</span> <span class="st">&#39;I am inherited&#39;</span> }<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> child <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">create</span>(parent)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>child<span class="op">.</span><span class="at">ownProp</span> <span class="op">=</span> <span class="st">&#39;I am direct&#39;</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">has</span>(child<span class="op">,</span> <span class="st">&#39;inheritedProp&#39;</span>)<span class="op">;</span>   <span class="co">// false</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">hasIn</span>(child<span class="op">,</span> <span class="st">&#39;inheritedProp&#39;</span>)<span class="op">;</span> <span class="co">// true</span></span></code></pre></div>
+<h2 id="key-reasons-to-use-_hasin">Key Reasons to Use
+<code>_.hasIn</code></h2>
+<h3 id="1-handling-es6-classes-and-inheritance">1. Handling ES6 Classes
+and Inheritance</h3>
+<p>When using ES6 classes, methods defined in a class definition are
+placed on the class's prototype, not directly on the instantiated
+instance. If a utility function needs to check whether an instance
+implements a specific method, <code>_.has</code> will return
+<code>false</code>. Using <code>_.hasIn</code> correctly detects class
+methods:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Vehicle {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">startEngine</span>() {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> car <span class="op">=</span> <span class="kw">new</span> <span class="fu">Vehicle</span>()<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">has</span>(car<span class="op">,</span> <span class="st">&#39;startEngine&#39;</span>)<span class="op">;</span>   <span class="co">// false (method is on Vehicle.prototype)</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">hasIn</span>(car<span class="op">,</span> <span class="st">&#39;startEngine&#39;</span>)<span class="op">;</span> <span class="co">// true</span></span></code></pre></div>
+<h3 id="2-working-with-native-and-third-party-objects">2. Working with
+Native and Third-Party Objects</h3>
+<p>Many environments, including browser DOM nodes, Node.js streams, and
+third-party SDKs, rely heavily on prototype inheritance to share
+functionality across objects. For example, standard methods like
+<code>toString</code> or DOM APIs exist on prototype chains. When
+validating external input or wrappers, <code>_.hasIn</code> ensures you
+do not produce false negatives on inherited APIs.</p>
+<h3 id="3-safe-nested-path-navigation">3. Safe Nested Path
+Navigation</h3>
+<p>Native property checks using the <code>in</code> operator can fail if
+an intermediate key is <code>null</code> or <code>undefined</code>,
+throwing a <code>TypeError</code>. <code>_.hasIn</code> accepts path
+arrays or dot-notation strings (e.g.,
+<code>'config.settings.timeout'</code>) and traverses each level safely.
+If any intermediate parent in the path is missing, <code>_.hasIn</code>
+cleanly returns <code>false</code> instead of crashing the
+application.</p>
+<h3 id="4-avoiding-prototype-pollution-edge-cases">4. Avoiding Prototype
+Pollution Edge Cases</h3>
+<p>Directly invoking <code>object.hasOwnProperty(key)</code> can lead to
+errors if an object is created with <code>Object.create(null)</code>
+(which lacks <code>Object.prototype</code>), or if the
+<code>hasOwnProperty</code> property has been overwritten.
+<code>_.hasIn</code> avoids these pitfalls by wrapping the verification
+safely inside Lodash’s internal mechanics.</p>
+<h2 id="summary">Summary</h2>
+<p>Developers choose <code>_.hasIn</code> whenever an object's complete
+interface—both its own properties and everything inherited through the
+prototype chain—must be evaluated. It provides a defensive, safe, and
+clean alternative to combining the native <code>in</code> operator with
+manual <code>null</code> checks across nested data structures.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Customize Lodash Template Delimiters - lodash</title>
+    <meta name="description" content="Lodash’s .template utility allows developers to compile JavaScript templates using customizable regular expressions for delimiter syntax. By default, Lodash uses ERB-style tags, but it provides built-in configuration properties to customize three core del">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-to-customize-lodash-template-delimiters">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Customize Lodash Template Delimiters - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-to-customize-lodash-template-delimiters" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .template utility allows developers to compile JavaScript templates using customizable regular expressions for delimiter syntax. By default, Lodash uses ERB-style tags, but it provides built-in configuration properties to customize three core del" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-customize-lodash-template-delimiters">How to Customize
+Lodash Template Delimiters</h1>
+<p>Lodash’s <code>_.template</code> utility allows developers to compile
+JavaScript templates using customizable regular expressions for
+delimiter syntax. By default, Lodash uses ERB-style tags, but it
+provides built-in configuration properties to customize three core
+delimiters: <strong>evaluate</strong>, <strong>interpolate</strong>, and
+<strong>escape</strong>. This article breaks down each customizable
+delimiter property, explains how they function, and demonstrates how to
+configure them globally or per template.</p>
+<hr />
+<h3 id="the-three-customizable-delimiters">The Three Customizable
+Delimiters</h3>
+<p>Lodash controls delimiter matching via regular expressions defined
+either globally on <code>_.templateSettings</code> or locally via the
+<code>options</code> argument in
+<code>_.template(string, [options])</code>.</p>
+<h4 id="1-interpolate-interpolate">1. Interpolate
+(<code>interpolate</code>)</h4>
+<ul>
+<li><strong>Default Syntax:</strong>
+<code>&lt;%= value %&gt;</code></li>
+<li><strong>Purpose:</strong> Evaluates a JavaScript expression and
+injects the raw result directly into the output without escaping HTML
+characters.</li>
+<li><strong>Customization:</strong> Set <code>interpolate</code> to a
+regular expression matching your desired syntax (such as Mustache-style
+<code>{{ value }}</code>).</li>
+</ul>
+<h4 id="2-escape-escape">2. Escape (<code>escape</code>)</h4>
+<ul>
+<li><strong>Default Syntax:</strong>
+<code>&lt;%- value %&gt;</code></li>
+<li><strong>Purpose:</strong> Evaluates a JavaScript expression and
+injects the result into the output, automatically HTML-escaping
+characters such as <code>&amp;</code>, <code>&lt;</code>,
+<code>&gt;</code>, <code>"</code>, and <code>'</code> to prevent XSS
+attacks.</li>
+<li><strong>Customization:</strong> Set <code>escape</code> to a regular
+expression (such as Handlebars-style <code>{{{ value }}}</code>).</li>
+</ul>
+<h4 id="3-evaluate-evaluate">3. Evaluate (<code>evaluate</code>)</h4>
+<ul>
+<li><strong>Default Syntax:</strong> <code>&lt;% code %&gt;</code></li>
+<li><strong>Purpose:</strong> Executes arbitrary JavaScript code (such
+as <code>if</code> conditions, loops, or variable assignments) without
+directly writing the return value to the compiled output.</li>
+<li><strong>Customization:</strong> Set <code>evaluate</code> to a
+regular expression (such as Jinja/Twig-style
+<code>{% code %}</code>).</li>
+</ul>
+<hr />
+<h3 id="how-to-apply-custom-delimiters">How to Apply Custom
+Delimiters</h3>
+<p>You can configure delimiters in two ways: globally for all templates
+or locally for a single template instance.</p>
+<h4 id="global-configuration">Global Configuration</h4>
+<p>Modify <code>_.templateSettings</code> directly to change the default
+syntax across your entire application:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Switch to Mustache/Twig style delimiters globally</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="at">templateSettings</span><span class="op">.</span><span class="at">interpolate</span> <span class="op">=</span> <span class="ss">/{{</span><span class="sc">([\s\S]+?)</span><span class="ss">}}/g</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="at">templateSettings</span><span class="op">.</span><span class="at">escape</span> <span class="op">=</span> <span class="ss">/{{-</span><span class="sc">([\s\S]+?)</span><span class="ss">}}/g</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="at">templateSettings</span><span class="op">.</span><span class="at">evaluate</span> <span class="op">=</span> <span class="ss">/{%</span><span class="sc">\s*([\s\S]+?)\s*</span><span class="ss">%}/g</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Compiling using the new global delimiters</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> compiled <span class="op">=</span> _<span class="op">.</span><span class="fu">template</span>(<span class="st">&#39;Hello {{ user }}! {% if (isAdmin) { %} {{- adminTag }} {% } %}&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> output <span class="op">=</span> <span class="fu">compiled</span>({</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">user</span><span class="op">:</span> <span class="st">&#39;Alex&#39;</span><span class="op">,</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">isAdmin</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">adminTag</span><span class="op">:</span> <span class="st">&#39;&lt;b&gt;Administrator&lt;/b&gt;&#39;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h4 id="local-configuration">Local Configuration</h4>
+<p>Pass custom delimiter patterns within the optional second parameter
+of <code>_.template</code> to avoid side effects in other parts of the
+application:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> templateString <span class="op">=</span> <span class="st">&#39;Hello ${ name }, role: ${ role }&#39;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> compiled <span class="op">=</span> _<span class="op">.</span><span class="fu">template</span>(templateString<span class="op">,</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">interpolate</span><span class="op">:</span> <span class="ss">/</span><span class="sc">\$</span><span class="ss">{</span><span class="sc">([^\\}]+?)</span><span class="ss">}/g</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> <span class="fu">compiled</span>({ <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Sam&#39;</span><span class="op">,</span> <span class="dt">role</span><span class="op">:</span> <span class="st">&#39;Developer&#39;</span> })<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;Hello Sam, role: Developer&quot;</span></span></code></pre></div>
+<hr />
+<h3 id="summary-of-delimiter-settings">Summary of Delimiter
+Settings</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Option Key</th>
+<th style="text-align: left;">Default Pattern</th>
+<th style="text-align: left;">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>interpolate</code></td>
+<td style="text-align: left;"><code>/&lt;%=([\s\S]+?)%&gt;/g</code></td>
+<td style="text-align: left;">Unescaped variable/expression output</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>escape</code></td>
+<td style="text-align: left;"><code>/&lt;%-([\s\S]+?)%&gt;/g</code></td>
+<td style="text-align: left;">HTML-escaped variable/expression
+output</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>evaluate</code></td>
+<td style="text-align: left;"><code>/&lt;%([\s\S]+?)%&gt;/g</code></td>
+<td style="text-align: left;">JavaScript logic execution (loops,
+conditionals)</td>
+</tr>
+</tbody>
+</table></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

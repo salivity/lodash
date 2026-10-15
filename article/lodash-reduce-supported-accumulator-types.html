@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash reduce Supported Accumulator Types - lodash</title>
+    <meta name="description" content="The .reduce function in the Lodash JavaScript library is a versatile aggregation utility that supports any valid JavaScript data type as an accumulator. Because JavaScript is dynamically typed, .reduce does not restrict the accumulator to a predefined set">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-reduce-supported-accumulator-types">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash reduce Supported Accumulator Types - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-reduce-supported-accumulator-types" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .reduce function in the Lodash JavaScript library is a versatile aggregation utility that supports any valid JavaScript data type as an accumulator. Because JavaScript is dynamically typed, .reduce does not restrict the accumulator to a predefined set" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-reduce-supported-accumulator-types">Lodash reduce
+Supported Accumulator Types</h1>
+<p>The <code>_.reduce</code> function in the Lodash JavaScript library
+is a versatile aggregation utility that supports any valid JavaScript
+data type as an accumulator. Because JavaScript is dynamically typed,
+<code>_.reduce</code> does not restrict the accumulator to a predefined
+set of structures; developers can use primitive types such as numbers,
+strings, and booleans, complex references like plain objects and arrays,
+modern collections like <code>Map</code> and <code>Set</code>, or even
+omit the accumulator entirely to rely on the first element of the
+collection.</p>
+<h3 id="primitive-types">Primitive Types</h3>
+<ul>
+<li><strong>Numbers:</strong> The most common accumulator type for
+arithmetic operations. A number is typically initialized to
+<code>0</code> or <code>1</code> to calculate sums, products, averages,
+or counters.</li>
+<li><strong>Strings:</strong> Frequently initialized as an empty string
+(<code>""</code>) to concatenate values, format template strings, or
+build URL query parameters and serialized formats.</li>
+<li><strong>Booleans:</strong> Initialized to <code>true</code> or
+<code>false</code> to evaluate conditions across a dataset, serving as a
+flexible alternative to <code>_.every</code> or
+<code>_.some</code>.</li>
+</ul>
+<h3 id="object-and-array-types">Object and Array Types</h3>
+<ul>
+<li><strong>Plain Objects (<code>{}</code>):</strong> Highly common for
+grouping, indexing, or pivoting collections. An empty object accumulator
+allows transforming an array of items into a lookup table indexed by a
+specific property ID or creating a frequency distribution map.</li>
+<li><strong>Arrays (<code>[]</code>):</strong> Used when the output must
+be an ordered list. Using an array accumulator enables filtering,
+mapping, and flattening simultaneously in a single iteration pass,
+avoiding intermediate array allocations.</li>
+</ul>
+<h3 id="es6-collections">ES6 Collections</h3>
+<ul>
+<li><strong><code>Map</code>:</strong> Ideal when keys are dynamic,
+non-string types, or when frequent insertions and lookups require the
+performance guarantees of a hash map.</li>
+<li><strong><code>Set</code>:</strong> Used when collecting unique
+elements across a nested or duplicated data structure, ensuring all
+aggregated entries are distinct without manual deduplication logic.</li>
+</ul>
+<h3 id="custom-and-advanced-types">Custom and Advanced Types</h3>
+<ul>
+<li><strong>Class Instances:</strong> Custom instances can accumulate
+state, trigger internal validation, or run domain-specific methods
+during each iteration step.</li>
+<li><strong>Functions and Promises:</strong> Accumulators can be
+function pipelines (composing multiple functions) or promise chains to
+execute asynchronous tasks sequentially across an array of items.</li>
+</ul>
+<h3 id="omitted-accumulator-default-behavior">Omitted Accumulator
+(Default Behavior)</h3>
+<p>If the <code>accumulator</code> argument is omitted or passed as
+<code>undefined</code>, Lodash uses the first element of the collection
+as the initial accumulator value, and iteration begins with the second
+element. This behavior is standard for mathematical reductions like
+finding the maximum value (<code>Math.max</code>) or cumulative string
+joins where a separate seed value is unnecessary.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

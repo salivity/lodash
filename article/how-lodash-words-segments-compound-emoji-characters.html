@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash Words Segments Compound Emoji Characters - lodash</title>
+    <meta name="description" content="The Lodash .words utility accurately isolates words and complex characters—including compound emojis—by combining Unicode feature detection with an elaborate, purpose-built regular expression. When processing strings, Lodash avoids standard naive characte">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-words-segments-compound-emoji-characters">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash Words Segments Compound Emoji Characters - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-words-segments-compound-emoji-characters" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .words utility accurately isolates words and complex characters—including compound emojis—by combining Unicode feature detection with an elaborate, purpose-built regular expression. When processing strings, Lodash avoids standard naive characte" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-words-segments-compound-emoji-characters">How Lodash
+Words Segments Compound Emoji Characters</h1>
+<p>The Lodash <code>_.words</code> utility accurately isolates words and
+complex characters—including compound emojis—by combining Unicode
+feature detection with an elaborate, purpose-built regular expression.
+When processing strings, Lodash avoids standard naive character
+splitting, instead recognizing multi-codepoint sequences such as
+Zero-Width Joiners, variation selectors, and skin tone modifiers. This
+article explains how Lodash inspects input text, routes it to a
+specialized Unicode word tokenizer, and preserves the integrity of
+compound emojis.</p>
+<h3 id="the-challenge-of-compound-emojis-in-javascript">The Challenge of
+Compound Emojis in JavaScript</h3>
+<p>JavaScript represents strings using UTF-16 code units. While standard
+characters fit into a single 16-bit code unit, modern emojis often exist
+outside the Basic Multilingual Plane (BMP) as surrogate pairs (two
+16-bit units).</p>
+<p>Compound emojis increase this complexity by combining multiple
+individual emojis into a single visual glyph. These include:</p>
+<ul>
+<li><strong>Zero-Width Joiner (ZWJ) Sequences:</strong> Multiple
+distinct emojis glued together by the <code>\u200D</code> character
+(e.g., a technologist emoji composed of a person, a ZWJ, and a
+laptop).</li>
+<li><strong>Skin Tone Modifiers:</strong> Base emojis followed by one of
+five Fitzpatrick scale modifiers
+(<code>\uD83C[\uDFFB-\uDFFF]</code>).</li>
+<li><strong>Regional Indicator Symbols:</strong> Two consecutive
+regional indicator characters that combine to render national
+flags.</li>
+<li><strong>Keycap Sequences:</strong> A digit or symbol followed by an
+emoji variation selector (<code>\uFE0F</code>) and a combining enclosing
+keycap (<code>\u20E3</code>).</li>
+</ul>
+<p>Standard JavaScript methods like
+<code>String.prototype.split('')</code> or simplistic regular
+expressions split these sequences at the surrogate or joiner boundary,
+causing data corruption and rendering broken emoji fragments.</p>
+<h3 id="step-1-unicode-detection-routing">Step 1: Unicode Detection
+Routing</h3>
+<p>When <code>_.words(string, pattern)</code> is invoked without a
+custom pattern argument, Lodash determines whether the input string
+contains complex Unicode characters before running its tokenization
+logic.</p>
+<p>It checks the string against an internal regular expression—commonly
+referenced as <code>hasUnicodeWord</code> in the Lodash source. This
+check scans for code points outside the ASCII range, specifically
+looking for astral symbols, variation selectors, diacritics, and the
+zero-width joiner (<code>\u200D</code>).</p>
+<ul>
+<li>If the string contains only standard ASCII characters, Lodash routes
+it to <code>asciiWords</code>, a lightweight regular expression
+optimized for performance.</li>
+<li>If complex Unicode is detected, Lodash routes the string to
+<code>unicodeWords</code>, which deploys the heavy-duty Unicode parsing
+engine.</li>
+</ul>
+<h3 id="step-2-the-structure-of-the-unicode-word-regex">Step 2: The
+Structure of the Unicode Word Regex</h3>
+<p>The <code>unicodeWords</code> function relies on a compiled regular
+expression composed of modular Unicode ranges. To handle compound emojis
+alongside written scripts, Lodash constructs regex components that
+explicitly match compound emoji mechanics:</p>
+<ol type="1">
+<li><strong>Surrogate Pair Matching:</strong> High and low surrogate
+ranges are explicitly grouped to treat 32-bit astral symbols as atomic
+units rather than two separate characters.</li>
+<li><strong>Fitzpatrick Modifiers:</strong> The regex appends optional
+modifiers (<code>[\uD83C[\uDFFB-\uDFFF]]</code>) immediately following
+eligible person or hand glyphs to ensure tone adjustments remain
+attached to the base glyph.</li>
+<li><strong>Variation Selectors:</strong> Patterns include optional
+matches for <code>\uFE0E</code> (text presentation) and
+<code>\uFE0F</code> (emoji presentation), preventing selector bytes from
+detaching.</li>
+<li><strong>ZWJ Recursion Simulation:</strong> The regular expression
+uses non-capturing groups structured around <code>\u200D</code>. It
+defines an emoji pattern followed by
+<code>(?:\u200D(?:pattern))*</code>, allowing the regex engine to match
+indefinitely chained sequences (such as family or profession
+combinations) as a single token.</li>
+<li><strong>Flag Sequences:</strong> Pairs of Regional Indicator
+characters (<code>[\uD83C\uDDE6-\uD83C\uDDFF]</code>) are matched
+specifically in couples, ensuring flags are not split into isolated
+letters.</li>
+</ol>
+<h3 id="step-3-extraction-and-output">Step 3: Extraction and Output</h3>
+<p>Once the appropriate regular expression matches the text,
+<code>_.words</code> uses <code>String.prototype.match</code> against
+the compiled pattern. Because the emoji definitions within the pattern
+have higher structural precedence and greedily consume modifiers and
+ZWJ-linked sequences, the entire composite glyph is captured as an
+unbroken string element.</p>
+<p>The resulting array safely isolates standard language words alongside
+fully qualified compound emojis, maintaining the visual and technical
+integrity of the multi-byte characters.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

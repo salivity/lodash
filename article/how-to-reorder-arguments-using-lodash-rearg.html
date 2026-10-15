@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Reorder Arguments Using Lodash rearg - lodash</title>
+    <meta name="description" content="This article provides an overview of the .rearg method in the Lodash JavaScript library, detailing how it rearranges function arguments based on an array of specified indexes. You will learn the mechanics behind this functional programming utility, observ">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-to-reorder-arguments-using-lodash-rearg">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Reorder Arguments Using Lodash rearg - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-to-reorder-arguments-using-lodash-rearg" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of the .rearg method in the Lodash JavaScript library, detailing how it rearranges function arguments based on an array of specified indexes. You will learn the mechanics behind this functional programming utility, observ" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-reorder-arguments-using-lodash-rearg">How to Reorder
+Arguments Using Lodash rearg</h1>
+<p>This article provides an overview of the <code>_.rearg</code> method
+in the Lodash JavaScript library, detailing how it rearranges function
+arguments based on an array of specified indexes. You will learn the
+mechanics behind this functional programming utility, observe practical
+code demonstrations, and understand common use cases such as adapting
+mismatched callback signatures and improving function composition.</p>
+<h2 id="understanding-lodash-_rearg">Understanding Lodash
+<code>_.rearg</code></h2>
+<p>The <code>_.rearg</code> method creates a wrapper function that
+invokes the original function with its arguments rearranged according to
+a designated sequence of indexes. It is particularly useful when you
+need to adapt an existing function to work with APIs or higher-order
+functions that provide arguments in an incompatible order.</p>
+<h3 id="syntax">Syntax</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">rearg</span>(func<span class="op">,</span> indexes)</span></code></pre></div>
+<ul>
+<li><strong><code>func</code></strong> <em>(Function)</em>: The original
+function whose arguments you want to rearrange.</li>
+<li><strong><code>indexes</code></strong> <em>(Array|...number)</em>:
+The arranged argument indexes. This can be passed as a single array of
+numbers or as individual numeric arguments.</li>
+</ul>
+<h3 id="how-index-mapping-works">How Index Mapping Works</h3>
+<p>When using <code>_.rearg</code>, the position within the
+<code>indexes</code> array corresponds directly to the parameter
+position in the original function. The value at that position defines
+which incoming argument from the caller should be used.</p>
+<p>For example, if <code>indexes</code> is set to
+<code>[2, 0, 1]</code>:</p>
+<ul>
+<li>Parameter 0 of the target function receives the caller's argument at
+index <code>2</code>.</li>
+<li>Parameter 1 of the target function receives the caller's argument at
+index <code>0</code>.</li>
+<li>Parameter 2 of the target function receives the caller's argument at
+index <code>1</code>.</li>
+</ul>
+<h3 id="basic-example">Basic Example</h3>
+<p>Consider a function that formats three items in a specific order:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">formatNames</span>(first<span class="op">,</span> second<span class="op">,</span> third) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="vs">`</span><span class="sc">${</span>first<span class="sc">}</span><span class="vs"> -&gt; </span><span class="sc">${</span>second<span class="sc">}</span><span class="vs"> -&gt; </span><span class="sc">${</span>third<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Reorder so that:</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Original param 0 gets caller&#39;s arg 1</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Original param 1 gets caller&#39;s arg 2</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Original param 2 gets caller&#39;s arg 0</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> reorderedFormat <span class="op">=</span> _<span class="op">.</span><span class="fu">rearg</span>(formatNames<span class="op">,</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">0</span>])<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">reorderedFormat</span>(<span class="st">&#39;A&#39;</span><span class="op">,</span> <span class="st">&#39;B&#39;</span><span class="op">,</span> <span class="st">&#39;C&#39;</span>))<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;B -&gt; C -&gt; A&quot;</span></span></code></pre></div>
+<p>In this case:</p>
+<ul>
+<li>Calling <code>reorderedFormat('A', 'B', 'C')</code> passes
+<code>'B'</code> (index 1) to <code>first</code>.</li>
+<li><code>'C'</code> (index 2) is passed to <code>second</code>.</li>
+<li><code>'A'</code> (index 0) is passed to <code>third</code>.</li>
+</ul>
+<h3 id="handling-partial-indexes-and-out-of-bound-arguments">Handling
+Partial Indexes and Out-of-Bound Arguments</h3>
+<p>If the <code>indexes</code> array contains fewer entries than the
+arguments passed to the wrapper, only the arguments matching the defined
+indexes will be forwarded to the original function:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">listArgs</span>(a<span class="op">,</span> b) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> [a<span class="op">,</span> b]<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> takeSelected <span class="op">=</span> _<span class="op">.</span><span class="fu">rearg</span>(listArgs<span class="op">,</span> [<span class="dv">2</span><span class="op">,</span> <span class="dv">0</span>])<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">takeSelected</span>(<span class="st">&#39;zero&#39;</span><span class="op">,</span> <span class="st">&#39;one&#39;</span><span class="op">,</span> <span class="st">&#39;two&#39;</span><span class="op">,</span> <span class="st">&#39;three&#39;</span>))<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [&#39;two&#39;, &#39;zero&#39;]</span></span></code></pre></div>
+<p>Any extra arguments that are not mapped in the <code>indexes</code>
+list are dropped and will not reach the target function. If an index
+refers to an argument that the caller did not supply,
+<code>undefined</code> is passed in its place.</p>
+<h3 id="practical-use-case-adapting-callback-signatures">Practical Use
+Case: Adapting Callback Signatures</h3>
+<p>A common scenario for <code>_.rearg</code> is adapting callback
+signatures for libraries that expect parameters in different orders. For
+example, standard Node.js callbacks use <code>(err, data)</code>, while
+some third-party libraries pass <code>(data, err)</code>.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">nodeStyleCallback</span>(err<span class="op">,</span> data) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (err) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Error occurred:&#39;</span><span class="op">,</span> err)<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Result:&#39;</span><span class="op">,</span> data)<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Adapt a function that receives (data, err) to (err, data)</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> adaptedCallback <span class="op">=</span> _<span class="op">.</span><span class="fu">rearg</span>(nodeStyleCallback<span class="op">,</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">0</span>])<span class="op">;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">// Simulating a call from an alternative API:</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">adaptedCallback</span>(<span class="st">&#39;Success payload&#39;</span><span class="op">,</span> <span class="kw">null</span>)<span class="op">;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: &quot;Result: Success payload&quot;</span></span></code></pre></div>
+<p>Using <code>_.rearg</code> eliminates the need to write boilerplate
+anonymous wrapper functions just to flip or reorganize incoming
+parameters.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

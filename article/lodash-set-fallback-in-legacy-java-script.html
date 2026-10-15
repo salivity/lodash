@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Set Fallback in Legacy JavaScript - lodash</title>
+    <meta name="description" content="This article examines how the Lodash utility library achieves safe, graceful degradation when native ES6 Set objects are absent in legacy JavaScript environments. By analyzing Lodash’s dynamic feature detection, internal cache wrappers, and tiered storage">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-set-fallback-in-legacy-java-script">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Set Fallback in Legacy JavaScript - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-set-fallback-in-legacy-java-script" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the Lodash utility library achieves safe, graceful degradation when native ES6 Set objects are absent in legacy JavaScript environments. By analyzing Lodash’s dynamic feature detection, internal cache wrappers, and tiered storage" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-set-fallback-in-legacy-javascript">Lodash Set Fallback in
+Legacy JavaScript</h1>
+<p>This article examines how the Lodash utility library achieves safe,
+graceful degradation when native ES6 <code>Set</code> objects are absent
+in legacy JavaScript environments. By analyzing Lodash’s dynamic feature
+detection, internal cache wrappers, and tiered storage strategies, you
+will understand how functions like <code>uniq</code>,
+<code>difference</code>, and <code>intersection</code> maintain
+functional parity and avoid runtime exceptions without relying on global
+polyfills.</p>
+<h3 id="native-feature-detection-with-getnative">Native Feature
+Detection with <code>getNative</code></h3>
+<p>Lodash avoids assuming the availability of modern ECMAScript
+specifications. Instead of checking for a global <code>Set</code>
+directly via <code>window.Set</code> or <code>global.Set</code>, it uses
+an internal utility named <code>getNative</code>. This function checks
+if the target constructor exists on the resolved root environment and
+verifies that its string representation matches native engine code
+(typically containing <code>[native code]</code>).</p>
+<p>If a legacy environment lacks <code>Set</code>, or if a faulty
+third-party polyfill has tampered with the global object,
+<code>getNative(root, 'Set')</code> evaluates to <code>undefined</code>.
+This prevents the library from executing incompatible constructor calls
+or throwing unhandled <code>ReferenceError</code> exceptions during
+runtime.</p>
+<h3 id="the-setcache-abstraction">The <code>SetCache</code>
+Abstraction</h3>
+<p>When algorithms require unique collection tracking, Lodash does not
+interface with <code>Set</code> directly in its core algorithmic paths.
+Instead, it routes operations through an internal constructor called
+<code>SetCache</code>.</p>
+<p><code>SetCache</code> acts as a unified interface providing standard
+methods such as <code>add</code> and <code>has</code>. Under the hood,
+<code>SetCache</code> delegates storage to <code>MapCache</code>. It
+stores incoming values as keys in the cache and assigns each key a
+shared constant flag (such as <code>HASH_UNDEFINED</code>). This allows
+Lodash to emulate set-like uniqueness checks through key-existence
+lookups, irrespective of whether the runtime provides a true native
+set.</p>
+<h3 id="tiered-storage-fallbacks-hash-listcache-and-mapcache">Tiered
+Storage Fallbacks: <code>Hash</code>, <code>ListCache</code>, and
+<code>MapCache</code></h3>
+<p>When native <code>Set</code> and <code>Map</code> are completely
+unavailable, <code>MapCache</code> decomposes operations into three
+underlying storage engines based on the data type:</p>
+<ol type="1">
+<li><strong><code>Hash</code> for Primitives:</strong> Strings, numbers,
+booleans, and symbols are directed to an internal <code>Hash</code>
+implementation. To prevent prototype pollution and collisions with
+standard Object prototype properties (such as <code>toString</code> or
+<code>constructor</code>), Lodash constructs clean dictionary objects
+with <code>Object.create(null)</code> when supported, or prefixes string
+keys internally.</li>
+<li><strong><code>ListCache</code> for Complex Objects:</strong>
+Non-primitive references that cannot be converted cleanly into hashable
+string keys fall back to a two-dimensional array lookup
+(<code>ListCache</code>). This performs linear searches
+(<code>indexOf</code> style scans) using a custom
+<code>SameValueZero</code> equivalence comparison.</li>
+<li><strong>Dynamic Promotion:</strong> If an operation begins using
+<code>ListCache</code> and the element threshold exceeds internal limits
+(typically 200 elements), Lodash evaluates whether it can promote
+storage to higher-performance structures without destabilizing the host
+environment.</li>
+</ol>
+<h3 id="performance-and-algorithmic-trade-offs">Performance and
+Algorithmic Trade-Offs</h3>
+<p>In modern runtimes with native <code>Set</code> support, operations
+like <code>_.uniq</code> operate with near <span
+class="math inline">\(O(N)\)</span> time complexity. In legacy
+environments lacking both native <code>Set</code> and native
+<code>Map</code>, operations involving complex reference objects degrade
+to <span class="math inline">\(O(N^2)\)</span> because identity checks
+must iterate linearly across previously seen items.</p>
+<p>However, Lodash explicitly prioritizes deterministic execution over
+raw algorithmic complexity. By encapsulating these fallbacks entirely
+within its internal modular scope, Lodash ensures that legacy execution
+environments execute code safely, avoid modifying the global scope, and
+produce identical output without crashing.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

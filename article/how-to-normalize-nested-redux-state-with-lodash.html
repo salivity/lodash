@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Normalize Nested Redux State with Lodash - lodash</title>
+    <meta name="description" content="Managing deeply nested state in Redux often leads to convoluted reducer logic, accidental state mutations, and unnecessary component re-renders. Structural normalization resolves these issues by flattening nested hierarchies into relational, database-like">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-to-normalize-nested-redux-state-with-lodash">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Normalize Nested Redux State with Lodash - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-to-normalize-nested-redux-state-with-lodash" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Managing deeply nested state in Redux often leads to convoluted reducer logic, accidental state mutations, and unnecessary component re-renders. Structural normalization resolves these issues by flattening nested hierarchies into relational, database-like" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-normalize-nested-redux-state-with-lodash">How to
+Normalize Nested Redux State with Lodash</h1>
+<p>Managing deeply nested state in Redux often leads to convoluted
+reducer logic, accidental state mutations, and unnecessary component
+re-renders. Structural normalization resolves these issues by flattening
+nested hierarchies into relational, database-like structures organized
+by IDs. The Lodash utility library provides a robust, lightweight set of
+functional tools that streamline this transformation process, enabling
+developers to decompose nested API responses into normalized state
+slices without relying on heavier specialized schema-definition
+libraries.</p>
+<h2 id="the-challenge-of-nested-redux-state">The Challenge of Nested
+Redux State</h2>
+<p>API payloads frequently nest related resources—such as a blog post
+containing an author object and an array of comment objects, each with
+their own author. Storing this data hierarchically causes several
+architectural problems:</p>
+<ul>
+<li><strong>Duplication:</strong> The same user entity appearing in
+multiple comments is duplicated across the store.</li>
+<li><strong>Complex Reducer Logic:</strong> Updating deeply nested
+properties requires multiple levels of object spreading to maintain
+immutability.</li>
+<li><strong>Performance Degradation:</strong> Immutability updates to
+deeply nested objects trigger selector recomputations and component
+re-renders across the entire parent tree.</li>
+</ul>
+<p>Normalization flattens this structure into distinct entity tables
+indexed by ID, replacing nested objects with relational references
+(arrays of IDs).</p>
+<h2 id="key-lodash-functions-for-state-normalization">Key Lodash
+Functions for State Normalization</h2>
+<p>Lodash provides functional data-manipulation methods that map
+directly to the requirements of data normalization:</p>
+<h3 id="1-_keyby">1. <code>_.keyBy</code></h3>
+<p>The foundation of a normalized store is the lookup table (a
+dictionary indexed by entity ID). <code>_.keyBy</code> transforms a flat
+array of entities into an object keyed by a designated property:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> keyBy <span class="im">from</span> <span class="st">&#39;lodash/keyBy&#39;</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> postsArray <span class="op">=</span> [</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="st">&#39;p1&#39;</span><span class="op">,</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;First Post&#39;</span> }<span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="st">&#39;p2&#39;</span><span class="op">,</span> <span class="dt">title</span><span class="op">:</span> <span class="st">&#39;Second Post&#39;</span> }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> postsById <span class="op">=</span> <span class="fu">keyBy</span>(postsArray<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Result:</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">// {</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">//   p1: { id: &#39;p1&#39;, title: &#39;First Post&#39; },</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">//   p2: { id: &#39;p2&#39;, title: &#39;Second Post&#39; }</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">// }</span></span></code></pre></div>
+<h3 id="2-_mapvalues">2. <code>_.mapValues</code></h3>
+<p>When normalizing, parent entities must replace nested child objects
+with ID references. <code>_.mapValues</code> iterates over an indexed
+object and maps its properties to a new shape:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mapValues <span class="im">from</span> <span class="st">&#39;lodash/mapValues&#39;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Converting nested author objects to author IDs in a posts dictionary</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> normalizedPosts <span class="op">=</span> <span class="fu">mapValues</span>(postsById<span class="op">,</span> post <span class="kw">=&gt;</span> ({</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span>post<span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">author</span><span class="op">:</span> post<span class="op">.</span><span class="at">author</span><span class="op">.</span><span class="at">id</span><span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">comments</span><span class="op">:</span> post<span class="op">.</span><span class="at">comments</span><span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> c<span class="op">.</span><span class="at">id</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>}))<span class="op">;</span></span></code></pre></div>
+<h3 id="3-_flatmap-and-_uniqby">3. <code>_.flatMap</code> and
+<code>_.uniqBy</code></h3>
+<p>Nested entities must be extracted from their parents and collected
+into their own top-level collections. <code>_.flatMap</code> extracts
+nested collections into a single array, while <code>_.uniqBy</code>
+removes duplicates:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> flatMap <span class="im">from</span> <span class="st">&#39;lodash/flatMap&#39;</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> uniqBy <span class="im">from</span> <span class="st">&#39;lodash/uniqBy&#39;</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Extract all unique comments from an array of posts</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> allComments <span class="op">=</span> <span class="fu">uniqBy</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">flatMap</span>(postsArray<span class="op">,</span> post <span class="kw">=&gt;</span> post<span class="op">.</span><span class="at">comments</span>)<span class="op">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;id&#39;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> commentsById <span class="op">=</span> <span class="fu">keyBy</span>(allComments<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<h3 id="4-_groupby">4. <code>_.groupBy</code></h3>
+<p>For one-to-many relationships where an entity needs to know which
+children belong to it, <code>_.groupBy</code> aggregates keys:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> groupBy <span class="im">from</span> <span class="st">&#39;lodash/groupBy&#39;</span><span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Group comment IDs by their parent post ID</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> commentIdsByPostId <span class="op">=</span> <span class="fu">mapValues</span>(</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">groupBy</span>(allComments<span class="op">,</span> <span class="st">&#39;postId&#39;</span>)<span class="op">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  comments <span class="kw">=&gt;</span> comments<span class="op">.</span><span class="fu">map</span>(c <span class="kw">=&gt;</span> c<span class="op">.</span><span class="at">id</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span></code></pre></div>
+<h2 id="practical-implementation-normalizing-a-nested-payload">Practical
+Implementation: Normalizing a Nested Payload</h2>
+<p>Consider an incoming API payload containing articles, embedded author
+profiles, and embedded comments:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> keyBy <span class="im">from</span> <span class="st">&#39;lodash/keyBy&#39;</span><span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mapValues <span class="im">from</span> <span class="st">&#39;lodash/mapValues&#39;</span><span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> flatMap <span class="im">from</span> <span class="st">&#39;lodash/flatMap&#39;</span><span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> uniqBy <span class="im">from</span> <span class="st">&#39;lodash/uniqBy&#39;</span><span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">function</span> <span class="fu">normalizeArticlesPayload</span>(articles) {</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 1. Extract and normalize authors</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> authors <span class="op">=</span> <span class="fu">uniqBy</span>(</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    articles<span class="op">.</span><span class="fu">map</span>(article <span class="kw">=&gt;</span> article<span class="op">.</span><span class="at">author</span>)<span class="op">,</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;id&#39;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 2. Extract and normalize comments</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> comments <span class="op">=</span> <span class="fu">uniqBy</span>(</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">flatMap</span>(articles<span class="op">,</span> article <span class="kw">=&gt;</span> article<span class="op">.</span><span class="at">comments</span> <span class="op">||</span> [])<span class="op">,</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;id&#39;</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 3. Normalize articles by replacing child objects with ID references</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> processedArticles <span class="op">=</span> articles<span class="op">.</span><span class="fu">map</span>(article <span class="kw">=&gt;</span> ({</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="dt">id</span><span class="op">:</span> article<span class="op">.</span><span class="at">id</span><span class="op">,</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="dt">title</span><span class="op">:</span> article<span class="op">.</span><span class="at">title</span><span class="op">,</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    <span class="dt">authorId</span><span class="op">:</span> article<span class="op">.</span><span class="at">author</span><span class="op">.</span><span class="at">id</span><span class="op">,</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="dt">commentIds</span><span class="op">:</span> (article<span class="op">.</span><span class="at">comments</span> <span class="op">||</span> [])<span class="op">.</span><span class="fu">map</span>(comment <span class="kw">=&gt;</span> comment<span class="op">.</span><span class="at">id</span>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>  }))<span class="op">;</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>  <span class="co">// 4. Return the fully flattened slices</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    <span class="dt">entities</span><span class="op">:</span> {</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>      <span class="dt">articles</span><span class="op">:</span> <span class="fu">keyBy</span>(processedArticles<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">,</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>      <span class="dt">authors</span><span class="op">:</span> <span class="fu">keyBy</span>(authors<span class="op">,</span> <span class="st">&#39;id&#39;</span>)<span class="op">,</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>      <span class="dt">comments</span><span class="op">:</span> <span class="fu">keyBy</span>(comments<span class="op">,</span> <span class="st">&#39;id&#39;</span>)</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    <span class="dt">result</span><span class="op">:</span> articles<span class="op">.</span><span class="fu">map</span>(article <span class="kw">=&gt;</span> article<span class="op">.</span><span class="at">id</span>)</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="safe-updates-in-reducers-with-_merge-and-_omit">Safe Updates in
+Reducers with <code>_.merge</code> and <code>_.omit</code></h2>
+<p>Once state is normalized, updating it requires shallow operations.
+Lodash helps maintain immutability and handle dynamic updates
+cleanly:</p>
+<ul>
+<li><strong><code>_.merge</code></strong>: Safely combines newly
+received entity maps with existing state slices without overwriting
+unmodified fields.</li>
+<li><strong><code>_.omit</code></strong>: Removes deleted entities from
+lookup tables immutably:</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> omit <span class="im">from</span> <span class="st">&#39;lodash/omit&#39;</span><span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">commentsReducer</span>(state <span class="op">=</span> { <span class="dt">byId</span><span class="op">:</span> {}<span class="op">,</span> <span class="dt">allIds</span><span class="op">:</span> [] }<span class="op">,</span> action) {</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">switch</span> (action<span class="op">.</span><span class="at">type</span>) {</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="st">&#39;COMMENT_DELETED&#39;</span><span class="op">:</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> {</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">byId</span><span class="op">:</span> <span class="fu">omit</span>(state<span class="op">.</span><span class="at">byId</span><span class="op">,</span> action<span class="op">.</span><span class="at">payload</span><span class="op">.</span><span class="at">id</span>)<span class="op">,</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">allIds</span><span class="op">:</span> state<span class="op">.</span><span class="at">allIds</span><span class="op">.</span><span class="fu">filter</span>(id <span class="kw">=&gt;</span> id <span class="op">!==</span> action<span class="op">.</span><span class="at">payload</span><span class="op">.</span><span class="at">id</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>      }<span class="op">;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">default</span><span class="op">:</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> state<span class="op">;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Using Lodash for state normalization gives developers granular
+control over data shaping without the overhead of schema-driven
+frameworks. Its functional utilities ensure deterministic
+transformations, reduce boilerplate in reducers, and optimize Redux
+store performance.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

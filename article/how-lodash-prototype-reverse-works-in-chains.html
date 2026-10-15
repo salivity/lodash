@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash prototype.reverse Works in Chains - lodash</title>
+    <meta name="description" content="In the Lodash JavaScript library, chaining allows multiple collection utilities to run in sequence, frequently taking advantage of lazy evaluation. This article explains how calling prototype.reverse on a Lodash wrapper alters the internal execution order">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-prototype-reverse-works-in-chains">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash prototype.reverse Works in Chains - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-prototype-reverse-works-in-chains" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the Lodash JavaScript library, chaining allows multiple collection utilities to run in sequence, frequently taking advantage of lazy evaluation. This article explains how calling prototype.reverse on a Lodash wrapper alters the internal execution order" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-prototypereverse-works-in-chains">How Lodash
+prototype.reverse Works in Chains</h1>
+<p>In the Lodash JavaScript library, chaining allows multiple collection
+utilities to run in sequence, frequently taking advantage of lazy
+evaluation. This article explains how calling
+<code>prototype.reverse</code> on a Lodash wrapper alters the internal
+execution order of a chain, detail how it manipulates internal iteration
+direction flags rather than eagerly mutating data, and examines its
+effect on shortcut fusion and downstream chain operations.</p>
+<h3 id="lazy-evaluation-and-iteration-direction">Lazy Evaluation and
+Iteration Direction</h3>
+<p>When an array is wrapped using <code>_(array)</code> or
+<code>lodash(array)</code>, Lodash instantiates a wrapper that utilizes
+a lazy evaluation pipeline (<code>LazyWrapper</code>). Unlike the native
+<code>Array.prototype.reverse</code>, which immediately mutates the
+underlying array in memory, Lodash's chained
+<code>prototype.reverse</code> defers execution until
+<code>.value()</code> is explicitly invoked.</p>
+<p>Internally, Lodash tracks the traversal orientation of a lazy
+sequence using a directional flag (represented internally as
+<code>dir</code>). Under normal conditions, <code>dir</code> is set to
+<code>1</code>, indicating forward traversal from index <code>0</code>
+to <code>n - 1</code>. Invoking <code>.reverse()</code> on the chain
+flips this direction to <code>-1</code>.</p>
+<h3 id="impact-on-pipeline-execution">Impact on Pipeline Execution</h3>
+<p>Because <code>prototype.reverse</code> toggles the internal traversal
+vector, the order in which subsequent chained operations encounter
+elements changes:</p>
+<ol type="1">
+<li><strong>Reversed Pull Mechanism:</strong> When <code>.value()</code>
+is called, the pipeline uses a pull-based iterator. Subsequent
+operators—such as <code>.map()</code>, <code>.filter()</code>, and
+<code>.take()</code>—request elements starting from the end of the
+source array and step backwards toward the front.</li>
+<li><strong>Preservation of Shortcut Fusion:</strong> If
+<code>.reverse()</code> is combined with limiting operators like
+<code>.take()</code>, Lodash does not reverse the entire dataset first.
+For example, <code>_(largeArray).reverse().take(5).value()</code> pulls
+items starting at the last index and stops processing entirely once five
+matching elements are collected. This avoids processing the remainder of
+the array.</li>
+<li><strong>Execution Order of Interleaved Actions:</strong> If
+<code>.reverse()</code> is called midway through an explicit chain with
+non-lazy actions, Lodash flushes the preceding pipeline, captures that
+intermediate result, and then applies the reversed direction to
+subsequent operations.</li>
+</ol>
+<p>By altering the sequence direction logically rather than eagerly
+manipulating the underlying memory, <code>prototype.reverse</code>
+changes the processing order of downstream operations while preserving
+the performance benefits of Lodash’s lazy evaluation engine.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Chain Map and Filter Order of Operations - lodash</title>
+    <meta name="description" content="When working with the Lodash JavaScript library, chaining sequence methods like map and filter via .chain() alters how code is evaluated compared to standard native JavaScript arrays. Instead of eagerly executing each transformation and generating interme">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-chain-map-and-filter-order-of-operations">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Chain Map and Filter Order of Operations - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-chain-map-and-filter-order-of-operations" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When working with the Lodash JavaScript library, chaining sequence methods like map and filter via .chain() alters how code is evaluated compared to standard native JavaScript arrays. Instead of eagerly executing each transformation and generating interme" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-chain-map-and-filter-order-of-operations">Lodash Chain
+Map and Filter Order of Operations</h1>
+<p>When working with the Lodash JavaScript library, chaining sequence
+methods like <code>map</code> and <code>filter</code> via
+<code>_.chain()</code> alters how code is evaluated compared to standard
+native JavaScript arrays. Instead of eagerly executing each
+transformation and generating intermediate arrays, Lodash leverages lazy
+evaluation and shortcut fusion. This article explains the explicit order
+of operations that occurs behind the scenes when executing multiple
+<code>map</code> and <code>filter</code> operations within a Lodash
+chain.</p>
+<h2 id="deferred-execution-via-value">Deferred Execution via
+<code>.value()</code></h2>
+<p>Lodash chains use deferred execution. Calling methods such as
+<code>_.chain(data).filter(...).map(...)</code> does not immediately
+process any items. Instead, it builds an internal sequence pipeline
+wrapped in a <code>lodash</code> wrapper object.</p>
+<p>Execution is completely deferred until the terminating
+<code>.value()</code> method is explicitly invoked. Only at this point
+does the computation begin.</p>
+<h2 id="shortcut-fusion-element-by-element-traversal">Shortcut Fusion:
+Element-by-Element Traversal</h2>
+<p>Unlike native JavaScript array chaining—which executes
+collection-by-collection (running the first <code>filter</code> on all
+items, then the first <code>map</code> on all surviving items)—Lodash
+uses <strong>shortcut fusion</strong>.</p>
+<p>Shortcut fusion reorganizes the pipeline to iterate through the
+source array element-by-element, rather than pass-by-pass:</p>
+<ol type="1">
+<li><strong>Item Selection:</strong> The engine takes the first item
+from the source array.</li>
+<li><strong>Sequential Step Application:</strong> It passes that single
+item through the chain of <code>filter</code> and <code>map</code>
+operations in the exact order they were chained.</li>
+<li><strong>Short-Circuiting (Branch Pruning):</strong> If a
+<code>filter</code> predicate returns <code>false</code> (or a falsy
+value) for that item, execution for that item halts immediately. Any
+subsequent <code>map</code> or <code>filter</code> steps in the chain
+are skipped, and the engine moves directly to the next item in the
+collection.</li>
+<li><strong>Result Accumulation:</strong> If an item successfully passes
+all filters and maps, the final transformed value is appended to the
+output array.</li>
+<li><strong>Next Element:</strong> The process repeats for the next
+element in the source array until the collection is exhausted.</li>
+</ol>
+<h2 id="step-by-step-execution-trace">Step-by-Step Execution Trace</h2>
+<p>Consider the following Lodash chain:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">chain</span>([<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span>])</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">filter</span>(x <span class="kw">=&gt;</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`filter1: </span><span class="sc">${</span>x<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">%</span> <span class="dv">2</span> <span class="op">===</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">map</span>(x <span class="kw">=&gt;</span> {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`map1: </span><span class="sc">${</span>x<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">*</span> <span class="dv">10</span><span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">filter</span>(x <span class="kw">=&gt;</span> {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`filter2: </span><span class="sc">${</span>x<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">&gt;</span> <span class="dv">20</span><span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">map</span>(x <span class="kw">=&gt;</span> {</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`map2: </span><span class="sc">${</span>x<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">value</span>()<span class="op">;</span></span></code></pre></div>
+<p>When <code>.value()</code> executes, the explicit order of operations
+proceeds as follows:</p>
+<ul>
+<li><strong>Item <code>1</code>:</strong>
+<ul>
+<li><code>filter1(1)</code> runs <span
+class="math inline">\(\rightarrow\)</span> returns
+<code>false</code>.</li>
+<li><code>map1</code>, <code>filter2</code>, and <code>map2</code> are
+skipped.</li>
+</ul></li>
+<li><strong>Item <code>2</code>:</strong>
+<ul>
+<li><code>filter1(2)</code> runs <span
+class="math inline">\(\rightarrow\)</span> returns
+<code>true</code>.</li>
+<li><code>map1(2)</code> runs <span
+class="math inline">\(\rightarrow\)</span> returns <code>20</code>.</li>
+<li><code>filter2(20)</code> runs <span
+class="math inline">\(\rightarrow\)</span> returns
+<code>false</code>.</li>
+<li><code>map2</code> is skipped.</li>
+</ul></li>
+<li><strong>Item <code>3</code>:</strong>
+<ul>
+<li><code>filter1(3)</code> runs <span
+class="math inline">\(\rightarrow\)</span> returns
+<code>false</code>.</li>
+<li>Subsequent steps are skipped.</li>
+</ul></li>
+<li><strong>Item <code>4</code>:</strong>
+<ul>
+<li><code>filter1(4)</code> runs <span
+class="math inline">\(\rightarrow\)</span> returns
+<code>true</code>.</li>
+<li><code>map1(4)</code> runs <span
+class="math inline">\(\rightarrow\)</span> returns <code>40</code>.</li>
+<li><code>filter2(40)</code> runs <span
+class="math inline">\(\rightarrow\)</span> returns
+<code>true</code>.</li>
+<li><code>map2(40)</code> runs <span
+class="math inline">\(\rightarrow\)</span> returns <code>41</code>.</li>
+<li>Value <code>41</code> is pushed to the final result array.</li>
+</ul></li>
+</ul>
+<p>The console output strictly reflects this interleaved, single-pass
+pipeline:</p>
+<pre class="text"><code>filter1: 1
+filter1: 2
+map1: 2
+filter2: 20
+filter1: 3
+filter1: 4
+map1: 4
+filter2: 40
+map2: 40</code></pre>
+<h2 id="exceptions-to-fusion">Exceptions to Fusion</h2>
+<p>While <code>map</code> and <code>filter</code> freely fuse together,
+certain operations act as execution boundaries that force intermediate
+arrays to be realized:</p>
+<ul>
+<li><strong>Aggregations or Sorting:</strong> Methods like
+<code>sortBy</code>, <code>reverse</code>, or <code>groupBy</code>
+require knowledge of the entire collection and cannot be lazily fused
+per element.</li>
+<li><strong>Reductions:</strong> Terminal operations like
+<code>reduce</code> or <code>sum</code> consume the fused pipeline up to
+that point.</li>
+</ul>
+<p>When intermediate operations require a full dataset, Lodash completes
+the fused <code>map</code>/<code>filter</code> pipeline up to that
+point, constructs the intermediate array, performs the required non-lazy
+operation, and resumes execution for the remainder of the chain.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

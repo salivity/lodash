@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.functions Method Explained - lodash</title>
+    <meta name="description" content="The .functions method in the Lodash JavaScript library inspects an object and extracts an array containing the names of all its own enumerable function properties. This article explains how .functions operates, what specific data it retrieves, how it filt">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-functions-method-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.functions Method Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-functions-method-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .functions method in the Lodash JavaScript library inspects an object and extracts an array containing the names of all its own enumerable function properties. This article explains how .functions operates, what specific data it retrieves, how it filt" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_functions-method-explained">Lodash _.functions Method
+Explained</h1>
+<p>The <code>_.functions</code> method in the Lodash JavaScript library
+inspects an object and extracts an array containing the names of all its
+own enumerable function properties. This article explains how
+<code>_.functions</code> operates, what specific data it retrieves, how
+it filters object properties, and how it differs from similar Lodash
+methods.</p>
+<h2 id="what-_functions-extracts">What _.functions Extracts</h2>
+<p>The <code>_.functions</code> method (also aliased as
+<code>_.methods</code>) iterates through an object and returns an array
+of string keys representing properties whose values are functions.</p>
+<p>Specifically, the method extracts:</p>
+<ul>
+<li><strong>Only function property names:</strong> Any property holding
+a primitive value (such as a string, number, or boolean) or a standard
+object is ignored.</li>
+<li><strong>Only own properties:</strong> It exclusively inspects
+properties defined directly on the target object, omitting any methods
+inherited through the prototype chain.</li>
+<li><strong>Only enumerable properties:</strong> Non-enumerable methods
+defined via mechanisms like <code>Object.defineProperty()</code> with
+<code>enumerable: false</code> are excluded.</li>
+</ul>
+<p>The returned array contains the property names (keys) as strings,
+sorted in ascending alphabetical order, rather than the function
+implementations themselves.</p>
+<h2 id="code-example">Code Example</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">CustomService</span>() {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">this</span><span class="op">.</span><span class="at">start</span> <span class="op">=</span> <span class="kw">function</span>() { <span class="cf">return</span> <span class="st">&#39;started&#39;</span><span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">this</span><span class="op">.</span><span class="at">stop</span> <span class="op">=</span> <span class="kw">function</span>() { <span class="cf">return</span> <span class="st">&#39;stopped&#39;</span><span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">this</span><span class="op">.</span><span class="at">status</span> <span class="op">=</span> <span class="st">&#39;active&#39;</span><span class="op">;</span> <span class="co">// Non-function property</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Inherited prototype method</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>CustomService<span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">restart</span> <span class="op">=</span> <span class="kw">function</span>() { <span class="cf">return</span> <span class="st">&#39;restarted&#39;</span><span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> service <span class="op">=</span> <span class="kw">new</span> <span class="fu">CustomService</span>()<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">functions</span>(service)<span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result)<span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [&#39;start&#39;, &#39;stop&#39;]</span></span></code></pre></div>
+<p>In this example, <code>_.functions</code> extracts
+<code>['start', 'stop']</code>. It ignores the string property
+<code>status</code> because it is not a function, and it ignores
+<code>restart</code> because it belongs to the prototype chain rather
+than the instance itself.</p>
+<h2 id="functions-vs-functionsin"><em>.functions vs.
+</em>.functionsIn</h2>
+<p>Lodash provides a companion method called <code>_.functionsIn</code>.
+The key distinction lies in inheritance:</p>
+<ul>
+<li><strong><code>_.functions(object)</code></strong>: Extracts function
+names only from the object’s <strong>own</strong> properties.</li>
+<li><strong><code>_.functionsIn(object)</code></strong>: Extracts
+function names from both <strong>own</strong> and
+<strong>inherited</strong> enumerable properties across the entire
+prototype chain.</li>
+</ul>
+<p>Using <code>_.functionsIn(service)</code> on the previous example
+would yield <code>['restart', 'start', 'stop']</code>.</p>
+<h2 id="common-use-cases">Common Use Cases</h2>
+<p>The <code>_.functions</code> method is primarily used for:</p>
+<ul>
+<li><strong>Introspection and Reflection:</strong> Discovering available
+capabilities and API endpoints on dynamically loaded objects or
+modules.</li>
+<li><strong>Auto-binding Context:</strong> Identifying methods on an
+object to bind their execution context (<code>this</code>)
+automatically.</li>
+<li><strong>Proxying and Wrapping:</strong> Iterating through object
+methods to apply middleware, logging, or debugging wrappers
+dynamically.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

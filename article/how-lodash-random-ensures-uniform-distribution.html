@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.random Ensures Uniform Distribution - lodash</title>
+    <meta name="description" content="The .random function in Lodash provides uniform pseudo-random number generation by combining modern JavaScript engine PRNGs with precise interval scaling and boundary-safe transformations. Rather than implementing its own proprietary generator from scratc">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-random-ensures-uniform-distribution">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.random Ensures Uniform Distribution - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-random-ensures-uniform-distribution" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .random function in Lodash provides uniform pseudo-random number generation by combining modern JavaScript engine PRNGs with precise interval scaling and boundary-safe transformations. Rather than implementing its own proprietary generator from scratc" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_random-ensures-uniform-distribution">How Lodash
+_.random Ensures Uniform Distribution</h1>
+<p>The <code>_.random</code> function in Lodash provides uniform
+pseudo-random number generation by combining modern JavaScript engine
+PRNGs with precise interval scaling and boundary-safe transformations.
+Rather than implementing its own proprietary generator from scratch,
+Lodash delegates entropy generation to JavaScript's native
+<code>Math.random()</code> and applies mathematical mappings that
+prevent boundary skew and modulo bias. This article examines the
+internal mechanisms Lodash uses to ensure both integer and
+floating-point distributions remain strictly uniform across arbitrary
+ranges.</p>
+<h3 id="reliance-on-modern-engine-prngs">Reliance on Modern Engine
+PRNGs</h3>
+<p>Lodash relies on JavaScript's native <code>Math.random()</code> as
+its entropy source. Modern JavaScript engines, such as V8 (Node.js,
+Chrome) and SpiderMonkey (Firefox), implement high-quality pseudo-random
+number generators (PRNGs), typically variants of the
+<code>xorshift128+</code> algorithm.</p>
+<p>These algorithms generate double-precision floating-point numbers
+uniformly distributed in the half-open interval <span
+class="math inline">\([0, 1)\)</span>, meaning:</p>
+<p><span class="math display">\[0 \le x &lt; 1\]</span></p>
+<p>Because the underlying engine guarantees that every sub-interval
+within <span class="math inline">\([0, 1)\)</span> has an equal
+likelihood of being chosen, Lodash’s primary responsibility is to
+preserve this property when transforming the unit interval to the
+caller's target range <code>[lower, upper]</code>.</p>
+<h3 id="eliminating-modulo-bias-for-integers">Eliminating Modulo Bias
+for Integers</h3>
+<p>A common mistake in pseudo-random mapping is using the modulo
+operator (e.g., <code>randomInt % range</code>), which causes modulo
+bias when the generator's state space does not divide evenly into the
+target range. Lodash eliminates modulo bias entirely by using interval
+scaling and floor discretization:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>lower <span class="op">+</span> <span class="fu">nativeFloor</span>(<span class="fu">nativeRandom</span>() <span class="op">*</span> (upper <span class="op">-</span> lower <span class="op">+</span> <span class="dv">1</span>))</span></code></pre></div>
+<p>This mathematical approach guarantees uniformity through three
+distinct steps:</p>
+<ol type="1">
+<li><strong>Interval Sizing (<code>upper - lower + 1</code>):</strong>
+When generating inclusive integers, the total number of distinct
+outcomes is <span class="math inline">\(N = upper - lower + 1\)</span>.
+Multiplying the <span class="math inline">\([0, 1)\)</span> interval by
+<span class="math inline">\(N\)</span> expands the continuous range to
+<span class="math inline">\([0, N)\)</span>.</li>
+<li><strong>Equidistant Partitioning:</strong> The interval <span
+class="math inline">\([0, N)\)</span> is partitioned into <span
+class="math inline">\(N\)</span> equal-width bins of length 1: <span
+class="math inline">\([0, 1), [1, 2), \dots, [N - 1, N)\)</span>. Since
+the underlying PRNG is uniform, the probability of a value falling into
+any single bin is precisely:</li>
+</ol>
+<p><span class="math display">\[P(\text{bin}_k) =
+\frac{1}{N}\]</span></p>
+<ol start="3" type="1">
+<li><strong>Floor Discretization (<code>nativeFloor</code>):</strong>
+Applying <code>Math.floor()</code> maps each continuous bin directly to
+its corresponding integer index without compressing or stretching the
+endpoints. Adding <code>lower</code> shifts the zero-indexed bin into
+the requested output domain.</li>
+</ol>
+<h3
+id="floating-point-normalization-and-inclusive-bounds">Floating-Point
+Normalization and Inclusive Bounds</h3>
+<p>When floating-point values are requested (either via the
+<code>floating</code> flag or passing float arguments), Lodash generates
+a continuous real number:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> rand <span class="op">=</span> <span class="fu">nativeRandom</span>()<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> randLength <span class="op">=</span> rand<span class="op">.</span><span class="fu">toString</span>()<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">min</span>(lower <span class="op">+</span> (rand <span class="op">*</span> (upper <span class="op">-</span> lower <span class="op">+</span> <span class="fu">freeParseFloat</span>(<span class="st">&#39;1e-&#39;</span> <span class="op">+</span> randLength)))<span class="op">,</span> upper)<span class="op">;</span></span></code></pre></div>
+<p>Because native <code>Math.random()</code> produces values in the
+half-open range <span class="math inline">\([0, 1)\)</span>, the upper
+bound is technically unreachable under direct multiplication. To make
+the range inclusive for floating-point values without distorting the
+linear distribution, Lodash applies an epsilon-scaled offset based on
+the string precision of the generated float and clamps the result to
+<code>upper</code> using <code>Math.min()</code>. This ensures that
+intermediate numbers scale linearly while safely accounting for edge
+inclusiveness.</p>
+<h3 id="argument-normalization-and-deterministic-boundaries">Argument
+Normalization and Deterministic Boundaries</h3>
+<p>To prevent statistical distortions caused by invalid parameters or
+undefined state, Lodash normalizes inputs before executing the
+mathematical transformation:</p>
+<ul>
+<li><strong>Automatic Boundary Reversal:</strong> If <code>lower</code>
+is greater than <code>upper</code>, Lodash swaps the values rather than
+returning an invalid result or throwing an error.</li>
+<li><strong>Implicit Floor Detection:</strong> If neither bound is
+explicitly designated as a float, but either parameter contains a
+fractional component (e.g., <code>lower % 1 !== 0</code>), Lodash
+automatically switches to floating-point mode. This prevents unexpected
+truncation that would otherwise skew boundary probabilities.</li>
+<li><strong>Single-Argument Handling:</strong> Passing a single value
+<span class="math inline">\(N\)</span> defaults the lower bound to <span
+class="math inline">\(0\)</span>, ensuring the interval remains
+calibrated to <span class="math inline">\([0, N]\)</span> without
+reducing bucket sizes.</li>
+</ul>
+<p>By enforcing linear scaling over raw modulo arithmetic and relying on
+native double-precision PRNG implementations, Lodash guarantees that
+each value within the user-specified interval maintains an identical
+probability of selection.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

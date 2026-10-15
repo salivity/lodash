@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash isArrayLike Checks Iterability - lodash</title>
+    <meta name="description" content="In Lodash, the .isArrayLike method provides a reliable way to determine if a value can be treated as an array without requiring it to be an actual Array instance. This article explores the internal mechanics of .isArrayLike, breaking down the specific cri">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-array-like-checks-iterability">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash isArrayLike Checks Iterability - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-array-like-checks-iterability" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In Lodash, the .isArrayLike method provides a reliable way to determine if a value can be treated as an array without requiring it to be an actual Array instance. This article explores the internal mechanics of .isArrayLike, breaking down the specific cri" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-isarraylike-checks-iterability">How Lodash
+isArrayLike Checks Iterability</h1>
+<p>In Lodash, the <code>_.isArrayLike</code> method provides a reliable
+way to determine if a value can be treated as an array without requiring
+it to be an actual <code>Array</code> instance. This article explores
+the internal mechanics of <code>_.isArrayLike</code>, breaking down the
+specific criteria Lodash uses—namely non-null checks, function
+exclusion, and length validation—to decide whether a value has an
+indexed structure suitable for iteration.</p>
+<h2 id="the-core-verification-logic">The Core Verification Logic</h2>
+<p>Lodash determines if an item is "array-like" by evaluating three
+fundamental conditions directly in its source code. An item is
+considered array-like if:</p>
+<ol type="1">
+<li>It is not <code>null</code> or <code>undefined</code>.</li>
+<li>It is not a JavaScript <code>Function</code>.</li>
+<li>It has a valid <code>length</code> property.</li>
+</ol>
+<p>In the Lodash implementation, the function is concise:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isArrayLike</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> <span class="kw">typeof</span> value <span class="op">!==</span> <span class="st">&#39;function&#39;</span> <span class="op">&amp;&amp;</span> <span class="fu">isLength</span>(value<span class="op">.</span><span class="at">length</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="validating-the-length-property-with-islength">Validating the
+Length Property with <code>isLength</code></h2>
+<p>The heavy lifting of the validation relies on the internal
+<code>isLength</code> helper. For a <code>length</code> property to be
+valid, it must meet strict numeric boundaries:</p>
+<ul>
+<li><strong>Type Check:</strong> The <code>length</code> must be a
+standard JavaScript <code>number</code>.</li>
+<li><strong>Non-Negative Integer:</strong> The value must be greater
+than or equal to <code>0</code> and have no fractional component
+(<code>length % 1 === 0</code>).</li>
+<li><strong>Safe Integer Constraint:</strong> The length cannot exceed
+<code>Number.MAX_SAFE_INTEGER</code>
+(<code>9007199254740991</code>).</li>
+</ul>
+<p>If an object possesses a <code>length</code> property that matches
+these conditions, Lodash assumes the object uses numeric indices
+corresponding to its length.</p>
+<h2 id="why-functions-are-excluded">Why Functions Are Excluded</h2>
+<p>In JavaScript, functions naturally have a <code>.length</code>
+property that indicates the number of arguments expected by the function
+(arity). Because functions have a valid numeric length, naive checks
+would classify them as array-like. Lodash explicitly checks
+<code>typeof value !== 'function'</code> to prevent functions from being
+mistakenly treated as iterable collections.</p>
+<h2 id="values-that-pass-the-_isarraylike-check">Values That Pass the
+<code>_.isArrayLike</code> Check</h2>
+<p>A value does not need to be an actual <code>Array</code> to pass this
+test. Common data structures that evaluate to <code>true</code>
+include:</p>
+<ul>
+<li>Standard JavaScript arrays (<code>[1, 2, 3]</code>)</li>
+<li>Strings (<code>'hello'</code>), which have a numeric length and
+indexed character access</li>
+<li>The <code>arguments</code> object inside standard functions</li>
+<li>Browser collections, such as <code>NodeList</code> or
+<code>HTMLCollection</code></li>
+<li>Custom plain objects with a valid length property (e.g.,
+<code>{ length: 2, 0: 'a', 1: 'b' }</code>)</li>
+</ul>
+<h2 id="array-like-vs-es6-iterables">Array-Like vs. ES6 Iterables</h2>
+<p>It is important to distinguish between an "array-like" object and an
+ES6 "iterable."</p>
+<p><code>_.isArrayLike</code> checks strictly for indexed iteration via
+a numeric length property. It does not check for the presence of
+<code>Symbol.iterator</code>. Consequently, structures like
+<code>Map</code> and <code>Set</code> evaluate to <code>false</code>
+under <code>_.isArrayLike</code> because they rely on internal size
+mechanisms and iterator protocols rather than an exposed
+<code>.length</code> property. Lodash uses this specific definition so
+that utilities like <code>_.forEach</code> can safely iterate over the
+target using standard, zero-based indexed loops.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

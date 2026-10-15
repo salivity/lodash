@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash isBoolean Checks Primitives and Objects - lodash</title>
+    <meta name="description" content="Lodash’s .isBoolean method provides a reliable way to verify whether a given value is either a native boolean primitive or a Boolean wrapper object. Standard JavaScript type checking often falls short because primitive booleans and Boolean objects yield d">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-boolean-checks-primitives-and-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash isBoolean Checks Primitives and Objects - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-boolean-checks-primitives-and-objects" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .isBoolean method provides a reliable way to verify whether a given value is either a native boolean primitive or a Boolean wrapper object. Standard JavaScript type checking often falls short because primitive booleans and Boolean objects yield d" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-isboolean-checks-primitives-and-objects">How Lodash
+isBoolean Checks Primitives and Objects</h1>
+<p>Lodash’s <code>_.isBoolean</code> method provides a reliable way to
+verify whether a given value is either a native boolean primitive or a
+<code>Boolean</code> wrapper object. Standard JavaScript type checking
+often falls short because primitive booleans and <code>Boolean</code>
+objects yield different results under basic operators. This article
+examines the internal implementation of <code>_.isBoolean</code>,
+detailing how it combines strict equality checks, object classification,
+and internal tag inspection to ensure accurate type detection without
+common pitfalls.</p>
+<h2 id="the-limitation-of-standard-javascript-checks">The Limitation of
+Standard JavaScript Checks</h2>
+<p>In vanilla JavaScript, checking for a boolean is not always
+straightforward due to the distinction between boolean primitives and
+<code>Boolean</code> objects created via the constructor:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">typeof</span> <span class="kw">true</span><span class="op">;</span> <span class="co">// &#39;boolean&#39;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">typeof</span> <span class="kw">new</span> <span class="bu">Boolean</span>(<span class="kw">true</span>)<span class="op">;</span> <span class="co">// &#39;object&#39;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">new</span> <span class="bu">Boolean</span>(<span class="kw">false</span>) <span class="kw">instanceof</span> <span class="bu">Boolean</span><span class="op">;</span> <span class="co">// true</span></span></code></pre></div>
+<p>While <code>typeof</code> identifies primitives, it classifies
+<code>new Boolean(...)</code> as an <code>object</code>. Conversely,
+<code>instanceof Boolean</code> fails when dealing with values
+originating from different execution contexts, such as iframes or
+different window realms, because the prototypes do not share the same
+memory reference.</p>
+<h2 id="how-lodash-implements-_isboolean">How Lodash Implements
+<code>_.isBoolean</code></h2>
+<p>Lodash solves this problem by using a multi-step evaluation that
+safely covers both primitives and complex object wrappers. Internally,
+the implementation follows this pattern:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isBoolean</span>(value) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">===</span> <span class="kw">true</span> <span class="op">||</span> value <span class="op">===</span> <span class="kw">false</span> <span class="op">||</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    (<span class="fu">isObjectLike</span>(value) <span class="op">&amp;&amp;</span> <span class="fu">baseGetTag</span>(value) <span class="op">===</span> <span class="st">&#39;[object Boolean]&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="1-the-fast-path-strict-primitive-comparison">1. The Fast Path:
+Strict Primitive Comparison</h3>
+<p>The first step checks if the input matches literal boolean values
+directly:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>value <span class="op">===</span> <span class="kw">true</span> <span class="op">||</span> value <span class="op">===</span> <span class="kw">false</span></span></code></pre></div>
+<p>This acts as a fast-path optimization. Because the vast majority of
+boolean checks in real-world applications involve primitive
+<code>true</code> or <code>false</code>, this comparison handles most
+operations in constant time without delegating to helper functions or
+inspecting object prototypes.</p>
+<h3 id="2-guarding-with-isobjectlike">2. Guarding with
+<code>isObjectLike</code></h3>
+<p>If the value is not a primitive boolean, Lodash checks if it could be
+a wrapped object using <code>isObjectLike</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isObjectLike</span>(value) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">typeof</span> value <span class="op">===</span> <span class="st">&#39;object&#39;</span> <span class="op">&amp;&amp;</span> value <span class="op">!==</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This step ensures that non-object primitives (such as numbers,
+strings, and symbols) as well as <code>null</code> are discarded
+immediately, preventing unnecessary lookups on invalid types.</p>
+<h3 id="3-cross-realm-inspection-via-basegettag">3. Cross-Realm
+Inspection via <code>baseGetTag</code></h3>
+<p>For values that pass <code>isObjectLike</code>, Lodash determines
+their true internal type using <code>baseGetTag</code>. This utility
+relies on the internal <code>Object.prototype.toString</code>
+method:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">toString</span><span class="op">.</span><span class="fu">call</span>(value)<span class="op">;</span> <span class="co">// Returns &#39;[object Boolean]&#39; for Boolean objects</span></span></code></pre></div>
+<p>Using <code>Object.prototype.toString</code> inspects the internal
+<code>[[Class]]</code> property of the object. Unlike
+<code>instanceof</code>, this approach is cross-realm safe, meaning a
+<code>Boolean</code> object created in an iframe or worker will still
+return <code>'[object Boolean]'</code> in the host context.</p>
+<p>Lodash also handles modern JavaScript features like
+<code>Symbol.toStringTag</code>. If an object attempts to disguise
+itself using <code>[Symbol.toStringTag]</code>, Lodash accounts for this
+by temporarily masking the custom tag to inspect the underlying native
+type safely.</p>
+<h2 id="key-benefits-of-this-approach">Key Benefits of This
+Approach</h2>
+<ul>
+<li><strong>Comprehensive Detection:</strong> Accurately recognizes
+<code>true</code>, <code>false</code>, <code>new Boolean(true)</code>,
+and <code>new Boolean(false)</code>.</li>
+<li><strong>Zero Falsy Confusion:</strong> Values such as
+<code>0</code>, <code>""</code>, <code>null</code>, and
+<code>undefined</code> are strictly rejected without being coerced.</li>
+<li><strong>Environment Agnostic:</strong> Works consistently across
+different execution contexts, such as multiple iframes, Node.js VMs, or
+web workers.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

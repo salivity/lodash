@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash mergeWith Prevents Infinite Recursion - lodash</title>
+    <meta name="description" content="In the Lodash library, .mergeWith safely handles circularly referenced objects by delegating operations to an internal traversal function that maintains an operational state stack. Instead of blindly traversing object trees, Lodash uses an internal cachin">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-merge-with-prevents-infinite-recursion">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash mergeWith Prevents Infinite Recursion - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-merge-with-prevents-infinite-recursion" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the Lodash library, .mergeWith safely handles circularly referenced objects by delegating operations to an internal traversal function that maintains an operational state stack. Instead of blindly traversing object trees, Lodash uses an internal cachin" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-mergewith-prevents-infinite-recursion">How Lodash
+mergeWith Prevents Infinite Recursion</h1>
+<p>In the Lodash library, <code>_.mergeWith</code> safely handles
+circularly referenced objects by delegating operations to an internal
+traversal function that maintains an operational state stack. Instead of
+blindly traversing object trees, Lodash uses an internal caching
+mechanism to track object references encountered during the recursive
+walk. When an already-visited object is encountered within the source
+hierarchy, Lodash resolves the reference from the stack rather than
+initiating a new recursive call, completely mitigating the risk of
+<code>RangeError: Maximum call stack size exceeded</code> errors and
+denial-of-service vulnerabilities.</p>
+<p>At the core of this safety mechanism is Lodash's internal
+<code>baseMerge</code> function, which accepts an optional hidden
+argument: <code>stack</code>. When <code>_.mergeWith</code> or
+<code>_.merge</code> is invoked, Lodash initializes an instance of its
+internal <code>Stack</code> class if one has not already been provided.
+This stack object acts as an associative lookup structure that persists
+across all nested invocations during that single merge operation.</p>
+<p>As the merge algorithm descends into nested objects or arrays via
+<code>baseMergeDeep</code>, it executes the following sequence:</p>
+<ol type="1">
+<li><strong>Pre-Traversal Lookup:</strong> Before recursing into a
+non-primitive value, the algorithm checks
+<code>stack.get(srcValue)</code>. If this source reference already
+exists in the stack, Lodash immediately assigns the retrieved cached
+target reference to the destination key and halts further recursion
+along that branch.</li>
+<li><strong>Stack Registration:</strong> If the object has not been
+visited, Lodash creates or determines the corresponding target structure
+(array or plain object), then calls
+<code>stack.set(srcValue, assigned)</code>. This step pairs the original
+source reference with the newly generated or modified destination
+reference <em>before</em> iterating over its keys.</li>
+<li><strong>Recursive Descent:</strong> The function iterates over the
+object’s enumerable properties, passing the customizer callback (if
+supplied to <code>_.mergeWith</code>) and the ongoing <code>stack</code>
+to subsequent recursive calls.</li>
+<li><strong>Reference Preservation:</strong> If an inner property points
+back to an ancestor object, the pre-traversal check detects the ancestor
+in the stack, returns the matching assigned target, and exits the branch
+safely.</li>
+</ol>
+<p>Lodash’s <code>Stack</code> implementation is optimized for both
+performance and memory efficiency. For small numbers of keys (fewer than
+200 elements), it uses a lightweight array of key-value pairs called
+<code>ListCache</code>. When the number of tracked objects exceeds this
+threshold, it automatically upgrades itself to a <code>MapCache</code>,
+which utilizes JavaScript’s native <code>Map</code> whenever
+available.</p>
+<p>Because the stack exists only for the duration of the top-level merge
+execution, all tracked references become eligible for garbage collection
+once <code>_.mergeWith</code> returns its final output, avoiding
+long-term memory leaks while maintaining robust protection against
+circular recursion.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

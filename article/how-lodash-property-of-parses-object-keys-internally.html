@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash propertyOf Parses Object Keys Internally - lodash</title>
+    <meta name="description" content="This article provides an in-depth look at how the Lodash library executes its .propertyOf method behind the scenes. It covers the inner workings of Lodash&#39;s functional key lookup system, focusing on how internal helper functions normalize, parse, memoize,">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-property-of-parses-object-keys-internally">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash propertyOf Parses Object Keys Internally - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-property-of-parses-object-keys-internally" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an in-depth look at how the Lodash library executes its .propertyOf method behind the scenes. It covers the inner workings of Lodash&#39;s functional key lookup system, focusing on how internal helper functions normalize, parse, memoize," />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-propertyof-parses-object-keys-internally">How Lodash
+propertyOf Parses Object Keys Internally</h1>
+<p>This article provides an in-depth look at how the Lodash library
+executes its <code>_.propertyOf</code> method behind the scenes. It
+covers the inner workings of Lodash's functional key lookup system,
+focusing on how internal helper functions normalize, parse, memoize, and
+traverse nested object properties when accessing complex data structures
+dynamically.</p>
+<h2 id="the-role-of-_propertyof">The Role of
+<code>_.propertyOf</code></h2>
+<p><code>_.propertyOf</code> creates a function that accepts a path and
+returns the value at that path from a targeted source object. Unlike
+<code>_.get</code>—which takes the target object and key path
+simultaneously—<code>_.propertyOf</code> curries the target object,
+creating a reusable accessor function tailored specifically for querying
+that reference:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> lookup <span class="op">=</span> _<span class="op">.</span><span class="fu">propertyOf</span>({ <span class="dt">user</span><span class="op">:</span> { <span class="dt">details</span><span class="op">:</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">101</span> } } })<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span>(<span class="st">&#39;user.details.id&#39;</span>)<span class="op">;</span> <span class="co">// Returns 101</span></span></code></pre></div>
+<p>Internally, <code>_.propertyOf</code> is structured as a closure:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">propertyOf</span>(object) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">function</span>(path) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> object <span class="op">==</span> <span class="kw">null</span> <span class="op">?</span> <span class="kw">undefined</span> <span class="op">:</span> <span class="fu">baseGet</span>(object<span class="op">,</span> path)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>If the closed-over <code>object</code> is <code>null</code> or
+<code>undefined</code>, the accessor returns <code>undefined</code>
+immediately. Otherwise, execution delegates to <code>baseGet</code>.</p>
+<h2 id="path-tokenization-and-castpath">Path Tokenization and
+<code>castPath</code></h2>
+<p>The string or array representing the target key must be resolved into
+an iterable sequence of property segments. Lodash routes the incoming
+<code>path</code> through an internal function named
+<code>castPath</code>.</p>
+<ol type="1">
+<li><strong>Array Check:</strong> If the provided path is already an
+array of strings or symbols (e.g.,
+<code>['user', 'details', 'id']</code>), <code>castPath</code> returns
+it directly.</li>
+<li><strong>Simple Key Optimization (<code>isKey</code>):</strong>
+Before running full string parsing, Lodash checks whether the input
+string is a flat, single-level property name. If the path is a symbol, a
+number, or a string lacking dots (<code>.</code>) or brackets
+(<code>[]</code>), or if the key already exists as an own/inherited
+property on the target object, parsing is bypassed entirely, treating
+the path as a single key.</li>
+<li><strong>Complex Path Delegation:</strong> When the path contains
+delimiters like dots or brackets, it is handed off to
+<code>stringToPath</code>.</li>
+</ol>
+<h2 id="parsing-paths-via-stringtopath-and-memoization">Parsing Paths
+via <code>stringToPath</code> and Memoization</h2>
+<p>To prevent performance degradation when resolving the same key paths
+repeatedly across iterations, <code>stringToPath</code> wraps its
+parsing logic in an internal LRU-style cache using
+<code>memoizeCachable</code>.</p>
+<p>When a cache miss occurs, the string is split into individual tokens
+using a compiled regular expression:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> rePropName <span class="op">=</span> <span class="ss">/</span><span class="sc">[^.[\]]+|\[(?</span><span class="ss">:</span><span class="sc">(</span><span class="ss">-</span><span class="sc">?\d+(?</span><span class="ss">:</span><span class="sc">\.\d+)?)|([&quot;&#39;])((?</span><span class="ss">:</span><span class="sc">(?</span><span class="ss">!</span><span class="sc">\2)[^\\]|\\</span><span class="ss">.</span><span class="sc">)*?)\2)\]|(?</span><span class="ss">=</span><span class="sc">(?</span><span class="ss">:</span><span class="sc">\.|\[\])(?</span><span class="ss">:</span><span class="sc">\.|\[\]|</span><span class="ss">$</span><span class="sc">))</span><span class="ss">/g</span><span class="op">;</span></span></code></pre></div>
+<p>This pattern matches:</p>
+<ul>
+<li>Standard identifiers separated by periods
+(<code>user.name</code>).</li>
+<li>Numeric array indices enclosed in brackets
+(<code>users[0]</code>).</li>
+<li>Quoted string keys inside brackets
+(<code>object["complex-key"]</code>).</li>
+<li>Escaped characters within string property names.</li>
+</ul>
+<p>Matched tokens are cleaned, pushed into a sequential array of string
+components, stored in the memoization cache, and returned to
+<code>baseGet</code>.</p>
+<h2 id="object-traversal-via-baseget-and-tokey">Object Traversal via
+<code>baseGet</code> and <code>toKey</code></h2>
+<p>Once the path is converted into an array of path keys,
+<code>baseGet</code> iteratively traverses the object graph using a
+while loop:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseGet</span>(object<span class="op">,</span> path) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  path <span class="op">=</span> <span class="fu">castPath</span>(path<span class="op">,</span> object)<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> index <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> length <span class="op">=</span> path<span class="op">.</span><span class="at">length</span><span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (object <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> index <span class="op">&lt;</span> length) {</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    object <span class="op">=</span> object[<span class="fu">toKey</span>(path[index<span class="op">++</span>])]<span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (index <span class="op">&amp;&amp;</span> index <span class="op">==</span> length) <span class="op">?</span> object <span class="op">:</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="property-normalization-with-tokey">Property Normalization with
+<code>toKey</code></h3>
+<p>During traversal, each segment passes through <code>toKey</code>.
+This ensures that negative zeroes (<code>-0</code>) are converted to
+<code>"-0"</code> and JavaScript <code>Symbol</code> primitives are
+preserved without triggering unwanted string coercion errors.</p>
+<h3 id="safe-navigation">Safe Navigation</h3>
+<p>The <code>while</code> loop checks <code>object != null</code> at
+each iteration. If any intermediate link in the path resolves to
+<code>null</code> or <code>undefined</code>, the loop terminates early.
+This mechanism ensures strict runtime safety, preventing
+<code>TypeError: Cannot read property of undefined</code> exceptions
+without requiring modern optional chaining operators
+(<code>?.</code>).</p>
+<h3 id="verification">Verification</h3>
+<p>After the loop exits, <code>(index &amp;&amp; index == length)</code>
+verifies that traversal resolved every segment in the path sequence. If
+all segments were navigated successfully, the resolved value is
+returned; otherwise, it resolves to <code>undefined</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

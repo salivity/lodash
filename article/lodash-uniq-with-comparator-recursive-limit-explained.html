@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash uniqWith Comparator Recursive Limit Explained - lodash</title>
+    <meta name="description" content="Lodash&#39;s .uniqWith method allows developers to create duplicate-free arrays using a custom comparator function to determine element equivalence. While developers often wonder about the internal recursion limits imposed on this comparator, Lodash itself en">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-uniq-with-comparator-recursive-limit-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash uniqWith Comparator Recursive Limit Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-uniq-with-comparator-recursive-limit-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .uniqWith method allows developers to create duplicate-free arrays using a custom comparator function to determine element equivalence. While developers often wonder about the internal recursion limits imposed on this comparator, Lodash itself en" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-uniqwith-comparator-recursive-limit-explained">Lodash
+uniqWith Comparator Recursive Limit Explained</h1>
+<p>Lodash's <code>_.uniqWith</code> method allows developers to create
+duplicate-free arrays using a custom comparator function to determine
+element equivalence. While developers often wonder about the internal
+recursion limits imposed on this comparator, Lodash itself enforces no
+recursive limit. Because <code>_.uniqWith</code> evaluates elements
+iteratively rather than recursively, any recursion limits encountered
+are entirely governed by the host JavaScript engine's maximum call stack
+size.</p>
+<h2 id="how-lodash-executes-the-custom-comparator">How Lodash Executes
+the Custom Comparator</h2>
+<p>Under the hood, <code>_.uniqWith</code> relies on Lodash’s internal
+<code>baseUniq</code> implementation. When a custom comparator is
+provided, <code>baseUniq</code> iterates through the target array using
+a standard <code>while</code> or <code>for</code> loop. For each
+element, it runs another loop (typically via
+<code>arrayIncludesWith</code>) to compare the current value against
+already accumulated unique values.</p>
+<p>Because Lodash drives this comparison process using iterative loops,
+the library itself introduces zero call stack frames between elements.
+It simply invokes <code>comparator(arrVal, othVal)</code> on each
+iteration.</p>
+<h2 id="the-javascript-engine-call-stack-limit">The JavaScript Engine
+Call Stack Limit</h2>
+<p>Because Lodash does not manage recursion depth, any recursion that
+occurs must originate inside the custom comparator itself—for instance,
+when traversing deeply nested or recursive data structures. In these
+scenarios, the recursion limit is determined solely by the JavaScript
+engine running the code:</p>
+<ul>
+<li><strong>V8 (Node.js and Google Chrome):</strong> Typically allows
+between 10,000 and 15,000 recursive calls, depending on the size of the
+stack frames.</li>
+<li><strong>SpiderMonkey (Mozilla Firefox):</strong> Often supports
+larger stack depths, frequently exceeding 50,000 frames.</li>
+<li><strong>JavaScriptCore (Safari):</strong> Implements dynamic limits
+that generally trigger between 10,000 and 40,000 calls depending on
+available memory.</li>
+</ul>
+<p>Exceeding these limits causes the runtime to throw an uncatchable or
+terminating
+<code>RangeError: Maximum call stack size exceeded</code>.</p>
+<h2 id="handling-recursion-with-_isequal">Handling Recursion with
+_.isEqual</h2>
+<p>A frequent pattern is passing <code>_.isEqual</code> as the custom
+comparator to <code>_.uniqWith</code> to compare objects by value. While
+<code>_.isEqual</code> performs deep object comparisons, it does not
+suffer from runaway recursion when encountering circular references.</p>
+<p>Lodash equips <code>_.isEqual</code> with an internal stack mechanism
+(a <code>Stack</code> cache using <code>Map</code> or pairwise arrays)
+that tracks previously compared object references. If a circular
+reference is detected, comparison stops for that branch, preventing
+stack overflows. However, extremely deep (non-circular) object trees
+that exceed thousands of nested properties can still exhaust the
+engine's call stack.</p>
+<h2 id="preventing-stack-overflows">Preventing Stack Overflows</h2>
+<p>To ensure recursive custom comparators do not break execution during
+<code>_.uniqWith</code> runs:</p>
+<ol type="1">
+<li><strong>Use Iteration for Deep Trees:</strong> If comparing objects
+with arbitrary depth, rewrite the traversal logic using an explicit
+stack array and a <code>while</code> loop rather than recursive function
+calls.</li>
+<li><strong>Sanitize Data Depth:</strong> Flatten or normalize nested
+structures before passing them to array deduplication.</li>
+<li><strong>Guard Against Cyclic Data:</strong> When implementing custom
+deep comparators without <code>_.isEqual</code>, track visited object
+references using a <code>WeakSet</code> or <code>Set</code> to prevent
+infinite loops.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

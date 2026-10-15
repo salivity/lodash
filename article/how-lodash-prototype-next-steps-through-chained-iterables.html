@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash Prototype Next Steps Through Chained Iterables - lodash</title>
+    <meta name="description" content="This article explores the internal mechanics of LazyWrapper.prototype.next in the Lodash JavaScript library, detailing how it leverages lazy evaluation to traverse chained operations. By reading this guide, you will understand how Lodash pipelines transfo">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-prototype-next-steps-through-chained-iterables">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash Prototype Next Steps Through Chained Iterables - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-prototype-next-steps-through-chained-iterables" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores the internal mechanics of LazyWrapper.prototype.next in the Lodash JavaScript library, detailing how it leverages lazy evaluation to traverse chained operations. By reading this guide, you will understand how Lodash pipelines transfo" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-prototype-next-steps-through-chained-iterables">How
+Lodash Prototype Next Steps Through Chained Iterables</h1>
+<p>This article explores the internal mechanics of
+<code>LazyWrapper.prototype.next</code> in the Lodash JavaScript
+library, detailing how it leverages lazy evaluation to traverse chained
+operations. By reading this guide, you will understand how Lodash
+pipelines transformations, maintains state across chained iterable
+sequences, and yields values on demand without creating redundant
+intermediate arrays.</p>
+<p>In Lodash, chaining operations like <code>map</code>,
+<code>filter</code>, and <code>take</code> on a wrapped collection does
+not execute immediately. Instead, calling <code>_ (iterable)</code>
+constructs a <code>LazyWrapper</code> instance. Rather than executing
+each method across the entire collection sequentially, Lodash defers
+execution and records each operation as an action descriptor inside an
+internal <code>__actions__</code> queue.</p>
+<p>The <code>LazyWrapper.prototype.next</code> method adheres to
+JavaScript’s standard iteration protocols. When invoked, it retrieves
+the single next valid value from the chained pipeline, returning an
+object structured as <code>{ done: boolean, value: any }</code>. It does
+this by stepping through the underlying collection item by item rather
+than stage by stage.</p>
+<p>When <code>next()</code> is called, it executes the following
+process:</p>
+<ol type="1">
+<li><p><strong>Source Index Tracking:</strong> Lodash tracks its
+position in the underlying iterable or array using an internal pointer
+(typically <code>this.__index__</code>). It accesses the current item
+and increments the pointer.</p></li>
+<li><p><strong>Pipeline Processing:</strong> The retrieved item is
+passed sequentially through the queue of registered iteratees
+(<code>this.__actions__</code>).</p></li>
+<li><p><strong>Predicate Filtering:</strong> If an action in the chain
+represents a filter and the item fails the predicate check, the
+traversal for that specific element halts immediately. The method
+discards the item, loops back to increment the internal index, and
+begins processing the subsequent item from the source.</p></li>
+<li><p><strong>Value Transformation:</strong> If an action represents a
+transformation (such as <code>map</code>), the item is transformed, and
+the newly produced value is handed down to the next action in the
+chain.</p></li>
+<li><p><strong>Early Termination Checks:</strong> When operators like
+<code>take</code> are present, <code>next()</code> evaluates whether the
+cumulative take count has been satisfied. If the limit has been reached,
+or if the source collection is exhausted, the method immediately returns
+<code>{ done: true, value: undefined }</code>.</p></li>
+</ol>
+<p>Once an item successfully navigates all registered actions without
+being discarded by a filter, <code>next()</code> halts further iteration
+and returns <code>{ done: false, value: result }</code>.</p>
+<p>This element-by-element evaluation enables stream-like data handling.
+Because <code>LazyWrapper.prototype.next</code> processes one item fully
+through the entire pipeline before touching the next, it eliminates the
+CPU overhead and memory allocation of intermediate arrays, making
+chained operations on large datasets highly efficient.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

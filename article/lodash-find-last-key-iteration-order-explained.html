@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash findLastKey Iteration Order Explained - lodash</title>
+    <meta name="description" content="The .findLastKey method in Lodash iterates over an object&#39;s own enumerable properties in reverse to locate the last key satisfying a given predicate. This article examines the exact execution priority that governs the traversal sequence of keys during thi">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-find-last-key-iteration-order-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash findLastKey Iteration Order Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-find-last-key-iteration-order-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .findLastKey method in Lodash iterates over an object&#39;s own enumerable properties in reverse to locate the last key satisfying a given predicate. This article examines the exact execution priority that governs the traversal sequence of keys during thi" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-findlastkey-iteration-order-explained">Lodash findLastKey
+Iteration Order Explained</h1>
+<p>The <code>_.findLastKey</code> method in Lodash iterates over an
+object's own enumerable properties in reverse to locate the last key
+satisfying a given predicate. This article examines the exact execution
+priority that governs the traversal sequence of keys during this
+operation, explaining how Lodash generates its property list, how the
+ECMAScript property traversal specification applies, and the resulting
+reverse evaluation order.</p>
+<h2 id="how-lodash-retrieves-keys">How Lodash Retrieves Keys</h2>
+<p>To iterate backward, Lodash first extracts the target object’s own
+enumerable property names using its internal <code>keys</code>
+implementation (equivalent to <code>Object.keys()</code>). The iteration
+is handled by internal utilities such as <code>baseForOwnRight</code>,
+which loops backward through the gathered keys array from
+<code>length - 1</code> down to <code>0</code>.</p>
+<p>Because the loop iterates from the end of the array to the beginning,
+the iteration sequence is the strict reverse of the ECMAScript
+<code>[[OwnPropertyKeys]]</code> specification order.</p>
+<h2 id="the-ecmascript-key-ordering-rules">The ECMAScript Key Ordering
+Rules</h2>
+<p>Under the ECMAScript standard, property keys on ordinary objects are
+ordered according to the following deterministic rules:</p>
+<ol type="1">
+<li><strong>Integer Indexes:</strong> Keys that qualify as non-negative
+integer strings (e.g., <code>"0"</code>, <code>"1"</code>,
+<code>"42"</code>) are placed first, sorted in <strong>ascending
+numerical order</strong>.</li>
+<li><strong>String Keys:</strong> All other string keys are ordered
+based on <strong>chronological insertion order</strong>.</li>
+<li><strong>Symbols:</strong> Symbol keys are ordered by insertion order
+(though standard <code>_.findLastKey</code> operates only on
+string-keyed properties and ignores Symbols).</li>
+</ol>
+<h2 id="the-reverse-execution-priority-in-_findlastkey">The Reverse
+Execution Priority in <code>_.findLastKey</code></h2>
+<p>Because <code>_.findLastKey</code> evaluates the properties in the
+inverse order of this standardized list, the execution priority during
+iteration is:</p>
+<ol type="1">
+<li><strong>String Keys (Reverse Insertion Order):</strong> Non-integer
+string keys are tested first, beginning with the most recently added
+string property and proceeding backward to the earliest added string
+property.</li>
+<li><strong>Integer Keys (Descending Numerical Order):</strong> Once all
+non-integer string properties have been evaluated, any integer index
+keys are evaluated next, beginning with the highest numeric index down
+to the lowest (e.g., <code>"10"</code>, then <code>"2"</code>, then
+<code>"0"</code>).</li>
+</ol>
+<h3 id="example">Example</h3>
+<p>Consider the following object:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> obj <span class="op">=</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">a</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">10</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">b</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span><span class="op">:</span> <span class="dv">4</span><span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">c</span><span class="op">:</span> <span class="dv">5</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<ol type="1">
+<li><strong>Standard <code>Object.keys</code> Order:</strong>
+<code>["2", "10", "a", "b", "c"]</code></li>
+<li><strong><code>_.findLastKey</code> Iteration Order:</strong>
+<ul>
+<li><code>"c"</code> (last inserted string key)</li>
+<li><code>"b"</code></li>
+<li><code>"a"</code> (first inserted string key)</li>
+<li><code>"10"</code> (highest integer index)</li>
+<li><code>"2"</code> (lowest integer index)</li>
+</ul></li>
+</ol>
+<p>The predicate function passed to <code>_.findLastKey</code> will
+execute on each property in this exact sequence until it returns a
+truthy value or exhausts all own enumerable keys.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

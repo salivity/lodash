@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash hasIn Resolves Nested Prototype Chains - lodash</title>
+    <meta name="description" content="Lodash&#39;s .hasIn method checks whether a specified path exists as either a direct or inherited property on an object. This article examines how Lodash parses nested property paths, navigates intermediate object references, and delegates to the native JavaS">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-has-in-resolves-nested-prototype-chains">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash hasIn Resolves Nested Prototype Chains - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-has-in-resolves-nested-prototype-chains" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .hasIn method checks whether a specified path exists as either a direct or inherited property on an object. This article examines how Lodash parses nested property paths, navigates intermediate object references, and delegates to the native JavaS" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-hasin-resolves-nested-prototype-chains">How Lodash
+hasIn Resolves Nested Prototype Chains</h1>
+<p>Lodash's <code>_.hasIn</code> method checks whether a specified path
+exists as either a direct or inherited property on an object. This
+article examines how Lodash parses nested property paths, navigates
+intermediate object references, and delegates to the native JavaScript
+runtime to traverse deep prototype chains.</p>
+<h3 id="path-normalization-and-parsing">Path Normalization and
+Parsing</h3>
+<p>When <code>_.hasIn(object, path)</code> is invoked, Lodash first
+normalizes the <code>path</code> argument into a standardized array of
+keys. If <code>path</code> is passed as a dot-notation string or
+bracket-notation string (such as <code>'user.profile.settings'</code>),
+it is processed through Lodash's internal <code>castPath</code> and
+<code>stringToPath</code> utilities. This splits the string into
+discrete segments: <code>['user', 'profile', 'settings']</code>. If an
+array is already provided, Lodash uses it directly, ensuring uniform
+key-by-key processing.</p>
+<h3 id="step-by-step-navigation">Step-by-Step Navigation</h3>
+<p>To verify deeply nested paths, Lodash iterates through the path
+segments sequentially rather than attempting to resolve the full chain
+in a single operation:</p>
+<ol type="1">
+<li><strong>Intermediate Traversal</strong>: For every path segment
+prior to the final target, Lodash retrieves the intermediate value using
+standard property access (equivalent to
+<code>current = current[segment]</code>). In JavaScript, standard member
+access automatically walks the prototype chain of <code>current</code>.
+If an intermediate property resides on a prototype rather than the
+instance itself, the engine resolves it seamlessly.</li>
+<li><strong>Null and Undefined Checks</strong>: At each step, Lodash
+verifies that the current target is non-null and not undefined. If any
+intermediate value resolves to <code>null</code> or
+<code>undefined</code>, execution stops immediately, and
+<code>_.hasIn</code> returns <code>false</code>.</li>
+</ol>
+<h3 id="terminal-resolution-via-the-in-operator">Terminal Resolution via
+the <code>in</code> Operator</h3>
+<p>Once Lodash reaches the final segment in the path array, it executes
+an internal check (typically <code>baseHasIn</code>), which leverages
+JavaScript's native <code>in</code> operator:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseHasIn</span>(object<span class="op">,</span> key) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> object <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> key <span class="kw">in</span> <span class="bu">Object</span>(object)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The <code>in</code> operator evaluates the property across the full
+prototype chain of the final target:</p>
+<ul>
+<li>The JavaScript engine checks if the key exists directly on the
+target object.</li>
+<li>If it is not found, the engine follows the internal
+<code>[[Prototype]]</code> link to the parent object.</li>
+<li>This traversal continues up the chain until the property is
+encountered or the prototype chain terminates at <code>null</code>.</li>
+</ul>
+<h3 id="handling-primitive-values">Handling Primitive Values</h3>
+<p>If an intermediate value or the base object is a primitive (such as a
+string or number), Lodash wraps it via <code>Object(object)</code>
+during the <code>in</code> check. This coercion ensures that properties
+inherited from built-in prototypes—such as <code>String.prototype</code>
+or <code>Number.prototype</code>—are correctly evaluated without
+throwing runtime errors.</p>
+<h3 id="summary-of-the-mechanism">Summary of the Mechanism</h3>
+<p><code>_.hasIn</code> does not manually crawl prototypes via
+<code>Object.getPrototypeOf()</code> or <code>__proto__</code>. Instead,
+it combines path normalization with iterative intermediate member access
+and a final native <code>in</code> check. By letting the JavaScript
+engine handle the actual prototype lookups at each segment of the path,
+Lodash resolves arbitrarily deep inheritance chains reliably and
+performantly.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

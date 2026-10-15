@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.partition Collection Mutation Behavior - lodash</title>
+    <meta name="description" content="This article explores how Lodash&#39;s .partition method behaves when a predicate function conditionally mutates the underlying collection during evaluation. It breaks down the internal iteration mechanics of Lodash, the consequences of index shifting and cac">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-partition-collection-mutation-behavior">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.partition Collection Mutation Behavior - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-partition-collection-mutation-behavior" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how Lodash&#39;s .partition method behaves when a predicate function conditionally mutates the underlying collection during evaluation. It breaks down the internal iteration mechanics of Lodash, the consequences of index shifting and cac" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_partition-collection-mutation-behavior">Lodash
+_.partition Collection Mutation Behavior</h1>
+<p>This article explores how Lodash's <code>_.partition</code> method
+behaves when a predicate function conditionally mutates the underlying
+collection during evaluation. It breaks down the internal iteration
+mechanics of Lodash, the consequences of index shifting and cached
+bounds, and why in-place mutations lead to non-deterministic
+partitioning results.</p>
+<hr />
+<h3 id="internal-iteration-mechanics-of-_partition">Internal Iteration
+Mechanics of <code>_.partition</code></h3>
+<p>In Lodash, <code>_.partition</code> is built on top of internal
+aggregation utilities (such as <code>createAggregator</code>). When
+invoked on an array, it iterates sequentially from index <code>0</code>
+up to <code>length - 1</code> using an internal loop structure similar
+to <code>arrayEach</code>.</p>
+<p>Crucially, the iteration bounds—specifically the array's
+<code>length</code>—are generally evaluated at the start of the
+iteration cycle, and an internal counter increments monotonically by
+<code>1</code> on each step. Each element at the current index is passed
+to the predicate function, and depending on whether the return value is
+truthy or falsy, the element is pushed into one of two result arrays:
+<code>[pass, fail]</code>.</p>
+<h3 id="what-happens-when-predicates-mutate-the-collection">What Happens
+When Predicates Mutate the Collection</h3>
+<p>Because JavaScript arrays are reference types and Lodash iterates
+directly over the source reference without cloning it beforehand,
+modifying the collection inside the predicate directly alters the
+execution context of subsequent iterations.</p>
+<h4 id="1-deleting-elements-eg-splice">1. Deleting Elements (e.g.,
+<code>splice</code>)</h4>
+<p>If the predicate removes an element using methods like
+<code>Array.prototype.splice()</code>:</p>
+<ul>
+<li>The elements to the right of the removed item shift left to fill the
+gap.</li>
+<li>Because the internal loop counter increments regardless, the element
+that shifts into the current index is skipped entirely.</li>
+<li>The loop may attempt to access indices that no longer contain valid
+elements near the original boundary, resulting in <code>undefined</code>
+values being evaluated and partitioned.</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span>]<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> [evens<span class="op">,</span> odds] <span class="op">=</span> _<span class="op">.</span><span class="fu">partition</span>(numbers<span class="op">,</span> (num<span class="op">,</span> index<span class="op">,</span> arr) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (num <span class="op">===</span> <span class="dv">2</span>) {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    arr<span class="op">.</span><span class="fu">splice</span>(index<span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span> <span class="co">// Mutating the source array</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> num <span class="op">%</span> <span class="dv">2</span> <span class="op">===</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Result:</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">// - `3` shifted into index 1 and was skipped.</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">// - `evens` receives [2, 4]</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">// - `odds` receives [1, 5]</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">// - `numbers` is permanently modified to [1, 3, 4, 5]</span></span></code></pre></div>
+<h4 id="2-adding-elements-eg-push-unshift">2. Adding Elements (e.g.,
+<code>push</code>, <code>unshift</code>)</h4>
+<ul>
+<li><strong><code>push</code></strong>: Appending elements to the end of
+the array expands the collection. However, because Lodash uses a
+pre-calculated length in its internal array iterator, newly appended
+items are typically ignored and will not be evaluated by the partition
+logic.</li>
+<li><strong><code>unshift</code></strong>: Prepending elements shifts
+existing items to higher indices, causing the loop to re-evaluate
+elements it has already processed, leading to duplicate assignments
+across the result partitions.</li>
+</ul>
+<h4 id="3-in-place-element-property-mutation">3. In-Place Element
+Property Mutation</h4>
+<p>If the predicate mutates the properties of an individual element
+rather than changing the array's structure, the mutation persists. The
+partitioned arrays store shallow references to the original objects. Any
+mutation applied to an object during the predicate's execution will be
+reflected in both the source array and the output partitions.</p>
+<h3 id="summary-of-behavioral-risks">Summary of Behavioral Risks</h3>
+<ul>
+<li><strong>Skipped Iterations:</strong> Removing elements causes
+subsequent adjacent elements to bypass evaluation.</li>
+<li><strong>Ignored Appends:</strong> Adding elements dynamically
+generally does not extend the partition loop.</li>
+<li><strong>Reference Contamination:</strong> Modifying object
+properties inside the predicate permanently alters the input collection
+and the partitioned output.</li>
+</ul>
+<p>To ensure predictable results, predicates passed to
+<code>_.partition</code> should remain pure functions without side
+effects. If the source collection must be modified, clone the collection
+prior to partitioning or perform mutations in a separate processing
+step.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

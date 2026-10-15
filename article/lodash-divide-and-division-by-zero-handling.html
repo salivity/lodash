@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash divide and Division by Zero Handling - lodash</title>
+    <meta name="description" content="This article examines how the .divide method in the Lodash JavaScript library manages division by zero. Unlike languages or libraries that throw runtime exceptions for invalid mathematical operations, Lodash adheres strictly to native JavaScript arithmeti">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-divide-and-division-by-zero-handling">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash divide and Division by Zero Handling - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-divide-and-division-by-zero-handling" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the .divide method in the Lodash JavaScript library manages division by zero. Unlike languages or libraries that throw runtime exceptions for invalid mathematical operations, Lodash adheres strictly to native JavaScript arithmeti" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-divide-and-division-by-zero-handling">Lodash divide and
+Division by Zero Handling</h1>
+<p>This article examines how the <code>_.divide</code> method in the
+Lodash JavaScript library manages division by zero. Unlike languages or
+libraries that throw runtime exceptions for invalid mathematical
+operations, Lodash adheres strictly to native JavaScript arithmetic
+standards. Consequently, dividing by zero using <code>_.divide</code>
+does not crash your application; instead, it returns
+<code>Infinity</code>, <code>-Infinity</code>, or <code>NaN</code>
+depending on the operands. Below is a direct explanation of this
+behavior, code demonstrations, and strategies for handling zero division
+safely in your applications.</p>
+<h2 id="native-javascript-behavior-in-lodash">Native JavaScript Behavior
+in Lodash</h2>
+<p>Lodash’s <code>_.divide(dividend, divisor)</code> is essentially a
+wrapper around the native JavaScript division operator (<code>/</code>).
+JavaScript follows the IEEE 754 standard for floating-point arithmetic.
+Under this standard, dividing by zero is mathematically defined rather
+than treated as a fatal error.</p>
+<p>Because <code>_.divide</code> performs direct division without
+internal validation for zero values, it reflects standard ECMAScript
+results:</p>
+<ul>
+<li><strong>Positive number divided by zero:</strong> Returns
+<code>Infinity</code>.</li>
+<li><strong>Negative number divided by zero:</strong> Returns
+<code>-Infinity</code>.</li>
+<li><strong>Zero divided by zero:</strong> Returns <code>NaN</code> (Not
+a Number).</li>
+</ul>
+<h2 id="code-examples">Code Examples</h2>
+<p>The following examples demonstrate how <code>_.divide</code> responds
+to different division-by-zero cases:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Dividing a positive number by zero</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> positiveResult <span class="op">=</span> _<span class="op">.</span><span class="fu">divide</span>(<span class="dv">10</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(positiveResult)<span class="op">;</span> <span class="co">// Output: Infinity</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Dividing a negative number by zero</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> negativeResult <span class="op">=</span> _<span class="op">.</span><span class="fu">divide</span>(<span class="op">-</span><span class="dv">10</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(negativeResult)<span class="op">;</span> <span class="co">// Output: -Infinity</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Dividing zero by zero</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> zeroResult <span class="op">=</span> _<span class="op">.</span><span class="fu">divide</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(zeroResult)<span class="op">;</span> <span class="co">// Output: NaN</span></span></code></pre></div>
+<p>In none of these cases does Lodash throw a <code>RangeError</code>,
+<code>TypeError</code>, or any custom error.</p>
+<h2 id="preventing-unexpected-values">Preventing Unexpected Values</h2>
+<p>Because <code>_.divide</code> produces <code>Infinity</code> or
+<code>NaN</code>, unchecked zero division can lead to silent failures
+downstream in your application—such as database insertion errors, broken
+UI elements, or corrupted calculations.</p>
+<p>To mitigate this, implement defensive programming patterns before or
+after executing <code>_.divide</code>.</p>
+<h3 id="1-pre-validation-guard-clause">1. Pre-validation Guard
+Clause</h3>
+<p>Verify that the divisor is non-zero before invoking the function:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">safeDivide</span>(dividend<span class="op">,</span> divisor<span class="op">,</span> fallback <span class="op">=</span> <span class="dv">0</span>) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (divisor <span class="op">===</span> <span class="dv">0</span>) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fallback<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> _<span class="op">.</span><span class="fu">divide</span>(dividend<span class="op">,</span> divisor)<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">safeDivide</span>(<span class="dv">10</span><span class="op">,</span> <span class="dv">0</span>))<span class="op">;</span> <span class="co">// Output: 0</span></span></code></pre></div>
+<h3 id="2-post-calculation-validation">2. Post-calculation
+Validation</h3>
+<p>Use native functions like <code>isFinite()</code> or Lodash’s
+<code>_.isFinite()</code> to ensure the output is a valid, usable
+number:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">divide</span>(<span class="dv">10</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="op">!</span>_<span class="op">.</span><span class="fu">isFinite</span>(result)) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Handle invalid calculation</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">warn</span>(<span class="st">&#39;Calculation resulted in non-finite value.&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="summary">Summary</h2>
+<p>The Lodash <code>_.divide</code> method does not handle or intercept
+zero division with exceptions. It directly yields native JavaScript
+values: <code>Infinity</code>, <code>-Infinity</code>, or
+<code>NaN</code>. Developers must implement explicit validation logic
+using checks like <code>divisor !== 0</code> or
+<code>_.isFinite()</code> to ensure calculations remain safe and
+predictable.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

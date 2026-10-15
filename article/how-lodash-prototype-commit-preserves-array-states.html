@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash prototype.commit Preserves Array States - lodash</title>
+    <meta name="description" content="Lodash utilizes lazy evaluation and shortcut fusion to optimize chained transformations, deferring execution until an explicit unwrapping method is invoked. The lodash.prototype.commit method intercepts this lazy sequence by forcing an immediate evaluatio">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-prototype-commit-preserves-array-states">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash prototype.commit Preserves Array States - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-prototype-commit-preserves-array-states" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash utilizes lazy evaluation and shortcut fusion to optimize chained transformations, deferring execution until an explicit unwrapping method is invoked. The lodash.prototype.commit method intercepts this lazy sequence by forcing an immediate evaluatio" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-prototypecommit-preserves-array-states">How Lodash
+prototype.commit Preserves Array States</h1>
+<p>Lodash utilizes lazy evaluation and shortcut fusion to optimize
+chained transformations, deferring execution until an explicit
+unwrapping method is invoked. The <code>lodash.prototype.commit</code>
+method intercepts this lazy sequence by forcing an immediate evaluation
+of the current pipeline, instantiating the intermediate transformed
+array in memory, and re-wrapping it into a fresh Lodash wrapper. This
+process halts loop fusion at a deterministic checkpoint, fundamentally
+preserving mapped intermediate array states before subsequent
+transformations are queued.</p>
+<h3 id="the-mechanics-of-lazy-evaluation-in-lodash">The Mechanics of
+Lazy Evaluation in Lodash</h3>
+<p>When methods such as <code>map</code>, <code>filter</code>, or
+<code>take</code> are called within an explicit Lodash chain
+(<code>_(array)</code>), Lodash does not instantly create intermediate
+arrays. Instead, it captures these operations as function descriptors
+inside an internal <code>LazyWrapper</code> structure, specifically
+populating an internal actions queue (<code>__actions__</code>).</p>
+<p>Under standard chaining, Lodash relies on shortcut fusion. It
+combines iteratees into a single iteration pass, passing each array
+element through all chained operations sequentially rather than
+resolving entire arrays between steps. While this optimizes memory
+allocation and CPU cycles, it leaves intermediate array states
+unmaterialized.</p>
+<h3 id="how-prototypecommit-executes-and-anchors-state">How
+prototype.commit Executes and Anchors State</h3>
+<p>Calling <code>.commit()</code> directly disrupts this deferred fusion
+model through a three-step sequence:</p>
+<ol type="1">
+<li><strong>Pipeline Flush (<code>this.value()</code>):</strong> When
+<code>.commit()</code> is called, it triggers the execution of all
+accumulated operations currently queued in <code>__actions__</code> or
+managed by the underlying <code>LazyWrapper</code>. The iteratees are
+executed over the input data, resolving all pending maps, filters, and
+slices into a concrete JavaScript array.</li>
+<li><strong>Intermediate Array Allocation:</strong> The generated array
+is explicitly allocated in memory. Because execution has been forced,
+the elements reflect the exact state resulting from all transformations
+defined prior to the <code>.commit()</code> invocation.</li>
+<li><strong>Wrapper Re-instantiation:</strong> Instead of returning the
+raw unwrapped array (as <code>value()</code> or <code>run()</code>
+does), <code>commit</code> wraps the newly allocated array in a new
+<code>LodashWrapper</code> instance. It preserves chaining metadata—such
+as the <code>__chain__</code> boolean flag—while setting the internal
+<code>__wrapped__</code> property to the newly evaluated array. The
+internal action queues (<code>__actions__</code>) and lazy tracking
+properties are cleared or reset.</li>
+</ol>
+<h3 id="preventing-downstream-fusion-and-side-effects">Preventing
+Downstream Fusion and Side Effects</h3>
+<p>By instantiating a new wrapper around the materialized array,
+<code>prototype.commit</code> establishes a strict execution boundary.
+Any subsequent calls (e.g., additional <code>.map()</code> or
+<code>.filter()</code> calls) operate on the newly wrapped snapshot
+rather than compounding onto the earlier execution plan.</p>
+<p>This isolation provides two critical behaviors:</p>
+<ul>
+<li><strong>Memory Snapshotting:</strong> If an iteratee mutates objects
+or relies on an intermediate index structure, committing the sequence
+guarantees that all elements have been fully processed and locked into
+their intermediate indices before downstream operations commence.</li>
+<li><strong>Predictable Branching:</strong> Storing a committed chain
+allows developers to reuse intermediate computations across multiple
+pipeline branches without re-running upstream operations.</li>
+</ul>
+<p>Ultimately, <code>lodash.prototype.commit</code> converts transient
+stream computations into a persistent, physical array in memory,
+ensuring that intermediate mapped states remain immutable checkpoints in
+dynamic data pipelines.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

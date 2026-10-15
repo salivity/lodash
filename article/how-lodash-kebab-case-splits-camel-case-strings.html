@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash kebabCase Splits CamelCase Strings - lodash</title>
+    <meta name="description" content="The Lodash .kebabCase function converts strings into hyphen-separated lowercase words by first parsing the input into individual word tokens using an internal boundary-detection mechanism. This article outlines the specific character boundaries Lodash rec">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-kebab-case-splits-camel-case-strings">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash kebabCase Splits CamelCase Strings - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-kebab-case-splits-camel-case-strings" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .kebabCase function converts strings into hyphen-separated lowercase words by first parsing the input into individual word tokens using an internal boundary-detection mechanism. This article outlines the specific character boundaries Lodash rec" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-kebabcase-splits-camelcase-strings">How Lodash
+kebabCase Splits CamelCase Strings</h1>
+<p>The Lodash <code>_.kebabCase</code> function converts strings into
+hyphen-separated lowercase words by first parsing the input into
+individual word tokens using an internal boundary-detection mechanism.
+This article outlines the specific character boundaries Lodash
+recognizes to accurately split camelCase and mixed-case strings,
+covering transitions between lowercase and uppercase characters,
+consecutive acronyms, numeric sequences, and Unicode boundaries.</p>
+<h2 id="the-underlying-mechanism-lodash-words">The Underlying Mechanism:
+Lodash <code>words</code></h2>
+<p>To convert a string to kebab-case, <code>_.kebabCase</code> calls
+Lodash's internal <code>words</code> function. Instead of splitting by a
+simple delimiter like a space or hyphen, Lodash applies specialized
+regular expressions to match complete words based on character classes
+and casing transitions.</p>
+<p>Depending on the input string, Lodash selects either a standard ASCII
+regex pattern or a comprehensive Unicode-aware regex pattern.</p>
+<h2 id="specific-character-bounds-recognized">Specific Character Bounds
+Recognized</h2>
+<p>Lodash splits camelCased strings by identifying the following
+specific structural boundaries:</p>
+<h3 id="1-lowercase-to-uppercase-transitions">1. Lowercase to Uppercase
+Transitions</h3>
+<p>The most common camelCase boundary occurs when an uppercase letter
+directly follows a lowercase letter (<code>[a-z][A-Z]</code>).</p>
+<ul>
+<li><strong>Rule:</strong> A boundary is placed between the lowercase
+character and the beginning of the uppercase character.</li>
+<li><strong>Example:</strong> <code>fooBar</code> is separated at the
+<code>o</code> and <code>B</code> boundary to produce <code>foo</code>
+and <code>bar</code>, yielding <code>foo-bar</code>.</li>
+</ul>
+<h3 id="2-acronyms-and-consecutive-uppercase-boundaries">2. Acronyms and
+Consecutive Uppercase Boundaries</h3>
+<p>When multiple consecutive uppercase letters are followed by a
+lowercase letter, standard camelCase splitters often break words
+incorrectly. Lodash handles this by using a lookahead pattern that
+recognizes where an acronym ends and a standard capitalized word begins
+(<code>[A-Z]{2,}(?=[A-Z][a-z])</code>).</p>
+<ul>
+<li><strong>Rule:</strong> A boundary is placed before the final
+uppercase character in a consecutive sequence if that final uppercase
+character is followed by a lowercase letter.</li>
+<li><strong>Example:</strong> <code>getHTTPResponse</code> is split into
+<code>get</code>, <code>HTTP</code>, and <code>Response</code>,
+producing <code>get-http-response</code> rather than
+<code>get-httpresponse</code>.</li>
+</ul>
+<h3 id="3-alphabetic-and-numeric-boundaries">3. Alphabetic and Numeric
+Boundaries</h3>
+<p>Lodash distinguishes between letters and numeric sequences, treating
+contiguous blocks of numbers as distinct entities or suffixes depending
+on their surrounding casing.</p>
+<ul>
+<li><strong>Rule:</strong> Boundaries exist between digits
+(<code>0-9</code>) and adjacent alphabetic characters
+(<code>a-zA-Z</code>), splitting numbers from succeeding words.</li>
+<li><strong>Example:</strong> <code>item12Details</code> is split at the
+number boundaries to yield <code>item</code>, <code>12</code>, and
+<code>details</code>, resulting in <code>item-12-details</code>.</li>
+</ul>
+<h3 id="4-non-alphanumeric-and-symbol-boundaries">4. Non-Alphanumeric
+and Symbol Boundaries</h3>
+<p>Any character that is not a letter or a digit serves as an explicit
+delimiter. Characters such as underscores (<code>_</code>), hyphens
+(<code>-</code>), spaces (<code>\s</code>), and other punctuation are
+treated as terminal boundaries.</p>
+<ul>
+<li><strong>Rule:</strong> Non-word characters are matched as separators
+and are stripped entirely from the resulting tokens.</li>
+<li><strong>Example:</strong> <code>user_camelCase</code> splits at the
+underscore and the <code>lC</code> transition, yielding
+<code>user-camel-case</code>.</li>
+</ul>
+<h3 id="5-unicode-casing-boundaries">5. Unicode Casing Boundaries</h3>
+<p>If a string contains characters outside the standard ASCII range
+(such as accented characters or non-Latin scripts), Lodash uses regular
+expressions built with Unicode character classes (such as
+<code>\p{Lu}</code> for uppercase letters and <code>\p{Ll}</code> for
+lowercase letters).</p>
+<ul>
+<li><strong>Rule:</strong> The same casing and acronym transitions used
+for ASCII are mapped to their respective Unicode casing
+counterparts.</li>
+<li><strong>Example:</strong> Strings containing characters like
+<code>é</code> or <code>Ø</code> are correctly split when followed or
+preceded by opposing casing formats.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

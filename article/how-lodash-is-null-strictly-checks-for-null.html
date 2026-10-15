@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.isNull Strictly Checks for Null - lodash</title>
+    <meta name="description" content="This article explains how the .isNull method in the Lodash JavaScript library strictly evaluates null assignments. It examines the underlying mechanism Lodash uses to confirm the null primitive, highlights the common JavaScript quirks surrounding null and">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-is-null-strictly-checks-for-null">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.isNull Strictly Checks for Null - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-is-null-strictly-checks-for-null" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the .isNull method in the Lodash JavaScript library strictly evaluates null assignments. It examines the underlying mechanism Lodash uses to confirm the null primitive, highlights the common JavaScript quirks surrounding null and" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_isnull-strictly-checks-for-null">How Lodash _.isNull
+Strictly Checks for Null</h1>
+<p>This article explains how the <code>_.isNull</code> method in the
+Lodash JavaScript library strictly evaluates <code>null</code>
+assignments. It examines the underlying mechanism Lodash uses to confirm
+the <code>null</code> primitive, highlights the common JavaScript quirks
+surrounding <code>null</code> and <code>undefined</code>, and details
+why using strict identity checks prevents unexpected type coercion in
+your code.</p>
+<h3 id="the-mechanism-behind-_isnull">The Mechanism Behind
+<code>_.isNull</code></h3>
+<p>At its core, Lodash implements <code>_.isNull</code> using
+JavaScript's strict equality operator (<code>===</code>). In the Lodash
+source code, the function is defined simply as:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">isNull</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value <span class="op">===</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By leveraging <code>===</code>, Lodash guarantees that the operand
+must match both the type and the exact primitive value of
+<code>null</code>. It bypasses the type coercion that occurs with loose
+equality operators, ensuring that only an explicit <code>null</code>
+returns <code>true</code>.</p>
+<h3 id="overcoming-native-javascript-quirks">Overcoming Native
+JavaScript Quirks</h3>
+<p>JavaScript handles <code>null</code> in ways that often confuse
+developers relying on built-in operators like <code>typeof</code> or
+loose equality (<code>==</code>):</p>
+<ol type="1">
+<li><strong>The <code>typeof</code> Bug:</strong> Running
+<code>typeof null</code> returns <code>"object"</code>. This legacy bug
+from the initial version of JavaScript makes <code>typeof</code> useless
+for validating whether a variable is strictly <code>null</code>.</li>
+<li><strong>Loose Equality Coercion:</strong> Using
+<code>value == null</code> evaluates to <code>true</code> if the
+variable is either <code>null</code> or <code>undefined</code>. While
+useful when checking for the absence of any value, it fails when a
+program must distinguish between an intentionally empty state
+(<code>null</code>) and an uninitialized state
+(<code>undefined</code>).</li>
+</ol>
+<p><code>_.isNull</code> eliminates these ambiguities by ensuring that
+no coercion takes place.</p>
+<h3 id="behavior-against-common-javascript-values">Behavior Against
+Common JavaScript Values</h3>
+<p>To understand how strictly <code>_.isNull</code> behaves, consider
+how it evaluates various falsy and non-null values:</p>
+<ul>
+<li><code>_.isNull(null)</code> returns <code>true</code></li>
+<li><code>_.isNull(undefined)</code> returns <code>false</code></li>
+<li><code>_.isNull(void 0)</code> returns <code>false</code></li>
+<li><code>_.isNull(false)</code> returns <code>false</code></li>
+<li><code>_.isNull(0)</code> returns <code>false</code></li>
+<li><code>_.isNull('')</code> returns <code>false</code></li>
+<li><code>_.isNull(NaN)</code> returns <code>false</code></li>
+<li><code>_.isNull({})</code> returns <code>false</code></li>
+</ul>
+<p>Because strict equality requires identical memory references for
+objects or identical types and values for primitives, none of these
+values can trigger a false positive.</p>
+<h3 id="practical-benefit-in-application-logic">Practical Benefit in
+Application Logic</h3>
+<p>While writing <code>value === null</code> in native JavaScript
+provides identical functionality, <code>_.isNull</code> offers
+functional utility within Lodash's broader ecosystem. It can be passed
+directly as a callback or predicate function to higher-order
+functions—such as <code>_.filter</code>, <code>_.reject</code>, or
+<code>_.some</code>—without the need to define an inline arrow
+function:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Using _.isNull as a predicate</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> data <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="kw">null</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">undefined</span><span class="op">,</span> <span class="kw">null</span><span class="op">,</span> <span class="dv">3</span>]<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> nonNullValues <span class="op">=</span> _<span class="op">.</span><span class="fu">reject</span>(data<span class="op">,</span> _<span class="op">.</span><span class="at">isNull</span>)<span class="op">;</span> </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Result: [1, 2, undefined, 3]</span></span></code></pre></div>
+<p>Through this single, strict identity comparison, Lodash provides a
+predictable and declarative way to guard against incorrect variable
+states.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

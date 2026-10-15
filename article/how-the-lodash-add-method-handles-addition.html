@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How the Lodash _.add Method Handles Addition - lodash</title>
+    <meta name="description" content="This article provides an overview of the .add method in the Lodash JavaScript library, explaining its core syntax, internal execution mechanism, type coercion behaviors, and common use cases in functional programming. The .add method in Lodash is a mathem">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-the-lodash-add-method-handles-addition">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How the Lodash _.add Method Handles Addition - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-the-lodash-add-method-handles-addition" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of the .add method in the Lodash JavaScript library, explaining its core syntax, internal execution mechanism, type coercion behaviors, and common use cases in functional programming. The .add method in Lodash is a mathem" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-the-lodash-_add-method-handles-addition">How the Lodash
+_.add Method Handles Addition</h1>
+<p>This article provides an overview of the <code>_.add</code> method in
+the Lodash JavaScript library, explaining its core syntax, internal
+execution mechanism, type coercion behaviors, and common use cases in
+functional programming.</p>
+<p>The <code>_.add</code> method in Lodash is a mathematical utility
+designed to add two numbers together. Its syntax accepts two arguments:
+the <code>augend</code> (the first number) and the <code>addend</code>
+(the second number).</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> _ <span class="im">from</span> <span class="st">&#39;lodash&#39;</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">add</span>(<span class="dv">6</span><span class="op">,</span> <span class="dv">4</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; 10</span></span></code></pre></div>
+<h3 id="internal-implementation">Internal Implementation</h3>
+<p>Under the hood, <code>_.add</code> is created using Lodash’s internal
+<code>createMathOperation</code> wrapper. Instead of simply wrapping the
+native JavaScript <code>+</code> operator without checks,
+<code>createMathOperation</code> standardizes how missing or
+non-standard numeric inputs are processed before performing the
+addition.</p>
+<p>When invoked, the function determines how to handle each operand:</p>
+<ol type="1">
+<li><strong>Defined Numbers:</strong> If both arguments are valid
+numbers, it returns their standard mathematical sum using native
+JavaScript arithmetic.</li>
+<li><strong>Undefined Values:</strong> If an argument is
+<code>undefined</code>, Lodash treats it as the default value
+<code>0</code>. For example, <code>_.add(5, undefined)</code> evaluates
+to <code>5</code>.</li>
+<li><strong>Strings and Type Coercion:</strong> If one of the operands
+is a string, Lodash falls back on standard JavaScript type coercion,
+converting the other operand to a string and performing string
+concatenation (e.g., <code>_.add('6', 4)</code> returns
+<code>'64'</code>).</li>
+<li><strong>Other Non-Numeric Types:</strong> Primitive values like
+<code>null</code> or boolean values are coerced according to JavaScript
+rules (e.g., <code>null</code> becomes <code>0</code>, <code>true</code>
+becomes <code>1</code>).</li>
+</ol>
+<h3 id="why-use-_add-over-the-native--operator">Why Use
+<code>_.add</code> Over the Native <code>+</code> Operator?</h3>
+<p>While <code>a + b</code> is sufficient for standard arithmetic,
+<code>_.add</code> is primarily used in functional programming
+patterns:</p>
+<ul>
+<li><p><strong>Higher-Order Functions:</strong> Because
+<code>_.add</code> is a named function rather than an operator, it can
+be passed directly as a callback without creating an inline arrow
+function:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span>]<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sum <span class="op">=</span> numbers<span class="op">.</span><span class="fu">reduce</span>(_<span class="op">.</span><span class="at">add</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// =&gt; 10</span></span></code></pre></div></li>
+<li><p><strong>Composition and Currying:</strong> Functional utility
+libraries often curry functions or use them in pipelines (such as with
+<code>_.flow</code> or Lodash FP). A standalone function allows addition
+to be composed cleanly alongside other transformations.</p></li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

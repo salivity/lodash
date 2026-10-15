@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash find Return Value When No Match Is Found - lodash</title>
+    <meta name="description" content="When searching through collections in JavaScript using the Lodash utility library, understanding the default behavior of search methods is essential for avoiding runtime errors. This article explains the exact execution fallback returned by .find when no">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-find-return-value-when-no-match-is-found">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash find Return Value When No Match Is Found - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-find-return-value-when-no-match-is-found" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When searching through collections in JavaScript using the Lodash utility library, understanding the default behavior of search methods is essential for avoiding runtime errors. This article explains the exact execution fallback returned by .find when no" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-find-return-value-when-no-match-is-found">Lodash find
+Return Value When No Match Is Found</h1>
+<p>When searching through collections in JavaScript using the Lodash
+utility library, understanding the default behavior of search methods is
+essential for avoiding runtime errors. This article explains the exact
+execution fallback returned by <code>_.find</code> when no element
+satisfies the predicate, demonstrates how it behaves through code
+examples, and covers best practices for safely handling the resulting
+value.</p>
+<h2 id="the-execution-fallback-undefined">The Execution Fallback:
+<code>undefined</code></h2>
+<p>If the predicate function in <code>_.find</code> iterates through the
+entire collection and does not successfully match any element, the
+execution fallback returned by the method is
+<strong><code>undefined</code></strong>.</p>
+<p>Lodash does not throw an error or return <code>null</code>,
+<code>false</code>, or <code>-1</code>; it strictly returns the
+primitive value <code>undefined</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> users <span class="op">=</span> [</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> }<span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Bob&#39;</span> }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Searching for a non-existent user</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">find</span>(users<span class="op">,</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Charlie&#39;</span> })<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result)<span class="op">;</span> </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: undefined</span></span></code></pre></div>
+<h2 id="handling-the-undefined-fallback">Handling the
+<code>undefined</code> Fallback</h2>
+<p>Because the fallback is <code>undefined</code>, attempting to access
+properties directly on the result without validation will result in a
+<code>TypeError: Cannot read properties of undefined</code>.</p>
+<p>You can handle the <code>undefined</code> fallback using several
+standard JavaScript and Lodash techniques:</p>
+<h3 id="1-optional-chaining-">1. Optional Chaining
+(<code>?.</code>)</h3>
+<p>Optional chaining allows you to safely read nested properties without
+causing a runtime exception if the item was not found.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> _<span class="op">.</span><span class="fu">find</span>(users<span class="op">,</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">99</span> })<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> userName <span class="op">=</span> user<span class="op">?.</span><span class="at">name</span><span class="op">;</span> <span class="co">// Evaluates to undefined instead of throwing an error</span></span></code></pre></div>
+<h3 id="2-nullish-coalescing-">2. Nullish Coalescing
+(<code>??</code>)</h3>
+<p>If your application requires a default fallback object or value, use
+the nullish coalescing operator:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> defaultUser <span class="op">=</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Guest&#39;</span> }<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> _<span class="op">.</span><span class="fu">find</span>(users<span class="op">,</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">99</span> }) <span class="op">??</span> defaultUser<span class="op">;</span></span></code></pre></div>
+<h3 id="3-lodash-_defaultto">3. Lodash <code>_.defaultTo</code></h3>
+<p>Lodash provides a built-in helper to substitute
+<code>undefined</code> (or <code>NaN</code>/<code>null</code>) with a
+default value:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> _<span class="op">.</span><span class="fu">defaultTo</span>(_<span class="op">.</span><span class="fu">find</span>(users<span class="op">,</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">99</span> })<span class="op">,</span> { <span class="dt">id</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Guest&#39;</span> })<span class="op">;</span></span></code></pre></div>
+<h2 id="potential-pitfall-collections-containing-undefined">Potential
+Pitfall: Collections Containing <code>undefined</code></h2>
+<p>A common edge case occurs when searching an array that explicitly
+contains <code>undefined</code> values:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> list <span class="op">=</span> [<span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="kw">undefined</span><span class="op">,</span> <span class="dv">4</span>]<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">find</span>(list<span class="op">,</span> (item) <span class="kw">=&gt;</span> item <span class="op">===</span> <span class="kw">undefined</span>)<span class="op">;</span></span></code></pre></div>
+<p>In this scenario, <code>_.find</code> returns <code>undefined</code>
+because the element was successfully located, not because the search
+failed. If your logic needs to distinguish between "element not found"
+and "element found with value undefined", use <code>_.findIndex</code>
+or <code>_.some</code> instead:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> exists <span class="op">=</span> _<span class="op">.</span><span class="fu">some</span>(list<span class="op">,</span> (item) <span class="kw">=&gt;</span> item <span class="op">===</span> <span class="kw">undefined</span>)<span class="op">;</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns true, confirming the value exists in the array</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash kebabCase Parses Internal Capitalization - lodash</title>
+    <meta name="description" content="The Lodash .kebabCase method converts strings into hyphen-separated lower-case tokens by passing the input through an internal pipeline composed of deburring, word extraction, and string joining. At the core of this transformation is Lodash’s internal wor">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-kebab-case-parses-internal-capitalization">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash kebabCase Parses Internal Capitalization - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-kebab-case-parses-internal-capitalization" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .kebabCase method converts strings into hyphen-separated lower-case tokens by passing the input through an internal pipeline composed of deburring, word extraction, and string joining. At the core of this transformation is Lodash’s internal wor" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-kebabcase-parses-internal-capitalization">How Lodash
+kebabCase Parses Internal Capitalization</h1>
+<p>The Lodash <code>_.kebabCase</code> method converts strings into
+hyphen-separated lower-case tokens by passing the input through an
+internal pipeline composed of deburring, word extraction, and string
+joining. At the core of this transformation is Lodash’s internal word
+segmentation mechanism, which relies on strict regular expression
+patterns rather than simple whitespace splitting. This article explains
+the explicit syntactic and lexical rules Lodash applies to parse
+internal capitalization, handle camelCase transitions, and isolate
+acronyms from surrounding letters.</p>
+<h3 id="the-word-extraction-pipeline">The Word Extraction Pipeline</h3>
+<p>When <code>_.kebabCase</code> receives a string, it delegates the
+operation to an internal compounding function. The process follows three
+core steps:</p>
+<ol type="1">
+<li><strong>Deburring</strong>: Accented characters (such as
+<code>é</code> or <code>ü</code>) are converted to their basic Latin
+equivalents via <code>_.deburr</code> so diacritics do not interfere
+with pattern matching.</li>
+<li><strong>Segmentation</strong>: The deburred string is split into
+discrete word tokens using the internal <code>words()</code>
+function.</li>
+<li><strong>Joining</strong>: Each matched token is converted to
+lowercase and joined with a hyphen (<code>-</code>).</li>
+</ol>
+<p>The behavior of internal capitalization depends entirely on the
+second step: the regular expression pattern inside
+<code>words()</code>.</p>
+<h3 id="the-capitalization-parsing-rules">The Capitalization Parsing
+Rules</h3>
+<p>Lodash evaluates whether a string contains Unicode or complex ASCII
+casing by checking for boundaries such as lowercase-to-uppercase
+transitions, digit-to-letter transitions, or non-ASCII characters. When
+compound casing is detected, Lodash parses internal capitalization using
+a regular expression that prioritizes three distinct capitalization
+patterns:</p>
+<h4
+id="1-acronym-boundary-matching-consecutive-uppercase-followed-by-lowercase">1.
+Acronym Boundary Matching (Consecutive Uppercase Followed by
+Lowercase)</h4>
+<p>To prevent acronyms from merging into subsequent TitleCase words,
+Lodash matches sequences of uppercase letters that are followed
+immediately by an uppercase letter and a lowercase letter.</p>
+<ul>
+<li><strong>Rule Pattern</strong>: <code>\p{Lu}+(?=\p{Lu}\p{Ll})</code>
+(or the equivalent ASCII range <code>[A-Z]+(?=[A-Z][a-z])</code>).</li>
+<li><strong>Mechanism</strong>: A lookahead assertion identifies the
+boundary where an acronym ends and a standard capitalized word begins.
+The final uppercase letter in the sequence is left to bind with the
+subsequent lowercase letters.</li>
+<li><strong>Example</strong>: In <code>getJSONResponse</code>, the
+sequence <code>JSON</code> is followed by <code>Response</code>. The
+engine captures <code>get</code>, isolates <code>JSON</code>, and leaves
+<code>Response</code> intact.</li>
+</ul>
+<h4 id="2-standard-camelcase-and-titlecase-matching">2. Standard
+CamelCase and TitleCase Matching</h4>
+<p>Once acronym lookaheads are evaluated, the expression captures
+standard words starting with an optional uppercase letter followed by
+one or more lowercase letters.</p>
+<ul>
+<li><strong>Rule Pattern</strong>: <code>\p{Lu}?\p{Ll}+</code> (or
+<code>[A-Z]?[a-z]+</code>).</li>
+<li><strong>Mechanism</strong>: A lowercase letter directly preceding an
+uppercase letter causes a match termination, effectively splitting
+<code>camelCase</code> identifiers without requiring delimiter
+characters.</li>
+<li><strong>Example</strong>: In <code>userId</code>, the boundary
+between the lowercase <code>r</code> and uppercase <code>I</code> forces
+the parser to terminate the match for <code>user</code> and begin a new
+token for <code>Id</code>.</li>
+</ul>
+<h4 id="3-standalone-uppercase-sequences">3. Standalone Uppercase
+Sequences</h4>
+<p>Any remaining uppercase characters that do not precede lowercase
+characters are grouped together as discrete tokens.</p>
+<ul>
+<li><strong>Rule Pattern</strong>: <code>\p{Lu}+</code> (or
+<code>[A-Z]+</code>).</li>
+<li><strong>Mechanism</strong>: Handles trailing acronyms or fully
+capitalized words at the end of a string.</li>
+<li><strong>Example</strong>: In <code>parseXML</code>, the
+<code>XML</code> token appears at the end of the string. Because no
+lowercase letters follow, it is captured as a standalone block.</li>
+</ul>
+<h3 id="numeric-and-boundary-interplay">Numeric and Boundary
+Interplay</h3>
+<p>Internal capitalization boundaries also interact directly with
+numbers and non-word characters:</p>
+<ul>
+<li><strong>Alphanumeric Boundaries</strong>: Transitions between
+numeric digits (<code>\d+</code>) and letters trigger automatic splits.
+<code>item2Map</code> is segmented into <code>item</code>,
+<code>2</code>, and <code>Map</code>.</li>
+<li><strong>Delimiter Stripping</strong>: Punctuation marks,
+underscores, and whitespace characters are excluded from the
+word-matching regex character classes, ensuring that mixed patterns like
+<code>user_firstName</code> or <code>API-Key</code> cleanly segment into
+their constituent linguistic words before kebab-casing.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

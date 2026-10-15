@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.forOwn Iterates Over Own Properties - lodash</title>
+    <meta name="description" content="This article explores how the Lodash utility library implements .forOwn to restrict iteration strictly to an object&#39;s directly attached enumerable keys. By examining the underlying architectural layers—ranging from internal keys extraction and defensive o">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-for-own-iterates-over-own-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.forOwn Iterates Over Own Properties - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-for-own-iterates-over-own-properties" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how the Lodash utility library implements .forOwn to restrict iteration strictly to an object&#39;s directly attached enumerable keys. By examining the underlying architectural layers—ranging from internal keys extraction and defensive o" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_forown-iterates-over-own-properties">How Lodash
+_.forOwn Iterates Over Own Properties</h1>
+<p>This article explores how the Lodash utility library implements
+<code>_.forOwn</code> to restrict iteration strictly to an object's
+directly attached enumerable keys. By examining the underlying
+architectural layers—ranging from internal keys extraction and defensive
+ownership checks to native reflection mechanisms—this overview
+demonstrates how <code>_.forOwn</code> reliably isolates an object's own
+properties while shielding execution from prototype chain inheritance
+and property shadowing vulnerabilities.</p>
+<h2 id="the-underlying-iteration-pipeline">The Underlying Iteration
+Pipeline</h2>
+<p>At a high level, <code>_.forOwn</code> serves as a specialized
+wrapper around Lodash's generic iteration engine, <code>baseFor</code>.
+While standard JavaScript <code>for...in</code> loops traverse both an
+object’s own properties and its entire prototype chain,
+<code>_.forOwn</code> prevents prototype traversal by pre-filtering
+property keys or combining iteration with strict ownership checks.</p>
+<p>In modern versions of Lodash, <code>_.forOwn</code> delegates
+directly to an internal helper function, typically named
+<code>baseForOwn</code>. This internal function coordinates iteration by
+pairing a directional loop handler with an enumerable keys
+retriever:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseForOwn</span>(object<span class="op">,</span> iteratee) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> object <span class="op">&amp;&amp;</span> <span class="fu">baseFor</span>(object<span class="op">,</span> iteratee<span class="op">,</span> keys)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By supplying its own internal <code>keys</code> retrieval function
+rather than <code>keysIn</code> (which powers <code>_.forIn</code>),
+Lodash forces the loop algorithm to operate exclusively on direct
+keys.</p>
+<h2 id="delegation-to-native-objectkeys">Delegation to Native
+<code>Object.keys</code></h2>
+<p>The primary layer of security and performance in
+<code>_.forOwn</code> is its dependency on <code>Object.keys</code> (or
+its internal equivalent, <code>baseKeys</code>).</p>
+<p>In ECMAScript environments, <code>Object.keys()</code> is defined by
+the runtime specification to return an array of an object's own
+enumerable string-keyed properties. By collecting these keys prior to
+iteration, Lodash delegates the boundary enforcement directly to the
+JavaScript engine's C++ layer. Inherited properties from
+<code>Object.prototype</code> or custom constructor prototypes are
+eliminated from the iteration target set before the user-supplied
+iteratee function is ever invoked.</p>
+<h2 id="defensive-ownership-checks">Defensive Ownership Checks</h2>
+<p>When handling legacy runtimes or complex objects where prototype
+traps might exist, Lodash guarantees encapsulation by shielding against
+shadowed or severed methods.</p>
+<p>A common failure point in native JavaScript occurs when attempting to
+call <code>object.hasOwnProperty(key)</code> directly:</p>
+<ol type="1">
+<li>The target object may have been initialized via
+<code>Object.create(null)</code>, leaving it without access to
+<code>Object.prototype</code>.</li>
+<li>The property name <code>hasOwnProperty</code> may be shadowed or
+overwritten on the object itself (e.g.,
+<code>{ hasOwnProperty: false }</code>).</li>
+</ol>
+<p>Lodash circumvents this by referencing the uncorrupted prototype
+method internally:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> hasOwnProperty <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">hasOwnProperty</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">hasPath</span>(object<span class="op">,</span> key) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> object <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> hasOwnProperty<span class="op">.</span><span class="fu">call</span>(object<span class="op">,</span> key)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By leveraging <code>Function.prototype.call</code> with the root
+<code>Object.prototype.hasOwnProperty</code>, Lodash safely verifies
+whether a property exists directly on the target instance, completely
+bypassing the instance's own prototype chain.</p>
+<h2 id="strict-enumerable-filtering">Strict Enumerable Filtering</h2>
+<p>Not all own properties should be traversed during functional
+iteration. JavaScript allows properties to be marked as non-enumerable
+via <code>Object.defineProperty</code>.</p>
+<p><code>_.forOwn</code> strictly adheres to enumerability
+specifications. In environments requiring fallback mechanisms for
+complex types (such as <code>arguments</code> objects, typed arrays, or
+prototype objects with non-standard descriptors), Lodash uses helper
+utilities like <code>isPrototype</code> and custom index validators to
+ignore non-enumerable internal attributes (like <code>length</code> on
+functions or <code>constructor</code> references on prototypes).</p>
+<h2 id="mitigation-of-prototype-pollution">Mitigation of Prototype
+Pollution</h2>
+<p>By encapsulating property discovery within safe retrieval boundaries,
+<code>_.forOwn</code> acts as a guard against prototype pollution
+attacks.</p>
+<p>When external payloads inject malicious properties into an
+application's shared prototypes (such as <code>Object.prototype</code>),
+standard <code>for...in</code> loops will process those unexpected keys.
+Because <code>_.forOwn</code> anchors its key list strictly to the
+immediate object using <code>Object.keys</code> and safe
+<code>hasOwnProperty</code> checks, injected prototype properties are
+systematically ignored. This guarantees that iteration logic processes
+only data explicitly set on the target instance itself.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

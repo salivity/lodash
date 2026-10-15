@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash Semantic Versioning and Backward Compatibility - lodash</title>
+    <meta name="description" content="This article explores how the Lodash JavaScript library utilizes Semantic Versioning (SemVer) to maintain backward compatibility, prevent unexpected runtime errors, and streamline dependency management for developers. By strictly adhering to the standardi">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-semantic-versioning-and-backward-compatibility">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash Semantic Versioning and Backward Compatibility - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-semantic-versioning-and-backward-compatibility" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how the Lodash JavaScript library utilizes Semantic Versioning (SemVer) to maintain backward compatibility, prevent unexpected runtime errors, and streamline dependency management for developers. By strictly adhering to the standardi" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-semantic-versioning-and-backward-compatibility">Lodash
+Semantic Versioning and Backward Compatibility</h1>
+<p>This article explores how the Lodash JavaScript library utilizes
+Semantic Versioning (SemVer) to maintain backward compatibility, prevent
+unexpected runtime errors, and streamline dependency management for
+developers. By strictly adhering to the standardized three-tier
+versioning format, Lodash establishes predictable boundaries between
+routine optimizations and disruptive API modifications, allowing
+engineering teams to safely update utilities across production
+applications.</p>
+<h2 id="understanding-the-semver-specification-in-lodash">Understanding
+the SemVer Specification in Lodash</h2>
+<p>Lodash adheres to the Semantic Versioning standard, denoted as
+<code>MAJOR.MINOR.PATCH</code> (e.g., <code>4.17.21</code>). Each
+component represents a specific type of change, establishing a contract
+between the library maintainers and the developers consuming the package
+via npm.</p>
+<h3 id="1-patch-releases-z-in-xyz">1. Patch Releases (Z in X.Y.Z)</h3>
+<p>Patch updates are reserved exclusively for backward-compatible bug
+fixes, security remediations, and internal performance optimizations.
+When Lodash increments a patch version:</p>
+<ul>
+<li>Existing function signatures, return values, and expected side
+effects remain unchanged.</li>
+<li>Code that worked in version <code>4.17.20</code> is guaranteed to
+work identically in <code>4.17.21</code>.</li>
+<li>Developers can configure their package managers using the tilde
+(<code>~4.17.20</code>) or caret (<code>^4.17.20</code>) operators to
+automatically accept these updates without risk of regression.</li>
+</ul>
+<h3 id="2-minor-releases-y-in-xyz">2. Minor Releases (Y in X.Y.Z)</h3>
+<p>Minor version updates introduce new functionality while preserving
+backward compatibility. In Lodash, a minor release may include:</p>
+<ul>
+<li>New utility methods added to the Lodash namespace.</li>
+<li>New optional parameters added to existing functions.</li>
+<li>Deprecation notices for methods scheduled for removal in future
+major versions.</li>
+</ul>
+<p>Because all additions are strictly additive, existing implementations
+do not experience breaking behavior when bumping minor versions.</p>
+<h3 id="3-major-releases-x-in-xyz">3. Major Releases (X in X.Y.Z)</h3>
+<p>Major versions represent breaking changes. Lodash reserves major
+increments (such as the transition from v3 to v4) for:</p>
+<ul>
+<li>Altering or removing existing function arguments.</li>
+<li>Changing return types or default execution flows (such as mutating
+versus non-mutating methods).</li>
+<li>Removing deprecated APIs to clean up technical debt.</li>
+<li>Dropping support for obsolete JavaScript runtimes or Node.js
+versions.</li>
+</ul>
+<p>By restricting all breaking changes to major releases, Lodash ensures
+that standard automated dependency updates will never inadvertently
+disrupt an existing application.</p>
+<h2 id="testing-and-quality-assurance-safeguards">Testing and Quality
+Assurance Safeguards</h2>
+<p>Lodash's adherence to SemVer is enforced through extensive automated
+quality controls:</p>
+<ul>
+<li><strong>Comprehensive Test Suites:</strong> Lodash maintains
+thousands of automated unit tests covering edge cases across various
+environments (modern browsers, legacy browsers, and multiple Node.js
+runtimes). Any proposed patch or minor change that fails existing
+regression tests is blocked from release.</li>
+<li><strong>Deprecation Cycles:</strong> Rather than abruptly changing
+or deleting methods, Lodash introduces console warnings or documentation
+updates in minor versions, providing developers with clear migration
+paths well before the next major release.</li>
+<li><strong>Modular Architecture:</strong> Lodash offers per-method
+packages (such as <code>lodash.debounce</code> or
+<code>lodash.get</code>) and modular ES builds, allowing consumers to
+isolate dependencies and minimize risk during updates.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

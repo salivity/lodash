@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.clone vs Shallow Clone in JavaScript - lodash</title>
+    <meta name="description" content="This article explains the relationship and technical distinctions between a general shallow clone in native JavaScript and the .clone utility provided by the Lodash library. While Lodash&#39;s .clone is fundamentally an implementation of a shallow copy, it di">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-clone-vs-shallow-clone-in-java-script">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.clone vs Shallow Clone in JavaScript - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-clone-vs-shallow-clone-in-java-script" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains the relationship and technical distinctions between a general shallow clone in native JavaScript and the .clone utility provided by the Lodash library. While Lodash&#39;s .clone is fundamentally an implementation of a shallow copy, it di" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_clone-vs-shallow-clone-in-javascript">Lodash _.clone vs
+Shallow Clone in JavaScript</h1>
+<p>This article explains the relationship and technical distinctions
+between a general shallow clone in native JavaScript and the
+<code>_.clone</code> utility provided by the Lodash library. While
+Lodash's <code>_.clone</code> is fundamentally an implementation of a
+shallow copy, it differs significantly from native shallow cloning
+techniques—such as object spread syntax and
+<code>Object.assign</code>—in how it handles specialized data
+structures, prototypes, and edge cases.</p>
+<h2 id="the-definition-of-a-shallow-clone">The Definition of a Shallow
+Clone</h2>
+<p>In JavaScript, a shallow clone creates a new compound object and
+copies the top-level properties from the original source. If a property
+is a primitive value (like a string, number, or boolean), the value
+itself is copied. However, if a property is a reference type (like an
+array or nested object), only the memory reference is copied. As a
+result, mutations made to nested objects in the clone directly affect
+the original object.</p>
+<p>Native JavaScript provides two common ways to perform a shallow
+clone:</p>
+<ul>
+<li>The spread operator: <code>{ ...original }</code> or
+<code>[ ...original ]</code></li>
+<li><code>Object.assign()</code>:
+<code>Object.assign({}, original)</code></li>
+</ul>
+<h2 id="what-lodash-_clone-does">What Lodash <code>_.clone</code>
+Does</h2>
+<p>The <code>_.clone</code> function in Lodash is explicitly a shallow
+clone algorithm, distinct from <code>_.cloneDeep</code>, which
+recursively traverses and duplicates nested trees.</p>
+<p>Like native techniques, <code>_.clone</code> does not duplicate
+nested objects; references to nested structures are shared between the
+clone and the source. However, <code>_.clone</code> is an advanced
+shallow clone implementation engineered to support diverse JavaScript
+types that standard native methods fail to duplicate properly.</p>
+<h2 id="key-differences">Key Differences</h2>
+<h3 id="1-handling-of-specialized-objects">1. Handling of Specialized
+Objects</h3>
+<p>Native shallow copying techniques are designed for plain objects and
+arrays. When applied to complex native types, native cloning mechanisms
+produce broken or empty objects:</p>
+<ul>
+<li><strong>Date Objects:</strong> Spreading a <code>Date</code>
+instance (<code>{ ...new Date() }</code>) returns an empty object
+<code>{}</code> because <code>Date</code> properties are not enumerable.
+In contrast, <code>_.clone(new Date())</code> produces a valid,
+functioning <code>Date</code> instance with the same timestamp.</li>
+<li><strong>RegExp Objects:</strong> <code>{ .../abc/g }</code> produces
+an empty object. <code>_.clone(/abc/g)</code> produces a new, properly
+configured <code>RegExp</code> instance.</li>
+<li><strong>Maps and Sets:</strong> Native object spread on a
+<code>Map</code> or <code>Set</code> loses all stored entries. Lodash
+<code>_.clone</code> produces a new <code>Map</code> or <code>Set</code>
+containing the shallow elements of the original collection.</li>
+<li><strong>ArrayBuffers and TypedArrays:</strong> Native methods cannot
+duplicate buffer allocations. Lodash <code>_.clone</code> properly
+allocates a new buffer and duplicates the binary data.</li>
+</ul>
+<h3 id="2-prototype-preservation">2. Prototype Preservation</h3>
+<p>Native shallow copy methods, such as <code>Object.assign()</code> or
+<code>{ ...obj }</code>, always return instances inheriting from
+<code>Object.prototype</code>, stripping any custom prototype
+chains:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">greet</span>() { <span class="cf">return</span> <span class="st">&quot;Hello&quot;</span><span class="op">;</span> }</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> <span class="kw">new</span> <span class="fu">User</span>()<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> spreadClone <span class="op">=</span> { <span class="op">...</span>user }<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> lodashClone <span class="op">=</span> _<span class="op">.</span><span class="fu">clone</span>(user)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(spreadClone <span class="kw">instanceof</span> User)<span class="op">;</span> <span class="co">// false (prototype lost)</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(lodashClone <span class="kw">instanceof</span> User)<span class="op">;</span> <span class="co">// true (prototype preserved)</span></span></code></pre></div>
+<p><code>_.clone</code> checks the prototype of custom instances and
+constructs the new shallow copy using the original prototype, preserving
+class methods and inheritance chains.</p>
+<h3 id="3-primitive-safety-and-robustness">3. Primitive Safety and
+Robustness</h3>
+<p>Native mechanisms can produce runtime exceptions or unexpected
+structures when non-object types are provided. Lodash's
+<code>_.clone</code> contains built-in type checks: passing a primitive
+(e.g., a number or string), <code>null</code>, or <code>undefined</code>
+returns the value safely without throwing an error.</p>
+<h2 id="summary">Summary</h2>
+<p><code>_.clone</code> is not fundamentally different in concept from a
+shallow clone; rather, it is a robust, type-aware implementation of one.
+While native methods like <code>{ ...obj }</code> and
+<code>Object.assign</code> are optimized for plain objects, Lodash's
+<code>_.clone</code> handles custom classes, <code>Date</code>,
+<code>RegExp</code>, <code>Map</code>, <code>Set</code>, and binary
+buffers, making it a more dependable choice when copying values of
+arbitrary or specialized types.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

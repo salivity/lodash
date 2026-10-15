@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Lodash _.assign Prevents Deep Cloning DOM Objects - lodash</title>
+    <meta name="description" content="Lodash’s .assign avoids accidentally deep cloning complex Document Object Model (DOM) objects primarily because it is fundamentally designed as a shallow-copy operation that only iterates over own enumerable properties. By restricting property traversal t">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/why-lodash-assign-prevents-deep-cloning-dom-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Lodash _.assign Prevents Deep Cloning DOM Objects - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/why-lodash-assign-prevents-deep-cloning-dom-objects" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .assign avoids accidentally deep cloning complex Document Object Model (DOM) objects primarily because it is fundamentally designed as a shallow-copy operation that only iterates over own enumerable properties. By restricting property traversal t" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-lodash-_assign-prevents-deep-cloning-dom-objects">Why Lodash
+_.assign Prevents Deep Cloning DOM Objects</h1>
+<p>Lodash’s <code>_.assign</code> avoids accidentally deep cloning
+complex Document Object Model (DOM) objects primarily because it is
+fundamentally designed as a shallow-copy operation that only iterates
+over own enumerable properties. By restricting property traversal to a
+single level and copying references rather than recursively duplicating
+object graphs, <code>_.assign</code> inherently avoids the circular
+references, prototype chains, and massive property trees typical of
+browser host objects.</p>
+<h3 id="shallow-copying-by-specification">Shallow Copying by
+Specification</h3>
+<p>Unlike <code>_.cloneDeep</code> or <code>_.merge</code>, which
+recursively traverse nested objects and arrays, <code>_.assign</code> is
+strictly a shallow copy function equivalent to ECMAScript's native
+<code>Object.assign</code>. When copying properties from a source to a
+target:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">assign</span>(target<span class="op">,</span> { <span class="dt">element</span><span class="op">:</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&#39;my-div&#39;</span>) })<span class="op">;</span></span></code></pre></div>
+<p>The function performs direct property assignment
+(<code>target[key] = source[key]</code>). It copies the memory address
+of the DOM node reference rather than constructing a new node or
+traversing its children. Because there is zero recursion in the
+algorithm, it is structurally impossible for <code>_.assign</code> to
+initiate a deep clone of any object, DOM elements included.</p>
+<h3 id="enumeration-of-own-properties-only">Enumeration of Own
+Properties Only</h3>
+<p>DOM elements are complex host objects with deep prototype chains
+extending through <code>HTMLElement</code>, <code>Element</code>,
+<code>Node</code>, and <code>EventTarget</code>. The vast majority of
+DOM properties—such as <code>childNodes</code>, <code>parentNode</code>,
+<code>innerHTML</code>, and event handlers—are non-enumerable getters
+and setters defined on these prototypes, not own properties of the
+instance.</p>
+<p>Lodash’s <code>_.assign</code> relies internally on retrieving only
+own enumerable properties (similar to <code>Object.keys()</code>). As a
+result, passing a raw DOM element directly as a source object yields
+almost no properties to copy:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> div <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">createElement</span>(<span class="st">&#39;div&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">assign</span>({}<span class="op">,</span> div)<span class="op">;</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// result contains almost nothing because DOM properties are inherited and non-enumerable</span></span></code></pre></div>
+<p>Because <code>_.assign</code> completely ignores inherited prototype
+properties, the massive surface area of the DOM interface is
+systematically excluded from the operation.</p>
+<h3 id="immunity-to-circular-references">Immunity to Circular
+References</h3>
+<p>DOM structures are cyclic graphs by default; an element references
+its parent via <code>parentNode</code>, and the parent references the
+child via <code>children</code> or <code>childNodes</code>. Recursive
+cloning utilities must maintain a hash map of visited objects to prevent
+infinite call stack errors.</p>
+<p>Because <code>_.assign</code> does not inspect or traverse nested
+values, it never follows these cyclic relationships into deeper layers.
+It treats an <code>HTMLElement</code> simply as a primitive object
+reference, effectively rendering circular references a non-issue.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

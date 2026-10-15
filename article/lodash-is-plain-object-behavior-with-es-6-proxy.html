@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash isPlainObject Behavior with ES6 Proxy - lodash</title>
+    <meta name="description" content="Passing an instantiated ES6 Proxy to Lodash’s .isPlainObject method can produce unexpected evaluations, silent side effects, and structural bugs in data pipelines. Because an ES6 Proxy transparently forwards internal operations to its target by default, L">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-is-plain-object-behavior-with-es-6-proxy">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash isPlainObject Behavior with ES6 Proxy - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-is-plain-object-behavior-with-es-6-proxy" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Passing an instantiated ES6 Proxy to Lodash’s .isPlainObject method can produce unexpected evaluations, silent side effects, and structural bugs in data pipelines. Because an ES6 Proxy transparently forwards internal operations to its target by default, L" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-isplainobject-behavior-with-es6-proxy">Lodash
+isPlainObject Behavior with ES6 Proxy</h1>
+<p>Passing an instantiated ES6 Proxy to Lodash’s
+<code>_.isPlainObject</code> method can produce unexpected evaluations,
+silent side effects, and structural bugs in data pipelines. Because an
+ES6 Proxy transparently forwards internal operations to its target by
+default, Lodash evaluates the proxy based on the underlying target's
+prototype chain rather than the proxy wrapper itself. This article
+breaks down the internal mechanism of <code>_.isPlainObject</code>, how
+Proxies interact with its checks, and the practical implications for
+deep cloning, state management, and debugging.</p>
+<h2 id="how-lodash-evaluates-plain-objects">How Lodash Evaluates Plain
+Objects</h2>
+<p>Lodash defines a plain object as an object created by the
+<code>Object</code> constructor or one with a <code>[[Prototype]]</code>
+of <code>null</code>. To determine this, <code>_.isPlainObject</code>
+performs two primary checks:</p>
+<ol type="1">
+<li><strong>Tag Verification:</strong> It checks
+<code>Object.prototype.toString.call(value) === '[object Object]'</code>
+to rule out primitives, functions, arrays, and standard built-ins (like
+<code>Map</code> or <code>Date</code>).</li>
+<li><strong>Prototype Chain Traversal:</strong> It walks up the
+prototype chain using <code>Object.getPrototypeOf(value)</code> until it
+reaches the root prototype, verifying that the prototype matches
+<code>Object.prototype</code> or <code>null</code>.</li>
+</ol>
+<h2 id="proxy-evaluation-mechanics">Proxy Evaluation Mechanics</h2>
+<p>An ES6 Proxy does not have its own distinct
+<code>[[Prototype]]</code> or type tag; it delegates internal calls
+(<code>[[GetPrototypeOf]]</code>, <code>[[Get]]</code>) to the target
+object unless a handler trap intercepts them.</p>
+<ul>
+<li><strong>Plain Target Without Traps:</strong> If the proxy wraps a
+standard object literal (<code>{}</code>) and defines no
+<code>getPrototypeOf</code> trap, <code>_.isPlainObject(proxy)</code>
+returns <code>true</code>.</li>
+<li><strong>Non-Plain Target:</strong> If the proxy wraps an instance of
+a class, function, or non-plain object,
+<code>_.isPlainObject(proxy)</code> returns <code>false</code>.</li>
+<li><strong>Trapped Prototypes:</strong> If the handler defines a
+<code>getPrototypeOf</code> trap, Lodash executes that trap during its
+prototype traversal. Returning <code>Object.prototype</code> from the
+trap causes Lodash to evaluate the proxy as a plain object, even if the
+underlying target is not.</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> target <span class="op">=</span> {}<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> proxy <span class="op">=</span> <span class="kw">new</span> <span class="bu">Proxy</span>(target<span class="op">,</span> {})<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">isPlainObject</span>(proxy))<span class="op">;</span> <span class="co">// true</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> classInstance <span class="op">=</span> <span class="kw">new</span> (<span class="kw">class</span> MyClass {})()<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> classProxy <span class="op">=</span> <span class="kw">new</span> <span class="bu">Proxy</span>(classInstance<span class="op">,</span> {})<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(_<span class="op">.</span><span class="fu">isPlainObject</span>(classProxy))<span class="op">;</span> <span class="co">// false</span></span></code></pre></div>
+<h2 id="major-implications">Major Implications</h2>
+<h3 id="1-invalidation-of-protective-boundaries">1. Invalidation of
+Protective Boundaries</h3>
+<p>Proxies are commonly used to implement encapsulation, access control,
+or reactive wrappers (e.g., Vue Reactivity, MobX). When
+<code>_.isPlainObject(proxy)</code> returns <code>true</code>, external
+systems assume the object is dumb, inert data. This can bypass developer
+expectations that the object is a managed or controlled structure.</p>
+<h3 id="2-trap-execution-and-unintended-side-effects">2. Trap Execution
+and Unintended Side Effects</h3>
+<p>During prototype inspection, Lodash calls
+<code>Object.getPrototypeOf</code>. If your proxy defines a
+<code>getPrototypeOf</code> trap with logging, analytics, or
+lazy-initialization logic, simply running
+<code>_.isPlainObject(proxy)</code> executes that code. Similarly, if
+the object uses a <code>Symbol.toStringTag</code> getter, the initial
+tag validation step triggers property access traps.</p>
+<h3 id="3-destruction-of-dynamic-behavior-in-merges-and-clones">3.
+Destruction of Dynamic Behavior in Merges and Clones</h3>
+<p>Utilities like <code>_.cloneDeep</code> and <code>_.merge</code> rely
+heavily on <code>_.isPlainObject</code> to decide whether to create a
+new object and recurse or copy the reference directly.</p>
+<p>If a Proxy evaluates as a plain object:</p>
+<ul>
+<li>Lodash creates a new, unproxied plain object literal.</li>
+<li>It iterates over the proxy's enumerable own properties and copies
+them to the new literal.</li>
+<li>The Proxy wrapper, along with all traps, membrane guarantees, and
+dynamic getters, is stripped away from the resulting clone.</li>
+</ul>
+<h3 id="4-false-negatives-via-custom-string-tags">4. False Negatives via
+Custom String Tags</h3>
+<p>If a proxy's target uses <code>Symbol.toStringTag</code> (or
+intercepts it via a <code>get</code> trap) to assign a custom type
+label, <code>Object.prototype.toString.call(proxy)</code> returns
+<code>[object CustomName]</code>. In this scenario,
+<code>_.isPlainObject</code> returns <code>false</code> immediately,
+even if the object's prototype chain is entirely plain.</p>
+<h2 id="summary-of-best-practices">Summary of Best Practices</h2>
+<p>When handling objects that may be Proxies:</p>
+<ul>
+<li>Avoid using <code>_.isPlainObject</code> as an assertion that an
+object is free of side effects; a plain proxy can still intercept reads
+and writes.</li>
+<li>Do not pass state-tracking or reactive proxies to structural Lodash
+utilities like <code>_.cloneDeep</code> or <code>_.merge</code> unless
+the stripping of proxy traps is desired behavior.</li>
+<li>If you must differentiate between a raw plain object and a proxy,
+maintain a <code>WeakSet</code> of generated proxies within your
+architecture, as native JavaScript provides no direct mechanism to
+detect an untrapped Proxy instance.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

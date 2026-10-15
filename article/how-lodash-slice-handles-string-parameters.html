@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.slice Handles String Parameters - lodash</title>
+    <meta name="description" content="This article explains how the Lodash .slice method processes start and end parameters when they are intentionally passed as string values. Unlike JavaScript&#39;s native Array.prototype.slice, which automatically converts string parameters into numbers, Lodas">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-slice-handles-string-parameters">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.slice Handles String Parameters - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-slice-handles-string-parameters" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the Lodash .slice method processes start and end parameters when they are intentionally passed as string values. Unlike JavaScript&#39;s native Array.prototype.slice, which automatically converts string parameters into numbers, Lodas" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_slice-handles-string-parameters">How Lodash _.slice
+Handles String Parameters</h1>
+<p>This article explains how the Lodash <code>_.slice</code> method
+processes <code>start</code> and <code>end</code> parameters when they
+are intentionally passed as string values. Unlike JavaScript's native
+<code>Array.prototype.slice</code>, which automatically converts string
+parameters into numbers, Lodash relies on strict type checks that alter
+how string inputs are resolved, often leading to unexpected results such
+as returning empty arrays.</p>
+<h2 id="strict-type-checking-in-lodash">Strict Type Checking in
+Lodash</h2>
+<p>Lodash implements <code>_.slice</code> as an optimized alternative to
+the native <code>Array.prototype.slice</code>. Rather than performing
+standard JavaScript type coercion (such as
+<code>ToIntegerOrInfinity</code>), Lodash inspects parameter types
+directly using the <code>typeof</code> operator.</p>
+<p>The internal logic determines positional offsets by verifying whether
+arguments are strictly numbers:</p>
+<ul>
+<li>If <code>typeof start === 'number'</code>, it handles negative
+offsets and index boundaries normally. If <code>typeof start</code> is
+anything else (including a string), Lodash defaults <code>start</code>
+to <code>0</code>.</li>
+<li>If <code>typeof end === 'number'</code>, it resolves negative
+offsets and applies bounds. If <code>typeof end</code> is not a number,
+it defaults <code>end</code> to <code>0</code> under most
+conditions.</li>
+</ul>
+<h2 id="how-string-values-for-start-behave">How String Values for
+<code>start</code> Behave</h2>
+<p>When you pass a string as the <code>start</code> parameter (e.g.,
+<code>_.slice(array, '2')</code>), the type check
+<code>typeof start === 'number'</code> evaluates to
+<code>false</code>.</p>
+<p>Because Lodash does not convert string numbers into numerical
+primitives:</p>
+<ol type="1">
+<li><code>start</code> is reset to <code>0</code>.</li>
+<li>Slicing begins at index <code>0</code>, ignoring the intended string
+value.</li>
+</ol>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [<span class="st">&#39;a&#39;</span><span class="op">,</span> <span class="st">&#39;b&#39;</span><span class="op">,</span> <span class="st">&#39;c&#39;</span><span class="op">,</span> <span class="st">&#39;d&#39;</span>]<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Passing a string start:</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">slice</span>(items<span class="op">,</span> <span class="st">&#39;2&#39;</span>)<span class="op">;</span> </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;] (start falls back to 0)</span></span></code></pre></div>
+<h2 id="how-string-values-for-end-behave">How String Values for
+<code>end</code> Behave</h2>
+<p>The behavior for a string <code>end</code> argument depends on how
+JavaScript evaluates relational comparisons before the type check
+occurs.</p>
+<p>Internally, Lodash first checks:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>end <span class="op">=</span> end <span class="op">&gt;</span> length <span class="op">?</span> length <span class="op">:</span> end<span class="op">;</span></span></code></pre></div>
+<ol type="1">
+<li><p><strong>When <code>end</code> is less than or equal to
+<code>length</code>:</strong> Evaluating <code>'2' &gt; 4</code> uses
+standard relational coercion, resulting in <code>false</code>. Lodash
+retains <code>end = '2'</code>. It then runs
+<code>if (typeof end === 'number')</code>. Because <code>'2'</code> is a
+string, this condition fails, triggering the fallback:
+<code>end = 0</code>. Since <code>start</code> and <code>end</code> both
+resolve to <code>0</code>, <code>_.slice</code> produces an empty array
+(<code>[]</code>).</p></li>
+<li><p><strong>When <code>end</code> is greater than
+<code>length</code>:</strong> Evaluating <code>'5' &gt; 4</code> coerces
+<code>'5'</code> to a number and returns <code>true</code>. Lodash
+reassigns <code>end = length</code>. Because <code>length</code> is an
+integer primitive, <code>typeof end === 'number'</code> now evaluates to
+<code>true</code>, and <code>end</code> remains bounded to the array's
+full length.</p></li>
+</ol>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [<span class="st">&#39;a&#39;</span><span class="op">,</span> <span class="st">&#39;b&#39;</span><span class="op">,</span> <span class="st">&#39;c&#39;</span><span class="op">,</span> <span class="st">&#39;d&#39;</span>]<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">// String end &lt;= length:</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">slice</span>(items<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="st">&#39;2&#39;</span>)<span class="op">;</span> </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns: [] (end falls back to 0)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">// String end &gt; length:</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">slice</span>(items<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="st">&#39;10&#39;</span>)<span class="op">;</span> </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;] (end is replaced by array length: 4)</span></span></code></pre></div>
+<h2 id="difference-from-native-arrayprototypeslice">Difference from
+Native <code>Array.prototype.slice</code></h2>
+<p>JavaScript's native <code>Array.prototype.slice</code> coerces
+arguments to integers using standard ECMAScript conversions:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [<span class="st">&#39;a&#39;</span><span class="op">,</span> <span class="st">&#39;b&#39;</span><span class="op">,</span> <span class="st">&#39;c&#39;</span><span class="op">,</span> <span class="st">&#39;d&#39;</span>]<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Native slice coerces strings to numbers:</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>items<span class="op">.</span><span class="fu">slice</span>(<span class="st">&#39;1&#39;</span><span class="op">,</span> <span class="st">&#39;3&#39;</span>)<span class="op">;</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns: [&#39;b&#39;, &#39;c&#39;]</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Lodash _.slice does not coerce strings:</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">slice</span>(items<span class="op">,</span> <span class="st">&#39;1&#39;</span><span class="op">,</span> <span class="st">&#39;3&#39;</span>)<span class="op">;</span> </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns: [] (start becomes 0, end becomes 0)</span></span></code></pre></div>
+<h2 id="handling-string-inputs-properly">Handling String Inputs
+Properly</h2>
+<p>To avoid unexpected empty arrays or incorrect slices when dealing
+with string values (such as URL parameters or form inputs), explicitly
+convert the arguments to numbers before calling
+<code>_.slice</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> start <span class="op">=</span> <span class="bu">Number</span>(<span class="st">&#39;1&#39;</span>)<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> end <span class="op">=</span> <span class="bu">Number</span>(<span class="st">&#39;3&#39;</span>)<span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">slice</span>(items<span class="op">,</span> start<span class="op">,</span> end)<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns: [&#39;b&#39;, &#39;c&#39;]</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash bindAll: Binding Object Execution Contexts - lodash</title>
+    <meta name="description" content="Lodash’s .bindAll utility provides a mechanism for locking an object&#39;s methods to its own execution context, ensuring that references to this remain constant regardless of how or where those functions are invoked. This article explains how .bindAll levera">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-bind-all-binding-object-execution-contexts">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash bindAll: Binding Object Execution Contexts - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-bind-all-binding-object-execution-contexts" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .bindAll utility provides a mechanism for locking an object&#39;s methods to its own execution context, ensuring that references to this remain constant regardless of how or where those functions are invoked. This article explains how .bindAll levera" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-bindall-binding-object-execution-contexts">Lodash
+bindAll: Binding Object Execution Contexts</h1>
+<p>Lodash’s <code>_.bindAll</code> utility provides a mechanism for
+locking an object's methods to its own execution context, ensuring that
+references to <code>this</code> remain constant regardless of how or
+where those functions are invoked. This article explains how
+<code>_.bindAll</code> leverages JavaScript’s native binding mechanisms
+to mitigate dynamic context loss across asynchronous callbacks, DOM
+events, higher-order pipelines, and component lifecycles.</p>
+<hr />
+<h3 id="understanding-context-loss-in-javascript">Understanding Context
+Loss in JavaScript</h3>
+<p>In JavaScript, execution context is dynamic and determined at call
+time, not definition time. When an object method is extracted and
+invoked as a standalone function, passed as a callback, or assigned as
+an event listener, its original receiver is severed.</p>
+<p>In non-strict mode, unattached function calls resolve
+<code>this</code> to the global object (<code>window</code> or
+<code>global</code>). In strict mode (<code>"use strict"</code>),
+unattached calls resolve <code>this</code> to
+<code>undefined</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alex&#39;</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">greet</span>() {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Hello, </span><span class="sc">${</span><span class="kw">this</span><span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> greet <span class="op">=</span> user<span class="op">.</span><span class="at">greet</span><span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">greet</span>()<span class="op">;</span> <span class="co">// TypeError: Cannot read properties of undefined (reading &#39;name&#39;) in strict mode</span></span></code></pre></div>
+<hr />
+<h3 id="how-_bindall-rigorously-locks-context">How
+<code>_.bindAll</code> Rigorously Locks Context</h3>
+<p>The Lodash method <code>_.bindAll(object, [methodNames])</code>
+mutates the target object in place. It iterates over the specified
+method names and replaces each original function with a bound version
+using native <code>Function.prototype.bind</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Conceptual representation of _.bindAll</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">bindAll</span>(object<span class="op">,</span> methodNames) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  methodNames<span class="op">.</span><span class="fu">forEach</span>((method) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    object[method] <span class="op">=</span> object[method]<span class="op">.</span><span class="fu">bind</span>(object)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> object<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Under the ECMAScript specification, calling native
+<code>.bind()</code> creates an <strong>Exotic Bound Function</strong>.
+This bound function internally retains:</p>
+<ul>
+<li><code>[[BoundTargetFunction]]</code>: The original method.</li>
+<li><code>[[BoundThis]]</code>: The target object reference.</li>
+<li><code>[[BoundArguments]]</code>: Any pre-applied arguments.</li>
+</ul>
+<p>Once a function is bound via this mechanism, its <code>this</code>
+binding is immutable. Subsequent attempts to re-bind or override the
+context using <code>.call()</code>, <code>.apply()</code>, or a second
+<code>.bind()</code> are ignored by the JavaScript runtime engine.</p>
+<hr />
+<h3 id="execution-contexts-stabilized-by-_bindall">Execution Contexts
+Stabilized by <code>_.bindAll</code></h3>
+<h4 id="1-asynchronous-callbacks-and-timers">1. Asynchronous Callbacks
+and Timers</h4>
+<p>When passing methods into asynchronous functions such as
+<code>setTimeout</code>, <code>setInterval</code>, or Promise resolution
+chains (<code>.then()</code>), the runtime executes the callback inside
+the event loop’s default execution context. <code>_.bindAll</code>
+ensures the callback remains anchored to its originating instance.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Poller {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">constructor</span>() {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">interval</span> <span class="op">=</span> <span class="dv">1000</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    _<span class="op">.</span><span class="fu">bindAll</span>(<span class="kw">this</span><span class="op">,</span> [<span class="st">&#39;poll&#39;</span>])<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">poll</span>() {</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Polling at interval: </span><span class="sc">${</span><span class="kw">this</span><span class="op">.</span><span class="at">interval</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">start</span>() {</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="pp">setTimeout</span>(<span class="kw">this</span><span class="op">.</span><span class="at">poll</span><span class="op">,</span> <span class="dv">1000</span>)<span class="op">;</span> <span class="co">// Retains `this.interval`</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h4 id="2-dom-event-listeners">2. DOM Event Listeners</h4>
+<p>When attaching plain methods to DOM elements via
+<code>addEventListener</code>, the browser engine implicitly binds
+<code>this</code> to the event's current target element
+(<code>event.currentTarget</code>). Using <code>_.bindAll</code>
+prevents this override, ensuring the method continues pointing to its
+class or model instance rather than the DOM node.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ButtonController {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">constructor</span>(element) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">element</span> <span class="op">=</span> element<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">clicks</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    _<span class="op">.</span><span class="fu">bindAll</span>(<span class="kw">this</span><span class="op">,</span> [<span class="st">&#39;handleClick&#39;</span>])<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">element</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="kw">this</span><span class="op">.</span><span class="at">handleClick</span>)<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">handleClick</span>(<span class="bu">event</span>) {</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">clicks</span> <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span> <span class="co">// `this` refers to ButtonController, not the DOM element</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h4 id="3-higher-order-functional-pipelines">3. Higher-Order Functional
+Pipelines</h4>
+<p>When methods are passed into functional iterators like
+<code>Array.prototype.map</code>, <code>Array.prototype.filter</code>,
+or Lodash collection utilities, the receiver is disconnected unless an
+explicit <code>thisArg</code> is accepted and provided. Using
+<code>_.bindAll</code> removes the requirement to track and pass
+<code>thisArg</code> throughout pipeline layers.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DataTransformer {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">constructor</span>(factor) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">factor</span> <span class="op">=</span> factor<span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    _<span class="op">.</span><span class="fu">bindAll</span>(<span class="kw">this</span><span class="op">,</span> [<span class="st">&#39;multiply&#39;</span>])<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">multiply</span>(val) {</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> val <span class="op">*</span> <span class="kw">this</span><span class="op">.</span><span class="at">factor</span><span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="bu">process</span>(numbers) {</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> numbers<span class="op">.</span><span class="fu">map</span>(<span class="kw">this</span><span class="op">.</span><span class="at">multiply</span>)<span class="op">;</span> <span class="co">// Safe from context detachment</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h4 id="4-ui-frameworks-and-component-lifecycles">4. UI Frameworks and
+Component Lifecycles</h4>
+<p>In architectures such as Backbone.js views or legacy React class
+components, event handlers are frequently detached and passed into child
+components or framework registries. Invoking
+<code>_.bindAll(this, ['render', 'onClick'])</code> in the constructor
+ensures that lifecycle methods and event handlers retain instance
+properties regardless of where the framework executes them.</p>
+<hr />
+<h3 id="performance-and-architectural-considerations">Performance and
+Architectural Considerations</h3>
+<ol type="1">
+<li><strong>Object Mutation:</strong> <code>_.bindAll</code> mutates the
+input object directly. It overwrites methods on the target object
+(usually an instance), which means these methods will mask any
+identically named methods on the prototype chain.</li>
+<li><strong>Memory Footprint:</strong> Each call to
+<code>_.bindAll</code> allocates new exotic bound function instances in
+memory for each method specified. In high-frequency object
+instantiations, this can impact memory consumption compared to
+prototype-level functions.</li>
+<li><strong>Immutability vs. Arrow Functions:</strong> Modern JavaScript
+often relies on class field arrow functions
+(<code>handleClick = () =&gt; {}</code>) to preserve context. However,
+<code>_.bindAll</code> remains useful when working with dynamic object
+literals, plain prototypes, or legacy environments where class fields
+are unavailable.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

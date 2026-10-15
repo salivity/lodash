@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash cloneDeep with Web Worker Instances - lodash</title>
+    <meta name="description" content="When a Web Worker instance is passed into the Lodash .cloneDeep method, Lodash fails to duplicate the actual background thread because active runtime instances cannot be serialized or duplicated. Instead of throwing an error, Lodash checks the worker&#39;s in">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-clone-deep-with-web-worker-instances">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash cloneDeep with Web Worker Instances - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-clone-deep-with-web-worker-instances" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When a Web Worker instance is passed into the Lodash .cloneDeep method, Lodash fails to duplicate the actual background thread because active runtime instances cannot be serialized or duplicated. Instead of throwing an error, Lodash checks the worker&#39;s in" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-clonedeep-with-web-worker-instances">Lodash cloneDeep
+with Web Worker Instances</h1>
+<p>When a Web Worker instance is passed into the Lodash
+<code>_.cloneDeep</code> method, Lodash fails to duplicate the actual
+background thread because active runtime instances cannot be serialized
+or duplicated. Instead of throwing an error, Lodash checks the worker's
+internal type tag against its whitelist of cloneable objects; because
+<code>Worker</code> is not supported, <code>_.cloneDeep</code> will
+either return an empty object (<code>{}</code>) if the worker is cloned
+directly at the root, or preserve the original reference if it is nested
+inside another object.</p>
+<h2 id="why-web-workers-cannot-be-cloned">Why Web Workers Cannot Be
+Cloned</h2>
+<p>A Web Worker is not a plain data structure; it represents an active
+operating system thread or browser background task with its own
+execution context, event loop, and memory heap. The JavaScript runtime
+does not allow copying thread execution states or native host
+bindings.</p>
+<p>While the native HTML structured clone algorithm
+(<code>structuredClone()</code>) explicitly throws a
+<code>DataCloneError</code> when encountering an uncloneable host object
+like a <code>Worker</code>, Lodash handles deep cloning through its own
+custom heuristics without throwing exceptions.</p>
+<h2 id="how-lodash-processes-the-worker-internally">How Lodash Processes
+the Worker Internally</h2>
+<p>Lodash uses an internal function named <code>baseClone</code> to
+recursively copy values. The process for a <code>Worker</code> instance
+proceeds as follows:</p>
+<ol type="1">
+<li><strong>Tag Detection:</strong> Lodash resolves the internal object
+tag using <code>Object.prototype.toString.call(value)</code>. For a Web
+Worker, this evaluates to <code>"[object Worker]"</code>.</li>
+<li><strong>Whitelist Verification:</strong> Lodash maintains an
+internal lookup table called <code>cloneableTags</code>. This table
+explicitly supports standard data types such as <code>Object</code>,
+<code>Array</code>, <code>Map</code>, <code>Set</code>,
+<code>Date</code>, <code>RegExp</code>, <code>ArrayBuffer</code>, and
+TypedArrays.</li>
+<li><strong>Fallback Logic:</strong> Because
+<code>"[object Worker]"</code> is absent from
+<code>cloneableTags</code>, Lodash classifies the instance as an
+uncloneable object and executes its fallback condition:</li>
+</ol>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="op">!</span>cloneableTags[tag]) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> object <span class="op">?</span> value <span class="op">:</span> {}<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="root-level-vs-nested-behavior">Root-Level vs. Nested
+Behavior</h2>
+<p>Because of Lodash's internal check against the parent
+<code>object</code> argument, the output changes depending on how the
+worker is passed:</p>
+<ul>
+<li><strong>Direct/Root Cloning:</strong> If you call
+<code>_.cloneDeep(myWorker)</code>, no parent container exists
+(<code>object</code> is <code>undefined</code>). Lodash returns an empty
+object (<code>{}</code>). The reference is lost, and none of the Worker
+methods (such as <code>postMessage</code> or <code>terminate</code>)
+exist on the returned object.</li>
+<li><strong>Nested Property Cloning:</strong> If the worker is nested
+inside a container object (for example,
+<code>_.cloneDeep({ worker: myWorker })</code>), the parent object
+exists during the recursive step. Lodash falls back to returning the
+original instance <code>value</code> by reference.</li>
+</ul>
+<h2 id="best-practices">Best Practices</h2>
+<p>Relying on <code>_.cloneDeep</code> around objects that manage
+background threads can introduce unexpected side effects or silent bugs
+due to shallow reference sharing or empty object replacements.</p>
+<ul>
+<li><strong>Separate State from Concurrency:</strong> Store pure,
+serializable state (such as payload messages or configuration settings)
+separate from the <code>Worker</code> instance itself.</li>
+<li><strong>Clone Only Data:</strong> Pass only plain JavaScript
+objects, primitives, and serializable collections into
+<code>_.cloneDeep</code>.</li>
+<li><strong>Explicit Worker Management:</strong> Manage Worker
+lifecycles and instances explicitly in a dedicated controller or pool
+rather than placing them inside application state models.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

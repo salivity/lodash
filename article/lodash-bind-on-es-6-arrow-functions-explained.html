@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.bind on ES6 Arrow Functions Explained - lodash</title>
+    <meta name="description" content="Applying the Lodash .bind method to an ES6 arrow function will fail to alter the function&#39;s execution context (this), leaving it permanently bound to its enclosing lexical scope. While the context binding is silently ignored without throwing a runtime err">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-bind-on-es-6-arrow-functions-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.bind on ES6 Arrow Functions Explained - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-bind-on-es-6-arrow-functions-explained" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Applying the Lodash .bind method to an ES6 arrow function will fail to alter the function&#39;s execution context (this), leaving it permanently bound to its enclosing lexical scope. While the context binding is silently ignored without throwing a runtime err" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_bind-on-es6-arrow-functions-explained">Lodash _.bind on
+ES6 Arrow Functions Explained</h1>
+<p>Applying the Lodash <code>_.bind</code> method to an ES6 arrow
+function will fail to alter the function's execution context
+(<code>this</code>), leaving it permanently bound to its enclosing
+lexical scope. While the context binding is silently ignored without
+throwing a runtime error, any additional arguments passed to
+<code>_.bind</code> will still be successfully partially applied.
+Understanding this behavior is critical for avoiding subtle state bugs
+when working with modern JavaScript and utility libraries.</p>
+<h3 id="lexical-this-vs-_bind">Lexical <code>this</code> vs.
+<code>_.bind</code></h3>
+<p>In ECMAScript 2015 (ES6), arrow functions were designed with lexical
+scoping for <code>this</code>. Unlike traditional <code>function</code>
+declarations or expressions, arrow functions do not have their own
+<code>this</code> binding; instead, they capture the <code>this</code>
+value of the enclosing execution context at the moment they are
+defined.</p>
+<p>Lodash's <code>_.bind</code> method operates similarly to the native
+<code>Function.prototype.bind</code>. Under the hood, it attempts to set
+the target function's context to the specified <code>thisArg</code>.
+However, JavaScript specifications mandate that an arrow function's
+lexical <code>this</code> cannot be overridden by <code>bind</code>,
+<code>call</code>, or <code>apply</code>. Consequently,
+<code>_.bind</code> cannot reassign the context of an arrow
+function.</p>
+<h3 id="silent-failure-of-context-binding">Silent Failure of Context
+Binding</h3>
+<p>When you pass an arrow function to <code>_.bind</code>, JavaScript
+does not throw a <code>TypeError</code> or warning. The operation
+executes normally, but the specified <code>thisArg</code> is completely
+disregarded:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> user <span class="op">=</span> { <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> }<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> greet <span class="op">=</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="vs">`Hello, </span><span class="sc">${</span><span class="kw">this</span><span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> boundGreet <span class="op">=</span> _<span class="op">.</span><span class="fu">bind</span>(greet<span class="op">,</span> user)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Output depends on the outer scope, not &#39;user&#39;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">boundGreet</span>())<span class="op">;</span> <span class="co">// &quot;Hello, undefined&quot; (in strict/module scope)</span></span></code></pre></div>
+<p>In this scenario, <code>greet</code> remains bound to the outer scope
+(such as <code>window</code> or <code>globalThis</code>), and passing
+<code>user</code> to <code>_.bind</code> has no effect.</p>
+<h3 id="partial-application-still-works">Partial Application Still
+Works</h3>
+<p>Although context binding fails, <code>_.bind</code> also serves to
+partially apply arguments. If you provide additional parameters to
+<code>_.bind</code>, Lodash will correctly prepend those arguments to
+subsequent calls of the arrow function:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> add <span class="op">=</span> (a<span class="op">,</span> b) <span class="kw">=&gt;</span> a <span class="op">+</span> b<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Context is ignored, but &#39;a&#39; is bound to 5</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> addFive <span class="op">=</span> _<span class="op">.</span><span class="fu">bind</span>(add<span class="op">,</span> <span class="kw">null</span><span class="op">,</span> <span class="dv">5</span>)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="fu">addFive</span>(<span class="dv">10</span>))<span class="op">;</span> <span class="co">// 15</span></span></code></pre></div>
+<h3 id="best-practices">Best Practices</h3>
+<p>To avoid unexpected behavior when using Lodash with arrow
+functions:</p>
+<ol type="1">
+<li><strong>Use standard function expressions for dynamic
+contexts:</strong> If a function relies on a dynamic <code>this</code>
+that needs to be configured at runtime, define it using the
+<code>function</code> keyword rather than an arrow function.</li>
+<li><strong>Use <code>_.partial</code> for argument
+pre-filling:</strong> If the goal is strictly argument currying or
+partial application on an arrow function, use Lodash's
+<code>_.partial</code> instead of <code>_.bind</code> to make the intent
+clear and avoid confusion regarding <code>this</code>.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Lodash sumBy for Nested Object Properties - lodash</title>
+    <meta name="description" content="Totaling values within arrays of complex JavaScript objects often requires multi-line, boilerplate-heavy loops or native reduce implementations that must explicitly handle missing or undefined fields. The Lodash library simplifies this challenge through i">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/using-lodash-sum-by-for-nested-object-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Lodash sumBy for Nested Object Properties - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/using-lodash-sum-by-for-nested-object-properties" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Totaling values within arrays of complex JavaScript objects often requires multi-line, boilerplate-heavy loops or native reduce implementations that must explicitly handle missing or undefined fields. The Lodash library simplifies this challenge through i" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-lodash-sumby-for-nested-object-properties">Using Lodash
+sumBy for Nested Object Properties</h1>
+<p>Totaling values within arrays of complex JavaScript objects often
+requires multi-line, boilerplate-heavy loops or native
+<code>reduce</code> implementations that must explicitly handle missing
+or undefined fields. The Lodash library simplifies this challenge
+through its <code>_.sumBy</code> utility method. By accepting property
+paths or custom iteratee functions, <code>_.sumBy</code> enables
+developers to calculate sums across deeply nested structures cleanly,
+safely, and with minimal code.</p>
+<h2 id="the-challenge-with-native-javascript">The Challenge with Native
+JavaScript</h2>
+<p>In standard JavaScript, summing a nested property across an array of
+objects typically relies on <code>Array.prototype.reduce()</code>.
+Consider an array of order items where each item contains a nested
+pricing object:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> orders <span class="op">=</span> [</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">pricing</span><span class="op">:</span> { <span class="dt">total</span><span class="op">:</span> <span class="fl">45.50</span> } }<span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">pricing</span><span class="op">:</span> { <span class="dt">total</span><span class="op">:</span> <span class="fl">12.00</span> } }<span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">pricing</span><span class="op">:</span> { <span class="dt">total</span><span class="op">:</span> <span class="fl">99.99</span> } }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> total <span class="op">=</span> orders<span class="op">.</span><span class="fu">reduce</span>((sum<span class="op">,</span> order) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> sum <span class="op">+</span> (order<span class="op">.</span><span class="at">pricing</span><span class="op">?.</span><span class="at">total</span> <span class="op">||</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span></code></pre></div>
+<p>While functional, this approach requires explicit initializers,
+optional chaining to prevent runtime errors if an object is malformed,
+and manual fallback handling for non-numeric values.</p>
+<h2 id="how-_sumby-streamlines-the-process">How <code>_.sumBy</code>
+Streamlines the Process</h2>
+<p>The <code>_.sumBy</code> method calculates the sum of values produced
+by each element in a collection. It takes two primary arguments:</p>
+<ol type="1">
+<li><strong>Collection</strong>: The array or object to iterate
+over.</li>
+<li><strong>Iteratee</strong>: The criterion used to extract or compute
+the numerical value to be summed.</li>
+</ol>
+<h3 id="1-using-string-path-notation">1. Using String Path Notation</h3>
+<p>Lodash supports dot-notation path strings as iteratees. This allows
+you to target nested keys directly without writing a custom callback
+function:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> orders <span class="op">=</span> [</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">pricing</span><span class="op">:</span> { <span class="dt">total</span><span class="op">:</span> <span class="fl">45.50</span> } }<span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">pricing</span><span class="op">:</span> { <span class="dt">total</span><span class="op">:</span> <span class="fl">12.00</span> } }<span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span><span class="op">,</span> <span class="dt">pricing</span><span class="op">:</span> { <span class="dt">total</span><span class="op">:</span> <span class="fl">99.99</span> } }</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> grandTotal <span class="op">=</span> _<span class="op">.</span><span class="fu">sumBy</span>(orders<span class="op">,</span> <span class="st">&#39;pricing.total&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: 157.49</span></span></code></pre></div>
+<p>Lodash internally resolves the <code>'pricing.total'</code> path for
+every element and accumulates the sum automatically.</p>
+<h3 id="2-built-in-safety-for-missing-data">2. Built-in Safety for
+Missing Data</h3>
+<p>If any nested key in the collection is <code>null</code>,
+<code>undefined</code>, or unresolvable, <code>_.sumBy</code> handles it
+gracefully instead of throwing a <code>TypeError</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> irregularOrders <span class="op">=</span> [</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">pricing</span><span class="op">:</span> { <span class="dt">total</span><span class="op">:</span> <span class="dv">50</span> } }<span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">pricing</span><span class="op">:</span> <span class="kw">null</span> }<span class="op">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">3</span> }</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> safeTotal <span class="op">=</span> _<span class="op">.</span><span class="fu">sumBy</span>(irregularOrders<span class="op">,</span> <span class="st">&#39;pricing.total&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: 50</span></span></code></pre></div>
+<p>Lodash treats missing, <code>null</code>, or non-numeric values as
+zero in the accumulation, eliminating the need for defensive manual
+checks.</p>
+<h3 id="3-using-custom-iteratee-functions">3. Using Custom Iteratee
+Functions</h3>
+<p>When values require transformation, type casting, or multi-property
+calculations before summing, <code>_.sumBy</code> accepts a
+function:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> inventory <span class="op">=</span> [</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">item</span><span class="op">:</span> <span class="st">&#39;A&#39;</span><span class="op">,</span> <span class="dt">stock</span><span class="op">:</span> { <span class="dt">warehouse</span><span class="op">:</span> <span class="dv">5</span><span class="op">,</span> <span class="dt">retail</span><span class="op">:</span> <span class="st">&#39;10&#39;</span> } }<span class="op">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">item</span><span class="op">:</span> <span class="st">&#39;B&#39;</span><span class="op">,</span> <span class="dt">stock</span><span class="op">:</span> { <span class="dt">warehouse</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span> <span class="dt">retail</span><span class="op">:</span> <span class="dv">3</span> } }</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> totalUnits <span class="op">=</span> _<span class="op">.</span><span class="fu">sumBy</span>(inventory<span class="op">,</span> (entry) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> entry<span class="op">.</span><span class="at">stock</span><span class="op">.</span><span class="at">warehouse</span> <span class="op">+</span> <span class="bu">Number</span>(entry<span class="op">.</span><span class="at">stock</span><span class="op">.</span><span class="at">retail</span>)<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: 20</span></span></code></pre></div>
+<h2 id="conclusion">Conclusion</h2>
+<p>By abstracting away nested null checks, accumulation initializers,
+and traversal boilerplate, <code>_.sumBy</code> converts multi-step
+reduction logic into a single, declarative line of code. It enhances
+both readability and safety when aggregating data across complex
+JavaScript object hierarchies.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

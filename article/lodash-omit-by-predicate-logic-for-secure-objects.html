@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash omitBy: Predicate Logic for Secure Objects - lodash</title>
+    <meta name="description" content="In modern JavaScript applications, dynamically sanitizing data payloads is vital for preventing security vulnerabilities such as mass assignment and internal state exposure. The Lodash utility function .omitBy provides a declarative, functional approach t">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-omit-by-predicate-logic-for-secure-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash omitBy: Predicate Logic for Secure Objects - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-omit-by-predicate-logic-for-secure-objects" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In modern JavaScript applications, dynamically sanitizing data payloads is vital for preventing security vulnerabilities such as mass assignment and internal state exposure. The Lodash utility function .omitBy provides a declarative, functional approach t" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-omitby-predicate-logic-for-secure-objects">Lodash omitBy:
+Predicate Logic for Secure Objects</h1>
+<p>In modern JavaScript applications, dynamically sanitizing data
+payloads is vital for preventing security vulnerabilities such as mass
+assignment and internal state exposure. The Lodash utility function
+<code>_.omitBy</code> provides a declarative, functional approach to
+constructing constrained objects by systematically filtering out
+key-value pairs that satisfy a specified condition. This article
+explores the internal evaluation mechanism of <code>_.omitBy</code>, how
+it assesses truthy and falsy return values within its predicate mapper,
+and how developers can utilize this boolean logic to securely isolate
+and constrain object properties.</p>
+<h3 id="the-mechanics-of-the-predicate-mapper">The Mechanics of the
+Predicate Mapper</h3>
+<p>At its core, <code>_.omitBy</code> takes two primary arguments: the
+source <code>object</code> and a <code>predicate</code> function. The
+predicate acts as a callback that is executed for every own, enumerable
+string-keyed property of the source object. During each iteration,
+Lodash passes two core parameters to this predicate:</p>
+<ol type="1">
+<li><code>value</code>: The current property value being inspected.</li>
+<li><code>key</code>: The corresponding object key name.</li>
+</ol>
+<p>The execution model evaluates the predicate's return value within a
+standard JavaScript boolean coercion context. Unlike methods that check
+for strict boolean equality (<code>=== true</code>),
+<code>_.omitBy</code> treats any truthy value (<code>true</code>,
+non-zero numbers, non-empty strings, objects) as a directive to exclude
+the property. Conversely, falsy returns (<code>false</code>,
+<code>null</code>, <code>undefined</code>, <code>0</code>,
+<code>NaN</code>, <code>""</code>) indicate that the key-value pair
+should be retained in the final object.</p>
+<h3 id="boolean-logic-and-predicate-inversion">Boolean Logic and
+Predicate Inversion</h3>
+<p>Because <code>_.omitBy</code> defines what to exclude rather than
+what to retain, developers must apply inverted boolean logic. If the
+predicate evaluates to <code>true</code>, the property is dropped.</p>
+<p>Consider the logical difference between retention and omission. While
+<code>_.pickBy</code> keeps items that pass a criteria check:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Retains only active accounts</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> activeUsers <span class="op">=</span> _<span class="op">.</span><span class="fu">pickBy</span>(users<span class="op">,</span> (user) <span class="kw">=&gt;</span> user<span class="op">.</span><span class="at">isActive</span>)<span class="op">;</span></span></code></pre></div>
+<p><code>_.omitBy</code> enforces exclusion constraints, acting as a
+dynamic denylist:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Drops sensitive or disabled accounts</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> safeUsers <span class="op">=</span> _<span class="op">.</span><span class="fu">omitBy</span>(users<span class="op">,</span> (user<span class="op">,</span> key) <span class="kw">=&gt;</span> user<span class="op">.</span><span class="at">isRestricted</span> <span class="op">||</span> key<span class="op">.</span><span class="fu">startsWith</span>(<span class="st">&#39;_&#39;</span>))<span class="op">;</span></span></code></pre></div>
+<p>When building predicates, compound logical operators
+(<code>&amp;&amp;</code>, <code>||</code>, <code>!</code>) allow for
+granular constraints:</p>
+<ul>
+<li><strong>Logical OR (<code>||</code>) for Multi-Vector
+Exclusions:</strong> Drops a key if it matches any unsafe condition
+(e.g., private keys OR <code>null</code> values).</li>
+<li><strong>Logical AND (<code>&amp;&amp;</code>) for Contextual
+Exclusions:</strong> Drops a key only when multiple parameters align
+(e.g., key is <code>"role"</code> AND user is not an
+administrator).</li>
+</ul>
+<h3 id="secure-object-sanitization-against-mass-assignment">Secure
+Object Sanitization Against Mass Assignment</h3>
+<p>Mass assignment occurs when client-supplied payloads inject
+unexpected properties directly into an internal data model, such as
+overwriting an <code>isAdmin</code> flag or modifying audit timestamps.
+Using <code>_.omitBy</code>, teams can enforce schema constraints by
+evaluating both keys and values against strict security rules.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sanitizePayload</span>(rawInput<span class="op">,</span> restrictedKeys <span class="op">=</span> [<span class="st">&#39;role&#39;</span><span class="op">,</span> <span class="st">&#39;permissions&#39;</span><span class="op">,</span> <span class="st">&#39;id&#39;</span>]) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> _<span class="op">.</span><span class="fu">omitBy</span>(rawInput<span class="op">,</span> (value<span class="op">,</span> key) <span class="kw">=&gt;</span> {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> isRestrictedKey <span class="op">=</span> restrictedKeys<span class="op">.</span><span class="fu">includes</span>(key)<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> isPrivateField <span class="op">=</span> key<span class="op">.</span><span class="fu">startsWith</span>(<span class="st">&#39;_&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> isFunction <span class="op">=</span> <span class="kw">typeof</span> value <span class="op">===</span> <span class="st">&#39;function&#39;</span><span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> isNullOrUndefined <span class="op">=</span> value <span class="op">===</span> <span class="kw">null</span> <span class="op">||</span> value <span class="op">===</span> <span class="kw">undefined</span><span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> isRestrictedKey <span class="op">||</span> isPrivateField <span class="op">||</span> isFunction <span class="op">||</span> isNullOrUndefined<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>In this evaluation:</p>
+<ul>
+<li>Any key appearing in <code>restrictedKeys</code> causes the
+predicate to immediately return <code>true</code>, eliminating privilege
+escalation pathways.</li>
+<li>Functions and prototype-polluting elements are caught and
+excluded.</li>
+<li>Null or undefined values are stripped out, preventing schema
+pollution downstream.</li>
+</ul>
+<h3 id="immutability-and-defense-in-depth">Immutability and
+Defense-in-Depth</h3>
+<p>A critical security characteristic of <code>_.omitBy</code> is
+non-mutation. The function iterates through the source object and
+constructs a completely new object containing only the permissible
+properties. The original input object remains unmodified in memory.</p>
+<p>By systematically mapping boolean evaluation to an omission pipeline,
+<code>_.omitBy</code> allows developers to establish rigid, declarative
+boundaries on untrusted inputs, guaranteeing that output objects contain
+only the shape and data explicitly permitted by the application
+logic.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

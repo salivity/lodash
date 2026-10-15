@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash sortedIndexOf Finds Array Elements - lodash</title>
+    <meta name="description" content="The .sortedIndexOf method in the Lodash JavaScript library is an optimized search utility designed specifically for arrays that are already sorted in ascending order. Instead of checking elements sequentially from beginning to end, it implements a binary">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-sorted-index-of-finds-array-elements">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash sortedIndexOf Finds Array Elements - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-sorted-index-of-finds-array-elements" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .sortedIndexOf method in the Lodash JavaScript library is an optimized search utility designed specifically for arrays that are already sorted in ascending order. Instead of checking elements sequentially from beginning to end, it implements a binary" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-sortedindexof-finds-array-elements">How Lodash
+sortedIndexOf Finds Array Elements</h1>
+<p>The <code>_.sortedIndexOf</code> method in the Lodash JavaScript
+library is an optimized search utility designed specifically for arrays
+that are already sorted in ascending order. Instead of checking elements
+sequentially from beginning to end, it implements a binary search
+algorithm to pinpoint the exact index of an element in <span
+class="math inline">\(O(\log n)\)</span> time. This article breaks down
+the internal mechanics of <code>_.sortedIndexOf</code>, explains how it
+locates the lowest matching index, and highlights why it outperforms
+standard linear search approaches on large datasets.</p>
+<h2 id="the-binary-search-mechanism">The Binary Search Mechanism</h2>
+<p>Standard array lookup methods like JavaScript's native
+<code>Array.prototype.indexOf</code> or Lodash's <code>_.indexOf</code>
+use linear search. Linear search iterates through the array index by
+index from left to right, resulting in a time complexity of <span
+class="math inline">\(O(n)\)</span>. When dealing with large arrays
+containing thousands or millions of elements, this approach can become a
+performance bottleneck.</p>
+<p>Because <code>_.sortedIndexOf</code> assumes the target array is
+already sorted, it bypasses the linear scan entirely and uses a binary
+search. The binary search operates through a divide-and-conquer
+strategy:</p>
+<ol type="1">
+<li><strong>Establish Boundaries:</strong> The algorithm maintains two
+pointers representing the current search range: a lower boundary
+(initially index <code>0</code>) and an upper boundary (initially
+<code>array.length - 1</code>).</li>
+<li><strong>Determine the Midpoint:</strong> In each iteration, it
+calculates the midpoint index between the lower and upper bounds:
+<code>mid = Math.floor((low + high) / 2)</code>.</li>
+<li><strong>Compare and Halve:</strong> The value at the midpoint is
+compared to the target value:
+<ul>
+<li>If the target is smaller than the midpoint value, the target must
+reside in the left half, so the upper bound is updated to
+<code>mid - 1</code>.</li>
+<li>If the target is larger than the midpoint value, the target must
+reside in the right half, so the lower bound is updated to
+<code>mid + 1</code>.</li>
+</ul></li>
+<li><strong>Repeat:</strong> The window narrows by half with every
+iteration until the target is isolated or the search bounds overlap,
+indicating the value does not exist in the collection.</li>
+</ol>
+<h2 id="resolving-duplicate-values">Resolving Duplicate Values</h2>
+<p>A standard binary search stops as soon as it encounters any match.
+However, <code>_.sortedIndexOf</code> mirrors the contract of
+<code>_.indexOf</code>, meaning it must return the <em>first</em>
+(lowest) index at which an element can be found.</p>
+<p>To achieve this, Lodash internally uses a variant of the binary
+search known as a lower-bound search (similar to
+<code>_.sortedIndex</code>). When a matching value is found during
+division, the algorithm does not terminate immediately. Instead, it
+continues to adjust the upper boundary downward to explore the left side
+of the midpoint. This guarantees that if multiple identical values
+exist, the search resolves to the very first occurrence.</p>
+<p>Once the lower-bound index is determined, Lodash performs a final
+validation check:</p>
+<ul>
+<li>If the element at that calculated index strictly matches
+(<code>===</code>) the target value, that index is returned.</li>
+<li>If the element at that index does not match the target, or if the
+index falls outside the array boundaries, <code>_.sortedIndexOf</code>
+returns <code>-1</code>.</li>
+</ul>
+<h2 id="code-example">Code Example</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sortedNumbers <span class="op">=</span> [<span class="dv">10</span><span class="op">,</span> <span class="dv">20</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="dv">40</span><span class="op">,</span> <span class="dv">50</span>]<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Finds the first occurrence of 30 using binary search</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> index <span class="op">=</span> _<span class="op">.</span><span class="fu">sortedIndexOf</span>(sortedNumbers<span class="op">,</span> <span class="dv">30</span>)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(index)<span class="op">;</span> <span class="co">// Output: 2</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns -1 when the element is absent</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> missingIndex <span class="op">=</span> _<span class="op">.</span><span class="fu">sortedIndexOf</span>(sortedNumbers<span class="op">,</span> <span class="dv">25</span>)<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(missingIndex)<span class="op">;</span> <span class="co">// Output: -1</span></span></code></pre></div>
+<h2 id="performance-and-constraints">Performance and Constraints</h2>
+<p>The primary advantage of <code>_.sortedIndexOf</code> is efficiency.
+On an array of 1,000,000 items, a linear search may require up to
+1,000,000 comparisons in the worst case. In contrast,
+<code>_.sortedIndexOf</code> will locate the item or confirm its absence
+in at most 20 comparisons (<span class="math inline">\(\log_2(1,000,000)
+\approx 20\)</span>).</p>
+<p>The critical requirement is array ordering. If
+<code>_.sortedIndexOf</code> is called on an unsorted array, the binary
+search logic will evaluate incorrect branches, leading to false
+negatives or inaccurate index returns without throwing a runtime
+error.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

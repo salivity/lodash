@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Replace Lodash _.get with Optional Chaining - lodash</title>
+    <meta name="description" content="This article explains how to replace Lodash&#39;s .get method using modern JavaScript&#39;s native optional chaining (?.) and nullish coalescing (??) operators. You will learn the direct syntactic equivalents for nested property access, dynamic keys, array indexi">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/replace-lodash-get-with-optional-chaining">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Replace Lodash _.get with Optional Chaining - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/replace-lodash-get-with-optional-chaining" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to replace Lodash&#39;s .get method using modern JavaScript&#39;s native optional chaining (?.) and nullish coalescing (??) operators. You will learn the direct syntactic equivalents for nested property access, dynamic keys, array indexi" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="replace-lodash-_get-with-optional-chaining">Replace Lodash _.get
+with Optional Chaining</h1>
+<p>This article explains how to replace Lodash's <code>_.get</code>
+method using modern JavaScript's native optional chaining
+(<code>?.</code>) and nullish coalescing (<code>??</code>) operators.
+You will learn the direct syntactic equivalents for nested property
+access, dynamic keys, array indexing, and default fallback values
+without requiring external utility libraries.</p>
+<h2 id="the-basic-equivalent">The Basic Equivalent</h2>
+<p>In Lodash, <code>_.get</code> safely retrieves deeply nested values
+without throwing a <code>TypeError</code> if an intermediate reference
+is <code>null</code> or <code>undefined</code>. In modern JavaScript
+(ES2020+), the syntactic equivalent is the optional chaining operator
+(<code>?.</code>).</p>
+<p><strong>Lodash:</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> street <span class="op">=</span> _<span class="op">.</span><span class="fu">get</span>(user<span class="op">,</span> <span class="st">&#39;address.street&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<p><strong>Modern JavaScript:</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> street <span class="op">=</span> user<span class="op">?.</span><span class="at">address</span><span class="op">?.</span><span class="at">street</span><span class="op">;</span></span></code></pre></div>
+<p>If <code>user</code> or <code>address</code> is <code>null</code> or
+<code>undefined</code>, the expression short-circuits and evaluates to
+<code>undefined</code> instead of throwing an error.</p>
+<hr />
+<h2 id="adding-default-values">Adding Default Values</h2>
+<p>Lodash allows passing a third argument as a fallback default value if
+the resolved value is <code>undefined</code>. The modern JavaScript
+equivalent combines optional chaining with the nullish coalescing
+operator (<code>??</code>).</p>
+<p><strong>Lodash:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> role <span class="op">=</span> _<span class="op">.</span><span class="fu">get</span>(user<span class="op">,</span> <span class="st">&#39;profile.role&#39;</span><span class="op">,</span> <span class="st">&#39;guest&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<p><strong>Modern JavaScript:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> role <span class="op">=</span> user<span class="op">?.</span><span class="at">profile</span><span class="op">?.</span><span class="at">role</span> <span class="op">??</span> <span class="st">&#39;guest&#39;</span><span class="op">;</span></span></code></pre></div>
+<p>The nullish coalescing operator (<code>??</code>) ensures that
+fallback values are only applied when the result is <code>null</code> or
+<code>undefined</code>, preserving falsy but valid values like
+<code>0</code>, <code>false</code>, or <code>""</code>.</p>
+<hr />
+<h2 id="dynamic-properties-and-array-indexing">Dynamic Properties and
+Array Indexing</h2>
+<p>Lodash supports both string path notation and array notation for
+accessing array items and dynamic object keys. Modern JavaScript
+achieves this using bracket notation with optional chaining
+(<code>?.[]</code>).</p>
+<h3 id="array-elements">Array Elements</h3>
+<p><strong>Lodash:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> firstItem <span class="op">=</span> _<span class="op">.</span><span class="fu">get</span>(order<span class="op">,</span> <span class="st">&#39;items[0].name&#39;</span>)<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">// or</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> firstItem <span class="op">=</span> _<span class="op">.</span><span class="fu">get</span>(order<span class="op">,</span> [<span class="st">&#39;items&#39;</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="st">&#39;name&#39;</span>])<span class="op">;</span></span></code></pre></div>
+<p><strong>Modern JavaScript:</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> firstItem <span class="op">=</span> order<span class="op">?.</span><span class="at">items</span><span class="op">?.</span>[<span class="dv">0</span>]<span class="op">?.</span><span class="at">name</span><span class="op">;</span></span></code></pre></div>
+<h3 id="dynamic-keys">Dynamic Keys</h3>
+<p><strong>Lodash:</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> dynamicKey <span class="op">=</span> <span class="st">&#39;settings&#39;</span><span class="op">;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> theme <span class="op">=</span> _<span class="op">.</span><span class="fu">get</span>(user<span class="op">,</span> [dynamicKey<span class="op">,</span> <span class="st">&#39;theme&#39;</span>])<span class="op">;</span></span></code></pre></div>
+<p><strong>Modern JavaScript:</strong></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> dynamicKey <span class="op">=</span> <span class="st">&#39;settings&#39;</span><span class="op">;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> theme <span class="op">=</span> user<span class="op">?.</span>[dynamicKey]<span class="op">?.</span><span class="at">theme</span><span class="op">;</span></span></code></pre></div>
+<hr />
+<h2 id="safe-function-and-method-calls">Safe Function and Method
+Calls</h2>
+<p>While Lodash provides <code>_.result</code> for invoking functions
+that might be present on a path, modern JavaScript extends optional
+chaining directly to function calls using <code>?.()</code>.</p>
+<p><strong>Modern JavaScript:</strong></p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Safely calls calculateTotal if it exists; otherwise evaluates to undefined</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> total <span class="op">=</span> order<span class="op">?.</span><span class="at">calculateTotal</span><span class="op">?.</span>()<span class="op">;</span></span></code></pre></div>
+<hr />
+<h2 id="key-difference-runtime-string-paths">Key Difference: Runtime
+String Paths</h2>
+<p>Optional chaining is a syntax feature, meaning property names must be
+known at write time or explicitly passed via bracket notation. It does
+not parse dot-delimited strings dynamically created at runtime (e.g.,
+<code>"data.nested.key"</code>).</p>
+<p>If dynamic string paths determined at runtime are required, use
+<code>Array.prototype.reduce</code>:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> getByPath <span class="op">=</span> (obj<span class="op">,</span> path<span class="op">,</span> defaultValue) <span class="kw">=&gt;</span> {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> travel <span class="op">=</span> (regexp) <span class="kw">=&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span><span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">split</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>      <span class="op">.</span><span class="fu">call</span>(path<span class="op">,</span> regexp)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      <span class="op">.</span><span class="fu">filter</span>(<span class="bu">Boolean</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      <span class="op">.</span><span class="fu">reduce</span>((res<span class="op">,</span> key) <span class="kw">=&gt;</span> (res <span class="op">!==</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> res <span class="op">!==</span> <span class="kw">undefined</span> <span class="op">?</span> res[key] <span class="op">:</span> <span class="kw">undefined</span>)<span class="op">,</span> obj)<span class="op">;</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> result <span class="op">=</span> <span class="fu">travel</span>(<span class="ss">/</span><span class="sc">[,[ \].]+?</span><span class="ss">/</span>)<span class="op">;</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result <span class="op">===</span> <span class="kw">undefined</span> <span class="op">||</span> result <span class="op">===</span> obj <span class="op">?</span> defaultValue <span class="op">:</span> result<span class="op">;</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<p>For all standard access patterns,
+<code>object?.path?.to?.property ?? defaultValue</code> completely
+replaces the need for Lodash's <code>_.get</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

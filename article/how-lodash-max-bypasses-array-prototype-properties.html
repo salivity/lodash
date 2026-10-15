@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.max Bypasses Array Prototype Properties - lodash</title>
+    <meta name="description" content="Lodash&#39;s .max bypasses prototype properties when processing large numeric arrays by utilizing index-based iteration constrained by the array&#39;s length property rather than object key enumeration. Instead of traversing object keys using mechanisms that clim">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-max-bypasses-array-prototype-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.max Bypasses Array Prototype Properties - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-max-bypasses-array-prototype-properties" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .max bypasses prototype properties when processing large numeric arrays by utilizing index-based iteration constrained by the array&#39;s length property rather than object key enumeration. Instead of traversing object keys using mechanisms that clim" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_max-bypasses-array-prototype-properties">How Lodash
+_.max Bypasses Array Prototype Properties</h1>
+<p>Lodash's <code>_.max</code> bypasses prototype properties when
+processing large numeric arrays by utilizing index-based iteration
+constrained by the array's <code>length</code> property rather than
+object key enumeration. Instead of traversing object keys using
+mechanisms that climb the prototype chain, Lodash delegates the
+operation to internal base methods that access elements via sequential
+integer indexes. This approach ensures maximum execution speed on
+massive datasets, prevents inherited properties from polluting
+calculations, and enables JavaScript engines to optimize memory access
+patterns.</p>
+<h2 id="index-based-traversal-via-baseextremum">Index-Based Traversal
+via <code>baseExtremum</code></h2>
+<p>Under the hood, <code>_.max</code> delegates evaluation to an
+internal function named <code>baseExtremum</code>. Rather than using a
+<code>for...in</code> loop—which enumerates all enumerable properties
+across the entire prototype chain—<code>baseExtremum</code> uses an
+optimized <code>while</code> loop:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseExtremum</span>(array<span class="op">,</span> iteratee<span class="op">,</span> comparator) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> index <span class="op">=</span> <span class="op">-</span><span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> length <span class="op">=</span> array<span class="op">.</span><span class="at">length</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> result<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> computed<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="op">++</span>index <span class="op">&lt;</span> length) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> value <span class="op">=</span> array[index]<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> current <span class="op">=</span> <span class="fu">iteratee</span>(value)<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (current <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> (computed <span class="op">===</span> <span class="kw">undefined</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>          <span class="op">?</span> (current <span class="op">===</span> current <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="fu">isSymbol</span>(current))</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>          <span class="op">:</span> <span class="fu">comparator</span>(current<span class="op">,</span> computed)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        )) {</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      computed <span class="op">=</span> current<span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      result <span class="op">=</span> value<span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because the loop counter increments from <code>0</code> up to
+<code>length - 1</code>, Lodash only requests numeric properties bounded
+by the current length of the array. Named properties, extensions, or
+custom helper functions appended to <code>Array.prototype</code> or
+<code>Object.prototype</code> (such as
+<code>Array.prototype.customValue = 999999</code>) are never
+targeted.</p>
+<h2 id="avoiding-property-enumeration">Avoiding Property
+Enumeration</h2>
+<p>Standard property enumeration via <code>for...in</code> visits every
+enumerable property on the object and its prototype chain, requiring
+explicit guards like
+<code>Object.prototype.hasOwnProperty.call(array, key)</code> to filter
+out prototype extensions. Executing <code>hasOwnProperty</code> across
+an array containing millions of elements adds severe overhead.</p>
+<p>By utilizing indexed element retrieval (<code>array[index]</code>),
+Lodash avoids property enumeration entirely:</p>
+<ul>
+<li><strong>Named extensions are ignored:</strong> Prototype extensions
+are keyed by non-numeric strings or symbols, meaning integer iteration
+never requests them.</li>
+<li><strong>No <code>hasOwnProperty</code> overhead:</strong> Direct
+index reads bypass the need to verify ownership of each property,
+eliminating millions of function call frames.</li>
+<li><strong>Deterministic iteration bounds:</strong> The array's
+<code>length</code> strictly controls execution boundaries, ignoring
+prototype properties that do not alter the length counter.</li>
+</ul>
+<h2 id="engine-level-optimizations-v8-fast-elements">Engine-Level
+Optimizations (V8 Fast Elements)</h2>
+<p>Directly accessing elements through sequential integer indices allows
+JavaScript engines like V8 to keep the array in a "fast elements" state
+(such as <code>PACKED_SMI_ELEMENTS</code> or
+<code>PACKED_DOUBLE_ELEMENTS</code>).</p>
+<p>When code uses property-enumeration loops or accesses arbitrary
+prototype properties, engines may fall back to "dictionary mode" (slow
+properties), which stores elements as a hash table. By sticking to dense
+numeric loops, <code>_.max</code> enables the engine to predict memory
+offsets linearly, load data into CPU caches efficiently, and inline the
+comparison operations without triggering deoptimizations.</p>
+<h2 id="handling-of-sparse-arrays-and-non-values">Handling of Sparse
+Arrays and Non-Values</h2>
+<p>In extreme edge cases involving sparse arrays (e.g.,
+<code>new Array(1000000)</code>), accessing an unassigned index via
+<code>array[index]</code> evaluates to <code>undefined</code> unless a
+matching numeric index explicitly exists on
+<code>Array.prototype</code>.</p>
+<p>Lodash protects the calculation against these cases through its
+comparison checks:</p>
+<ol type="1">
+<li>It validates that values are non-null and not
+<code>undefined</code>.</li>
+<li>It handles <code>NaN</code> values via self-equality checks
+(<code>current === current</code>).</li>
+<li>If an index does not contain a valid primitive number, the
+comparator ignores it, preventing faulty comparisons from setting an
+invalid maximum.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

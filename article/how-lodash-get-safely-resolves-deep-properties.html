@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash get Safely Resolves Deep Properties - lodash</title>
+    <meta name="description" content="The .get method in Lodash allows developers to safely retrieve values from deeply nested objects without triggering TypeError: Cannot read properties of undefined or null. Historically, accessing deeply nested properties in standard JavaScript posed a sig">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-get-safely-resolves-deep-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash get Safely Resolves Deep Properties - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-get-safely-resolves-deep-properties" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .get method in Lodash allows developers to safely retrieve values from deeply nested objects without triggering TypeError: Cannot read properties of undefined or null. Historically, accessing deeply nested properties in standard JavaScript posed a sig" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-get-safely-resolves-deep-properties">How Lodash get
+Safely Resolves Deep Properties</h1>
+<p>The <code>_.get</code> method in Lodash allows developers to safely
+retrieve values from deeply nested objects without triggering
+<code>TypeError: Cannot read properties of undefined</code> or
+<code>null</code>. Historically, accessing deeply nested properties in
+standard JavaScript posed a significant risk of runtime crashes whenever
+an intermediate property was missing. Lodash eliminates this problem by
+normalizing property paths, traversing the target object step-by-step,
+validating intermediate states against <code>null</code> or
+<code>undefined</code>, and returning a default value if the target
+property cannot be resolved.</p>
+<h3 id="the-problem-with-native-nested-access">The Problem with Native
+Nested Access</h3>
+<p>In traditional JavaScript, accessing a property like
+<code>user.profile.address.city</code> fails fatally if any intermediate
+property—such as <code>profile</code> or <code>address</code>—evaluates
+to <code>null</code> or <code>undefined</code>. Attempting to read a
+property on a nullish value causes the JavaScript engine to throw a
+<code>TypeError</code>, halting script execution.</p>
+<h3 id="path-normalization">Path Normalization</h3>
+<p>When you provide a path to <code>_.get</code>, it accepts either an
+array of keys (e.g., <code>['a', 'b', 'c']</code>) or a string
+representation (e.g., <code>'a.b.c'</code> or
+<code>'a[0].b.c'</code>).</p>
+<p>Lodash processes this path using an internal helper function
+(historically <code>toPath</code> or <code>castPath</code>). If the path
+is a string, Lodash uses regular expressions to parse and split it into
+an array of individual property keys and array indices. Lodash also
+maintains an internal cache for compiled string paths, ensuring that
+repeatedly queried path strings avoid the performance overhead of
+redundant regex parsing.</p>
+<h3 id="iterative-traversal">Iterative Traversal</h3>
+<p>Once the path is converted into an array of segments, Lodash iterates
+through the keys sequentially using a standard loop rather than
+recursion.</p>
+<ol type="1">
+<li><strong>Initialization:</strong> Lodash sets a pointer (the current
+context) directly to the target object.</li>
+<li><strong>Step-by-Step Traversal:</strong> For each key in the
+normalized path array, the function reads the corresponding property
+from the current context and updates the pointer to hold that
+value.</li>
+<li><strong>Guard Checking:</strong> At each iteration, Lodash verifies
+that the current context is not <code>null</code> or
+<code>undefined</code>.</li>
+</ol>
+<h3 id="early-exit-and-nullish-safety">Early Exit and Nullish
+Safety</h3>
+<p>If at any point during iteration the intermediate context becomes
+<code>null</code> or <code>undefined</code>, Lodash immediately breaks
+out of the loop. Because it never attempts to access a property on an
+intermediate nullish value, no native <code>TypeError</code> is thrown.
+The iteration terminates gracefully, and the traversal pointer is
+evaluated as <code>undefined</code>.</p>
+<h3 id="default-value-handling">Default Value Handling</h3>
+<p>After the loop finishes—either because the full path was successfully
+traversed or because traversal halted early—Lodash checks the final
+result:</p>
+<ul>
+<li>If the resolved value is explicitly <code>undefined</code>,
+<code>_.get</code> returns the user-provided default value (or
+<code>undefined</code> if no default was specified).</li>
+<li>If the resolved value is any other falsy value (such as
+<code>null</code>, <code>false</code>, <code>0</code>, or
+<code>""</code>), Lodash preserves and returns that value, treating it
+as a valid, successfully resolved property.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

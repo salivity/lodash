@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash unzip Reconstructs Grouped Arrays - lodash</title>
+    <meta name="description" content="The Lodash .unzip method is an array utility designed to reverse the operation of .zip by taking an array of grouped elements and regrouping them back into their original constituent arrays. This article explains how .unzip processes nested array indices,">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-unzip-reconstructs-grouped-arrays">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash unzip Reconstructs Grouped Arrays - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-unzip-reconstructs-grouped-arrays" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .unzip method is an array utility designed to reverse the operation of .zip by taking an array of grouped elements and regrouping them back into their original constituent arrays. This article explains how .unzip processes nested array indices," />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-unzip-reconstructs-grouped-arrays">How Lodash unzip
+Reconstructs Grouped Arrays</h1>
+<p>The Lodash <code>_.unzip</code> method is an array utility designed
+to reverse the operation of <code>_.zip</code> by taking an array of
+grouped elements and regrouping them back into their original
+constituent arrays. This article explains how <code>_.unzip</code>
+processes nested array indices, performs matrix transposition to
+rearrange data, and handles edge cases such as arrays with uneven
+lengths.</p>
+<h2 id="the-transposition-mechanism">The Transposition Mechanism</h2>
+<p>At its core, <code>_.unzip</code> performs a 2D matrix transposition.
+It accepts a single two-dimensional array (an array containing nested
+arrays) and maps the element at index <code>[row][column]</code> to
+index <code>[column][row]</code> in the output structure.</p>
+<p>When executed, <code>_.unzip</code> processes the input through the
+following steps:</p>
+<ol type="1">
+<li><strong>Calculates Output Dimensions:</strong> It scans the nested
+arrays to determine the maximum length among them. This maximum length
+defines how many arrays the output will contain.</li>
+<li><strong>Iterates by Index:</strong> It iterates from index
+<code>0</code> up to the determined maximum length.</li>
+<li><strong>Regroups Values:</strong> For each iteration index
+<code>i</code>, it extracts the element located at index <code>i</code>
+from each nested array and groups them into a new array.</li>
+<li><strong>Returns the Reconstructed Collection:</strong> It outputs a
+new array containing these newly formed arrays.</li>
+</ol>
+<h2 id="basic-reconstruction-example">Basic Reconstruction Example</h2>
+<p>Consider an array containing grouped data representing names,
+identifiers, and statuses:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> zipped <span class="op">=</span> [</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;Alice&#39;</span><span class="op">,</span> <span class="dv">101</span><span class="op">,</span> <span class="kw">true</span>]<span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;Bob&#39;</span><span class="op">,</span> <span class="dv">102</span><span class="op">,</span> <span class="kw">false</span>]<span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;Charlie&#39;</span><span class="op">,</span> <span class="dv">103</span><span class="op">,</span> <span class="kw">true</span>]</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> unzipped <span class="op">=</span> _<span class="op">.</span><span class="fu">unzip</span>(zipped)<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(unzipped)<span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">// Output:</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">// [</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">//   [&#39;Alice&#39;, &#39;Bob&#39;, &#39;Charlie&#39;],</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">//   [101, 102, 103],</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co">//   [true, false, true]</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co">// ]</span></span></code></pre></div>
+<p>In this example, the first elements (<code>'Alice'</code>,
+<code>'Bob'</code>, <code>'Charlie'</code>) are combined into the first
+output array, the second elements (<code>101</code>, <code>102</code>,
+<code>103</code>) form the second array, and the third elements form the
+third array.</p>
+<h2 id="handling-unequal-array-lengths">Handling Unequal Array
+Lengths</h2>
+<p>If the nested arrays within the input are not of equal length,
+<code>_.unzip</code> standardizes the output by filling missing slots
+with <code>undefined</code>. The total number of output arrays always
+matches the length of the longest inner array.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> irregularZipped <span class="op">=</span> [</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;a&#39;</span><span class="op">,</span> <span class="dv">1</span>]<span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;b&#39;</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="st">&#39;extra&#39;</span>]<span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&#39;c&#39;</span>]</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> result <span class="op">=</span> _<span class="op">.</span><span class="fu">unzip</span>(irregularZipped)<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(result)<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Output:</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">// [</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">//   [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;],</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">//   [1, 2, undefined],</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">//   [undefined, &#39;extra&#39;, undefined]</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">// ]</span></span></code></pre></div>
+<p>Because the second array contains three elements, the output produces
+three reconstructed arrays. For indices where an inner array has no
+value, <code>undefined</code> is inserted to maintain consistent
+positional alignment.</p>
+<h2 id="relationship-to-_zip">Relationship to _.zip</h2>
+<p>In Lodash, <code>_.zip</code> and <code>_.unzip</code> share the same
+underlying logic. While <code>_.zip</code> accepts multiple array
+arguments using rest parameters (<code>_.zip(...arrays)</code>),
+<code>_.unzip</code> accepts a single array containing those nested
+arrays. Consequently, <code>_.unzip</code> can reconstruct collections
+produced by <code>_.zip</code>, and passing an unzipped collection back
+into <code>_.unzip</code> returns it to its grouped state.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

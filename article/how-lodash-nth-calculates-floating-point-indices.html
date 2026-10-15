@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash nth Calculates Floating-Point Indices - lodash</title>
+    <meta name="description" content="The .nth function in the Lodash JavaScript library retrieves the element at index n of an array, supporting both positive and negative values. When provided with a floating-point number rather than an integer, Lodash internally normalizes the index by tru">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-nth-calculates-floating-point-indices">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash nth Calculates Floating-Point Indices - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-nth-calculates-floating-point-indices" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The .nth function in the Lodash JavaScript library retrieves the element at index n of an array, supporting both positive and negative values. When provided with a floating-point number rather than an integer, Lodash internally normalizes the index by tru" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-nth-calculates-floating-point-indices">How Lodash nth
+Calculates Floating-Point Indices</h1>
+<p>The <code>_.nth</code> function in the Lodash JavaScript library
+retrieves the element at index <code>n</code> of an array, supporting
+both positive and negative values. When provided with a floating-point
+number rather than an integer, Lodash internally normalizes the index by
+truncating the decimal component toward zero using internal utility
+methods before computing array bounds and retrieving the target
+element.</p>
+<h3 id="step-1-integer-coercion-via-tointeger">Step 1: Integer Coercion
+via <code>toInteger</code></h3>
+<p>When <code>_.nth(array, n)</code> is called, the second argument
+<code>n</code> is passed through Lodash's internal
+<code>toInteger</code> helper function.</p>
+<p>Under the hood, <code>toInteger</code> executes the following
+sequence:</p>
+<ol type="1">
+<li>It converts the input to a finite number using
+<code>toFinite</code>.</li>
+<li>It calculates the fractional remainder using the modulo operator:
+<code>remainder = result % 1</code>.</li>
+<li>It subtracts the remainder from the value:
+<code>remainder ? result - remainder : result</code>.</li>
+</ol>
+<p>This calculation performs truncation toward zero rather than standard
+mathematical rounding (<code>Math.round</code>) or downward rounding
+(<code>Math.floor</code>). Consequently:</p>
+<ul>
+<li>An argument of <code>1.2</code> or <code>1.9</code> truncates to
+<code>1</code>.</li>
+<li>An argument of <code>-1.2</code> or <code>-1.9</code> truncates to
+<code>-1</code>.</li>
+<li>Special float values like <code>NaN</code> default to
+<code>0</code>.</li>
+</ul>
+<h3 id="step-2-negative-index-resolution-via-basenth">Step 2: Negative
+Index Resolution via <code>baseNth</code></h3>
+<p>Once converted to an integer, the normalized value is forwarded to
+the internal <code>baseNth</code> function alongside the array.</p>
+<p>Lodash supports negative index querying, where negative numbers count
+backward from the end of the collection. The calculation is applied as
+follows:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>n <span class="op">+=</span> n <span class="op">&lt;</span> <span class="dv">0</span> <span class="op">?</span> length <span class="op">:</span> <span class="dv">0</span><span class="op">;</span></span></code></pre></div>
+<p>If the truncated integer is negative, <code>baseNth</code> adds the
+array's <code>length</code> to determine the corresponding zero-based
+positive index:</p>
+<ul>
+<li>For an array with a length of <code>5</code>, an input of
+<code>-1.7</code> truncates to <code>-1</code>.</li>
+<li>Applying the formula yields <code>-1 + 5 = 4</code>.</li>
+<li>The element at index <code>4</code> (the final element) is
+targeted.</li>
+</ul>
+<h3 id="step-3-index-validation-and-access">Step 3: Index Validation and
+Access</h3>
+<p>Finally, Lodash checks if the resolved index satisfies
+<code>isIndex(n, length)</code>. This verification ensures that the
+index is a non-negative integer within the valid range
+<code>[0, length - 1]</code>.</p>
+<p>If the calculated index is valid, <code>array[n]</code> is returned.
+If the value falls out of range (for example, if a negative float
+resolves past the start of the array), the function safely returns
+<code>undefined</code>.</p>
+<h3 id="code-example">Code Example</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> items <span class="op">=</span> [<span class="st">&#39;a&#39;</span><span class="op">,</span> <span class="st">&#39;b&#39;</span><span class="op">,</span> <span class="st">&#39;c&#39;</span><span class="op">,</span> <span class="st">&#39;d&#39;</span>]<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Positive floats truncate downward toward zero</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">nth</span>(items<span class="op">,</span> <span class="fl">1.9</span>)<span class="op">;</span>  <span class="co">// Truncates to 1 -&gt; returns &#39;b&#39;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Negative floats truncate upward toward zero</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">nth</span>(items<span class="op">,</span> <span class="op">-</span><span class="fl">1.9</span>)<span class="op">;</span> <span class="co">// Truncates to -1 -&gt; resolves to index 3 -&gt; returns &#39;d&#39;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">nth</span>(items<span class="op">,</span> <span class="op">-</span><span class="fl">2.1</span>)<span class="op">;</span> <span class="co">// Truncates to -2 -&gt; resolves to index 2 -&gt; returns &#39;c&#39;</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

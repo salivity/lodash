@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash isMap: Internal Tagging and Cross-Realm Checks - lodash</title>
+    <meta name="description" content="This article explores how Lodash’s .isMap utility reliably detects JavaScript Map instances across different execution contexts without failing due to cross-realm memory and identity discrepancies. In multi-realm environments like iframes or Node.js vm mo">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-is-map-internal-tagging-and-cross-realm-checks">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash isMap: Internal Tagging and Cross-Realm Checks - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-is-map-internal-tagging-and-cross-realm-checks" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how Lodash’s .isMap utility reliably detects JavaScript Map instances across different execution contexts without failing due to cross-realm memory and identity discrepancies. In multi-realm environments like iframes or Node.js vm mo" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-ismap-internal-tagging-and-cross-realm-checks">Lodash
+isMap: Internal Tagging and Cross-Realm Checks</h1>
+<p>This article explores how Lodash’s <code>_.isMap</code> utility
+reliably detects JavaScript <code>Map</code> instances across different
+execution contexts without failing due to cross-realm memory and
+identity discrepancies. In multi-realm environments like iframes or
+Node.js <code>vm</code> modules, traditional identity checks fail
+because distinct memory spaces possess unique prototype chains. Lodash
+bypasses this limitation by leveraging internal object tags via
+<code>Object.prototype.toString</code> and modern environment-specific
+bindings, ensuring consistent type detection without relying on
+constructor references.</p>
+<h3 id="the-problem-with-cross-realm-type-checking">The Problem with
+Cross-Realm Type Checking</h3>
+<p>In JavaScript, a "realm" consists of an execution context with its
+own global environment, intrinsic objects, and memory space. Common
+examples include separate <code>&lt;iframe&gt;</code> elements in a
+browser, pop-up windows, or distinct contexts created by the Node.js
+<code>vm</code> module.</p>
+<p>When verifying whether an object is a <code>Map</code>, developers
+commonly reach for the <code>instanceof</code> operator:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>myObject <span class="kw">instanceof</span> <span class="bu">Map</span></span></code></pre></div>
+<p>The <code>instanceof</code> operator works by traversing the
+prototype chain of <code>myObject</code> to see if it matches the
+prototype property of the <code>Map</code> constructor in the current
+realm. If <code>myObject</code> was instantiated in an iframe, its
+prototype references the <code>Map.prototype</code> of that iframe, not
+the <code>Map.prototype</code> of the parent window. Because these
+prototypes occupy different locations in memory,
+<code>myObject instanceof Map</code> evaluates to <code>false</code>,
+causing false negatives despite <code>myObject</code> having all
+standard <code>Map</code> methods and internal slots.</p>
+<h3 id="internal-tagging-via-objectprototypetostring">Internal Tagging
+via <code>Object.prototype.toString</code></h3>
+<p>To overcome the fragility of reference-based checks, Lodash relies on
+internal string tagging. According to the ECMAScript specification,
+standard objects possess internal behaviors that define their kind,
+historically represented via internal <code>[[Class]]</code> slots and
+modernly surfaced through <code>Symbol.toStringTag</code>.</p>
+<p>When invoking <code>Object.prototype.toString.call(value)</code> on
+an instance:</p>
+<ol type="1">
+<li>The engine accesses the internal state or the
+<code>Symbol.toStringTag</code> property of the target object.</li>
+<li>It returns a standardized string in the format
+<code>"[object Type]"</code>.</li>
+<li>For a native <code>Map</code>, it returns
+<code>"[object Map]"</code> regardless of the realm in which the object
+was allocated.</li>
+</ol>
+<p>Because this method returns a primitive string value, comparison does
+not depend on memory addresses or execution realms. A string generated
+from an object inside an iframe matches the string generated from the
+host context.</p>
+<h3 id="how-lodash-implements-_ismap">How Lodash Implements
+<code>_.isMap</code></h3>
+<p>Under the hood, Lodash implements <code>_.isMap</code> by combining
+object validity checks with internal tag resolution. Lodash routes the
+check through an internal helper (often referenced as
+<code>baseIsMap</code> or unified under its internal <code>getTag</code>
+function):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> mapTag <span class="op">=</span> <span class="st">&#39;[object Map]&#39;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">baseIsMap</span>(value) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="fu">isObjectLike</span>(value) <span class="op">&amp;&amp;</span> <span class="fu">getTag</span>(value) <span class="op">==</span> mapTag<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The process follows a strict sequence:</p>
+<ol type="1">
+<li><strong>Null and Object Guard:</strong> The
+<code>isObjectLike</code> helper verifies that the input is non-null and
+that <code>typeof value === 'object'</code>. This eliminates primitives
+immediately before heavier operations run.</li>
+<li><strong>Tag Extraction (<code>getTag</code>):</strong> Lodash calls
+a customized version of
+<code>Object.prototype.toString.call(value)</code>. Lodash handles
+quirks across various JavaScript engines, such as managing cases where
+native collections might mask their types or where <code>DataView</code>
+and other native types cause anomalies in older runtimes.</li>
+<li><strong>String Comparison:</strong> The resulting string is compared
+directly to <code>'[object Map]'</code>.</li>
+</ol>
+<p>In modern Node.js environments, Lodash enhances this approach by
+using native internal bindings where available (such as
+<code>util.types.isMap</code>). When those bindings are not available,
+it defaults back to the <code>getTag</code> mechanism.</p>
+<h3 id="why-this-architecture-works">Why This Architecture Works</h3>
+<p>By shifting from constructor identity to primitive string tag
+evaluation, Lodash ensures that:</p>
+<ul>
+<li><strong>Memory Independence is Achieved:</strong> Prototypes in
+separate contexts do not need to share a memory address.</li>
+<li><strong>No Prototype Pollution Leakage:</strong> Evaluating the
+internal tag does not mutate the target object or require traversing
+outside the realm's sandbox.</li>
+<li><strong>Reliability Across Boundaries:</strong> Web Workers,
+iframes, and sandbox runtimes can pass collections freely without
+breaking type guards.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

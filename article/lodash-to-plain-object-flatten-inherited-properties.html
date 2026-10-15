@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash toPlainObject: Flatten Inherited Properties - lodash</title>
+    <meta name="description" content="Lodash’s .toPlainObject converts any input value into a plain JavaScript object by flattening its inherited prototype chain into direct, own enumerable properties. While standard JavaScript operations like Object.assign() or object spread ({ ...obj }) cop">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-to-plain-object-flatten-inherited-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash toPlainObject: Flatten Inherited Properties - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-to-plain-object-flatten-inherited-properties" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .toPlainObject converts any input value into a plain JavaScript object by flattening its inherited prototype chain into direct, own enumerable properties. While standard JavaScript operations like Object.assign() or object spread ({ ...obj }) cop" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-toplainobject-flatten-inherited-properties">Lodash
+toPlainObject: Flatten Inherited Properties</h1>
+<p>Lodash’s <code>_.toPlainObject</code> converts any input value into a
+plain JavaScript object by flattening its inherited prototype chain into
+direct, own enumerable properties. While standard JavaScript operations
+like <code>Object.assign()</code> or object spread
+(<code>{ ...obj }</code>) copy only an object's own properties,
+<code>_.toPlainObject</code> traverses enumerable properties across the
+entire inheritance hierarchy and assigns them as own properties of a
+newly created plain object.</p>
+<h3 id="the-mechanism-of-_toplainobject">The Mechanism of
+<code>_.toPlainObject</code></h3>
+<p>In JavaScript, objects created via classes or constructor functions
+inherit properties and methods through the <code>prototype</code> chain.
+These inherited members do not reside directly on the instance, meaning
+methods like <code>Object.prototype.hasOwnProperty()</code> return
+<code>false</code> for them.</p>
+<p>When <code>_.toPlainObject(value)</code> is executed, Lodash performs
+the following sequence:</p>
+<ol type="1">
+<li><strong>Creates a Clean Target</strong>: Lodash initializes a new,
+plain object literal (<code>{}</code>) without carrying over the
+prototype of the source instance.</li>
+<li><strong>Traverses Enumerable Properties</strong>: Unlike
+<code>Object.keys()</code>, which only reads own properties, Lodash
+scans both own and inherited enumerable properties. Internally, this
+operates similarly to a <code>for...in</code> loop.</li>
+<li><strong>Flattens Values to Own Properties</strong>: Each enumerable
+key discovered along the prototype chain is assigned directly onto the
+new target object as an own property.</li>
+<li><strong>Stops at the Base Prototype</strong>: The traversal halts
+when reaching standard built-in prototype layers, such as
+<code>Object.prototype</code>, avoiding internal native properties.</li>
+</ol>
+<h3 id="code-demonstration">Code Demonstration</h3>
+<p>Consider a scenario where a subclass inherits properties from a
+parent constructor:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">Parent</span>() {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">this</span><span class="op">.</span><span class="at">parentOwn</span> <span class="op">=</span> <span class="st">&#39;parent value&#39;</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>Parent<span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">inheritedFromParent</span> <span class="op">=</span> <span class="st">&#39;inherited parent value&#39;</span><span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">Child</span>() {</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  Parent<span class="op">.</span><span class="fu">call</span>(<span class="kw">this</span>)<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">this</span><span class="op">.</span><span class="at">childOwn</span> <span class="op">=</span> <span class="st">&#39;child value&#39;</span><span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>Child<span class="op">.</span><span class="at">prototype</span> <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">create</span>(Parent<span class="op">.</span><span class="at">prototype</span>)<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>Child<span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">constructor</span> <span class="op">=</span> Child<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>Child<span class="op">.</span><span class="at">prototype</span><span class="op">.</span><span class="at">inheritedFromChild</span> <span class="op">=</span> <span class="st">&#39;inherited child value&#39;</span><span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> instance <span class="op">=</span> <span class="kw">new</span> <span class="fu">Child</span>()<span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co">// Standard JavaScript spread only captures own properties</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> spreadObject <span class="op">=</span> { <span class="op">...</span>instance }<span class="op">;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(spreadObject<span class="op">.</span><span class="fu">hasOwnProperty</span>(<span class="st">&#39;inheritedFromChild&#39;</span>))<span class="op">;</span> <span class="co">// false</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co">// Lodash toPlainObject flattens inherited properties</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> plainObject <span class="op">=</span> _<span class="op">.</span><span class="fu">toPlainObject</span>(instance)<span class="op">;</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(plainObject<span class="op">.</span><span class="fu">hasOwnProperty</span>(<span class="st">&#39;inheritedFromChild&#39;</span>))<span class="op">;</span>  <span class="co">// true</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(plainObject<span class="op">.</span><span class="fu">hasOwnProperty</span>(<span class="st">&#39;inheritedFromParent&#39;</span>))<span class="op">;</span> <span class="co">// true</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(plainObject)<span class="op">;</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co">// Output:</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="co">// {</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="co">//   parentOwn: &#39;parent value&#39;,</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="co">//   childOwn: &#39;child value&#39;,</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="co">//   inheritedFromChild: &#39;inherited child value&#39;,</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="co">//   inheritedFromParent: &#39;inherited parent value&#39;</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="co">// }</span></span></code></pre></div>
+<h3 id="key-differences-and-limitations">Key Differences and
+Limitations</h3>
+<ul>
+<li><strong>Enumerability Requirement</strong>:
+<code>_.toPlainObject</code> only extracts enumerable properties.
+Methods defined within ES6 <code>class</code> bodies are non-enumerable
+by default and will not be copied over.</li>
+<li><strong>Property Overwrites</strong>: If a child object defines an
+own property with the same name as an inherited prototype property, the
+child's own property value takes precedence during the flattening
+process.</li>
+<li><strong>Loss of Methods and Prototypes</strong>: The returned object
+loses its original prototype link (<code>instanceof Child</code> becomes
+<code>false</code>). Dynamic getter and setter behaviors defined on
+prototypes will resolve to static values at the moment of
+conversion.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

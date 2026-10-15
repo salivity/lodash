@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash maxBy Finds Deeply Nested Extremes - lodash</title>
+    <meta name="description" content="Lodash&#39;s .maxBy method provides a reliable mechanism for finding the maximum element in a collection based on deep property paths or transformation functions. This article explores the internal architecture behind .maxBy, detailing how its foundational lo">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-max-by-finds-deeply-nested-extremes">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash maxBy Finds Deeply Nested Extremes - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-max-by-finds-deeply-nested-extremes" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash&#39;s .maxBy method provides a reliable mechanism for finding the maximum element in a collection based on deep property paths or transformation functions. This article explores the internal architecture behind .maxBy, detailing how its foundational lo" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-maxby-finds-deeply-nested-extremes">How Lodash maxBy
+Finds Deeply Nested Extremes</h1>
+<p>Lodash's <code>_.maxBy</code> method provides a reliable mechanism
+for finding the maximum element in a collection based on deep property
+paths or transformation functions. This article explores the internal
+architecture behind <code>_.maxBy</code>, detailing how its foundational
+loop function, <code>baseExtremum</code>, uses a dual-state accumulator
+strategy to track both computed criteria and source references, while
+safely resolving deeply nested object values without performance
+overhead or loss of context.</p>
+<h3 id="the-foundation-baseextremum">The Foundation:
+<code>baseExtremum</code></h3>
+<p>At the heart of <code>_.maxBy</code> lies an internal helper function
+called <code>baseExtremum</code>. When
+<code>_.maxBy(array, iteratee)</code> is invoked, it delegates
+immediately to:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">baseExtremum</span>(array<span class="op">,</span> <span class="fu">getIteratee</span>(iteratee<span class="op">,</span> <span class="dv">2</span>)<span class="op">,</span> baseGt)<span class="op">;</span></span></code></pre></div>
+<p>Here, <code>baseGt</code> serves as the comparison operator
+(<code>&gt;</code>), and <code>getIteratee</code> normalizes strings,
+property paths, or custom functions into an executable accessor. Rather
+than performing a two-pass map-then-reduce operation—which would
+generate intermediate arrays and increase memory
+footprint—<code>baseExtremum</code> performs a single linear sweep
+(<code>O(n)</code>) using an internal accumulator design.</p>
+<h3 id="the-dual-state-accumulator-strategy">The Dual-State Accumulator
+Strategy</h3>
+<p>To preserve the identity of the original collection item while
+comparing transformed or nested criteria, <code>baseExtremum</code>
+tracks two distinct accumulator values across the iteration:</p>
+<ol type="1">
+<li><strong>The Result Reference (<code>result</code>):</strong> Holds
+the reference to the actual item inside the input array that currently
+possesses the highest evaluated value.</li>
+<li><strong>The Computed Metric (<code>computed</code>):</strong> Holds
+the derived primitive value produced by applying the iteratee to the
+current item.</li>
+</ol>
+<p>During each iteration, the loop applies the iteratee to the current
+element to obtain a candidate value. It then compares this candidate
+against <code>computed</code> using the comparator:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">const</span> value <span class="kw">of</span> array) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> current <span class="op">=</span> <span class="fu">iteratee</span>(value)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (current <span class="op">!=</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> (computed <span class="op">===</span> <span class="kw">undefined</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="op">?</span> (current <span class="op">===</span> current <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="fu">isSymbol</span>(current))</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> <span class="fu">comparator</span>(current<span class="op">,</span> computed)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      )) {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    computed <span class="op">=</span> current<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> value<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> result<span class="op">;</span></span></code></pre></div>
+<p>This separation avoids re-evaluating the iteratee on previously
+visited elements while ensuring that the return value remains the intact
+object, regardless of how deeply nested the target comparison key
+was.</p>
+<h3 id="resolving-deep-paths-via-baseiteratee">Resolving Deep Paths via
+<code>baseIteratee</code></h3>
+<p>When developers pass a nested path string (such as
+<code>'user.analytics.score'</code>) into <code>_.maxBy</code>, Lodash
+compiles this string using <code>baseIteratee</code> and
+<code>property</code>.</p>
+<p>Under the hood, this relies on <code>baseGet</code>, which navigates
+the object tree segment by segment. If any intermediate key in the path
+is <code>null</code> or <code>undefined</code>, the traversal
+short-circuits gracefully and yields <code>undefined</code> instead of
+throwing a <code>TypeError</code>.</p>
+<p>Because the dual accumulator evaluates the iteratee per element,
+<code>baseGet</code> extracts the deeply nested numerical or comparable
+value directly into the <code>current</code> slot, while the top-level
+parent object remains tethered to <code>result</code>.</p>
+<h3 id="guarding-against-non-comparable-values">Guarding Against
+Non-Comparable Values</h3>
+<p>A critical aspect of Lodash's accumulator strategy is its strictness
+around invalid comparisons:</p>
+<ul>
+<li><strong><code>NaN</code> Filtering:</strong> JavaScript's
+<code>&gt;</code> operator yields <code>false</code> for any comparison
+involving <code>NaN</code>. Lodash guards against this by checking
+<code>current === current</code>, skipping <code>NaN</code> entries so
+they do not permanently corrupt the <code>computed</code> state.</li>
+<li><strong><code>undefined</code> and <code>null</code>
+Handling:</strong> The iteration ignores <code>null</code> and
+<code>undefined</code> candidates unless no valid values exist,
+preventing premature termination of the extremum search.</li>
+<li><strong>Symbol Exclusions:</strong> Symbols cannot be compared with
+relational operators; <code>baseExtremum</code> explicitly ignores them
+to prevent runtime type exceptions.</li>
+</ul>
+<p>By pairing single-pass dual accumulation with defensive property
+extraction, <code>_.maxBy</code> maps and resolves deeply nested
+criteria while preserving the complete source object.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

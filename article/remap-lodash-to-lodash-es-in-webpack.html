@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remap Lodash to Lodash-es in Webpack - lodash</title>
+    <meta name="description" content="This article explains how to configure Webpack aliases to cleanly redirect standard Lodash imports directly to lodash-es. By replacing the CommonJS distribution with its ECMAScript Modules (ESM) counterpart, Webpack can perform effective dead-code elimina">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/remap-lodash-to-lodash-es-in-webpack">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Remap Lodash to Lodash-es in Webpack - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/remap-lodash-to-lodash-es-in-webpack" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure Webpack aliases to cleanly redirect standard Lodash imports directly to lodash-es. By replacing the CommonJS distribution with its ECMAScript Modules (ESM) counterpart, Webpack can perform effective dead-code elimina" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="remap-lodash-to-lodash-es-in-webpack">Remap Lodash to Lodash-es
+in Webpack</h1>
+<p>This article explains how to configure Webpack aliases to cleanly
+redirect standard Lodash imports directly to <code>lodash-es</code>. By
+replacing the CommonJS distribution with its ECMAScript Modules (ESM)
+counterpart, Webpack can perform effective dead-code elimination
+(tree-shaking), reducing your application's bundle size without
+requiring you to manually rewrite existing import statements across your
+codebase.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Ensure you have <code>lodash-es</code> installed in your project
+alongside your standard dependencies:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install lodash-es</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">--save-dev</span> @types/lodash-es <span class="co"># optional, for TypeScript projects</span></span></code></pre></div>
+<h3 id="the-webpack-alias-configuration">The Webpack Alias
+Configuration</h3>
+<p>In your <code>webpack.config.js</code>, define an alias within the
+<code>resolve</code> property. Webpack aliases match module paths and
+swap them out before bundling.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// webpack.config.js</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> path <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;path&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>module<span class="op">.</span><span class="at">exports</span> <span class="op">=</span> {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ... other webpack settings</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">resolve</span><span class="op">:</span> {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">alias</span><span class="op">:</span> {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Remaps both top-level &#39;lodash&#39; and path-based &#39;lodash/...&#39; imports</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">lodash</span><span class="op">:</span> <span class="st">&#39;lodash-es&#39;</span><span class="op">,</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<h3 id="how-the-mapping-behaves">How the Mapping Behaves</h3>
+<p>In Webpack, when an alias key does not include a trailing
+<code>$</code> symbol, it acts as a prefix matcher:</p>
+<ol type="1">
+<li><p><strong>Named Imports:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { debounce<span class="op">,</span> cloneDeep } <span class="im">from</span> <span class="st">&#39;lodash&#39;</span><span class="op">;</span></span></code></pre></div>
+<p>Webpack resolves this to <code>lodash-es</code>, importing only the
+exported functions. Webpack's tree-shaking mechanism analyzes the unused
+exports and strips them from the production bundle.</p></li>
+<li><p><strong>Direct Subpath Imports:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> debounce <span class="im">from</span> <span class="st">&#39;lodash/debounce&#39;</span><span class="op">;</span></span></code></pre></div>
+<p>Webpack resolves this path prefix to <code>lodash-es/debounce</code>,
+which imports the individual ES module directly.</p></li>
+</ol>
+<h3 id="strict-top-level-remapping">Strict Top-Level Remapping</h3>
+<p>If your project exclusively uses named root imports and you want to
+prevent subpath resolution edge cases, you can use the exact match
+operator (<code>$</code>):</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>module<span class="op">.</span><span class="at">exports</span> <span class="op">=</span> {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">resolve</span><span class="op">:</span> {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">alias</span><span class="op">:</span> {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Only matches import ... from &#39;lodash&#39; exactly</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;lodash$&#39;</span><span class="op">:</span> <span class="st">&#39;lodash-es&#39;</span><span class="op">,</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Optionally map submodules explicitly if mixed conventions exist</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;lodash&#39;</span><span class="op">:</span> <span class="st">&#39;lodash-es&#39;</span><span class="op">,</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<p>Using simply <code>'lodash': 'lodash-es'</code> is generally
+preferred because it covers both forms seamlessly.</p>
+<h3 id="important-considerations">Important Considerations</h3>
+<ul>
+<li><p><strong>Babel Loader Exclusions:</strong> Most Webpack
+configurations exclude <code>node_modules</code> from transpilation via
+Babel or SWC. Because <code>lodash-es</code> distributes raw ES6
+modules, legacy browser targets (like Internet Explorer 11) might
+require you to allow <code>lodash-es</code> through your transpiler:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">// webpack.config.js</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>module<span class="op">:</span> {</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">rules</span><span class="op">:</span> [</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">test</span><span class="op">:</span> <span class="ss">/</span><span class="sc">\.</span><span class="ss">m</span><span class="sc">?</span><span class="ss">js</span><span class="sc">$</span><span class="ss">/</span><span class="op">,</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">exclude</span><span class="op">:</span> <span class="ss">/node_modules</span><span class="sc">\/(?</span><span class="ss">!lodash-es</span><span class="sc">)</span><span class="ss">/</span><span class="op">,</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">use</span><span class="op">:</span> {</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">loader</span><span class="op">:</span> <span class="st">&#39;babel-loader&#39;</span><span class="op">,</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>      }<span class="op">,</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  ]<span class="op">,</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div></li>
+<li><p><strong>CommonJS <code>require()</code> Statements:</strong> The
+<code>lodash-es</code> library does not support CommonJS
+<code>require()</code> syntax. Ensure that dependencies or legacy local
+files do not rely on <code>const _ = require('lodash')</code>, as this
+will produce an import execution error in an ESM environment.</p></li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Character Ranges for Lodash trimEnd - lodash</title>
+    <meta name="description" content="This article explores how Lodash’s .trimEnd processes string suffixes, detailing the exact Unicode whitespace ranges the function targets by default and the explicit character ranges required to safely validate dynamic suffix patterns. Readers will learn">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/secure-character-ranges-for-lodash-trim-end">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Secure Character Ranges for Lodash trimEnd - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/secure-character-ranges-for-lodash-trim-end" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how Lodash’s .trimEnd processes string suffixes, detailing the exact Unicode whitespace ranges the function targets by default and the explicit character ranges required to safely validate dynamic suffix patterns. Readers will learn" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="secure-character-ranges-for-lodash-trimend">Secure Character
+Ranges for Lodash trimEnd</h1>
+<p>This article explores how Lodash’s <code>_.trimEnd</code> processes
+string suffixes, detailing the exact Unicode whitespace ranges the
+function targets by default and the explicit character ranges required
+to safely validate dynamic suffix patterns. Readers will learn the
+internal mechanisms of Lodash’s trimming logic, how to prevent regular
+expression injection vulnerabilities during dynamic suffix checks, and
+how to reliably model suffix boundaries across ASCII and Unicode
+character sets.</p>
+<h2 id="understanding-lodash-_trimend-mechanics">Understanding Lodash
+<code>_.trimEnd</code> Mechanics</h2>
+<p>The <code>_.trimEnd</code> method strips trailing characters from a
+target string. When invoked with only a string argument
+(<code>_.trimEnd(string)</code>), Lodash defaults to stripping all
+trailing ECMAScript and Unicode whitespace characters. When invoked with
+a custom character set (<code>_.trimEnd(string, [chars])</code>), Lodash
+dynamically interprets those characters as a discrete collection of
+single-character symbols to match and remove from the end of the
+string.</p>
+<p>Internally, Lodash converts the <code>chars</code> argument into an
+array of characters—handling astral plane Unicode characters (surrogate
+pairs) correctly—and compiles or iterates these characters against the
+end of the string until a non-matching character is encountered.</p>
+<h2 id="default-unicode-whitespace-character-ranges">Default Unicode
+Whitespace Character Ranges</h2>
+<p>When no custom characters are passed, Lodash targets standard
+ECMAScript whitespace and line terminator code points. To validate or
+mirror this behavior using explicit character classes, you must account
+for the following explicit hex and Unicode ranges:</p>
+<ul>
+<li><strong>ASCII Whitespace and Control Codes:</strong>
+<ul>
+<li>Tabulation: <code>\u0009</code> (<code>\t</code>)</li>
+<li>Line Feed: <code>\u000A</code> (<code>\n</code>)</li>
+<li>Vertical Tab: <code>\u000B</code> (<code>\v</code>)</li>
+<li>Form Feed: <code>\u000C</code> (<code>\f</code>)</li>
+<li>Carriage Return: <code>\u000D</code> (<code>\r</code>)</li>
+<li>Space: <code>\u0020</code></li>
+</ul></li>
+<li><strong>Latin-1 Supplement Whitespace:</strong>
+<ul>
+<li>No-Break Space: <code>\u00A0</code></li>
+</ul></li>
+<li><strong>Ogham Space Mark:</strong>
+<ul>
+<li><code>\u1680</code></li>
+</ul></li>
+<li><strong>General Punctuation Space Separators (En quad to Hair
+space):</strong>
+<ul>
+<li>Range: <code>\u2000</code> through <code>\u200A</code></li>
+</ul></li>
+<li><strong>Line and Paragraph Separators:</strong>
+<ul>
+<li>Line Separator: <code>\u2028</code></li>
+<li>Paragraph Separator: <code>\u2029</code></li>
+</ul></li>
+<li><strong>Additional Unicode Spaces:</strong>
+<ul>
+<li>Narrow No-Break Space: <code>\u202F</code></li>
+<li>Medium Mathematical Space: <code>\u205F</code></li>
+<li>Ideographic Space (CJK): <code>\u3000</code></li>
+</ul></li>
+<li><strong>Zero Width No-Break Space (Byte Order Mark):</strong>
+<ul>
+<li><code>\uFEFF</code></li>
+</ul></li>
+</ul>
+<p>Expressed as a single explicit regular expression character class,
+this complete range is:</p>
+<pre class="regex"><code>[\t\n\v\f\r \u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]</code></pre>
+<h2 id="explicit-ranges-for-dynamic-suffix-validation">Explicit Ranges
+for Dynamic Suffix Validation</h2>
+<p>When validating inputs dynamically modified by
+<code>_.trimEnd(str, dynamicChars)</code>, treating user-defined
+suffixes blindly can introduce Regular Expression Denial of Service
+(ReDoS) or syntax corruption. Securely validating dynamic suffix
+boundaries requires bounding inputs to explicit, well-defined
+ranges:</p>
+<h3 id="1-printable-ascii-range-x20-x7e">1. Printable ASCII Range
+(<code>\x20-\x7E</code>)</h3>
+<p>If suffixes are strictly alphanumeric or standard punctuation,
+validate that dynamic inputs fall entirely within the standard printable
+ASCII range:</p>
+<ul>
+<li>Range: <code>^[\x20-\x7E]+$</code> This prevents control characters
+(<code>\x00-\x1F</code>, <code>\x7F</code>) from altering string parsing
+or introducing invisible suffixes.</li>
+</ul>
+<h3 id="2-unicode-identifier-ranges">2. Unicode Identifier Ranges</h3>
+<p>When suffixes represent code tokens, variable names, or natural
+language, use Unicode property escapes (<code>\p{L}</code>,
+<code>\p{N}</code>, <code>\p{P}</code>) with the <code>u</code>
+flag:</p>
+<ul>
+<li>Safe Character Set:
+<code>^[\p{Letter}\p{Number}\p{Punctuation}\s]+$u</code> This ensures
+only visible, structurally valid characters enter dynamic suffix
+trimming logic.</li>
+</ul>
+<h3 id="3-escaped-dynamic-literal-validation">3. Escaped Dynamic Literal
+Validation</h3>
+<p>If custom suffixes are dynamically injected into regular expressions
+to verify what <code>_.trimEnd</code> would remove, special regular
+expression control characters must be escaped:</p>
+<ul>
+<li><p>Reserved characters requiring escape:
+<code>[\^$.*+?()[{\|]</code></p></li>
+<li><p>Safe construction pattern:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> escapeRegExp <span class="op">=</span> (str) <span class="kw">=&gt;</span> str<span class="op">.</span><span class="fu">replace</span>(<span class="ss">/</span><span class="sc">[.*+?^${}()|[\]\\]</span><span class="ss">/g</span><span class="op">,</span> <span class="st">&#39;</span><span class="sc">\\</span><span class="st">$&amp;&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> safeChars <span class="op">=</span> <span class="fu">escapeRegExp</span>(dynamicChars)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> suffixValidator <span class="op">=</span> <span class="kw">new</span> <span class="bu">RegExp</span>(<span class="vs">`[</span><span class="sc">${</span>safeChars<span class="sc">}</span><span class="vs">]+$`</span><span class="op">,</span> <span class="st">&#39;u&#39;</span>)<span class="op">;</span></span></code></pre></div></li>
+</ul>
+<h2 id="security-best-practices-for-suffix-normalization">Security Best
+Practices for Suffix Normalization</h2>
+<ol type="1">
+<li><strong>Avoid Unbounded Regex Compilation:</strong> Do not pass
+unvalidated user input directly into <code>RegExp</code> constructors
+alongside anchor symbols (<code>$</code> or <code>\b</code>). Rely on
+<code>_.trimEnd</code> directly or escape inputs before constructing
+dynamic expressions.</li>
+<li><strong>Surrogate Pair Awareness:</strong> Lodash handles astral
+code points (e.g., emojis in the <code>\uD800-\uDFFF</code> surrogate
+ranges). If using explicit ranges to validate Lodash's output, ensure
+your regular expressions include the Unicode (<code>u</code>) flag to
+prevent split surrogate pairs.</li>
+<li><strong>Immutability of Suffix Sets:</strong> Enforce explicit
+whitelists of acceptable characters (such as <code>[a-zA-Z0-9_-]</code>)
+before allowing dynamic suffix-stripping in security-sensitive contexts,
+such as sanitizing file names, URIs, or database keys.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

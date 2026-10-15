@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash invoke Safely Handles Missing Methods - lodash</title>
+    <meta name="description" content="Lodash’s .invoke method provides a fail-safe mechanism for invoking nested object methods by combining path traversal, target validation, and conditional execution. Instead of directly executing a method reference that could lead to fatal TypeError: is no">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-invoke-safely-handles-missing-methods">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash invoke Safely Handles Missing Methods - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-invoke-safely-handles-missing-methods" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Lodash’s .invoke method provides a fail-safe mechanism for invoking nested object methods by combining path traversal, target validation, and conditional execution. Instead of directly executing a method reference that could lead to fatal TypeError: is no" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-invoke-safely-handles-missing-methods">How Lodash
+invoke Safely Handles Missing Methods</h1>
+<p>Lodash’s <code>_.invoke</code> method provides a fail-safe mechanism
+for invoking nested object methods by combining path traversal, target
+validation, and conditional execution. Instead of directly executing a
+method reference that could lead to fatal
+<code>TypeError: is not a function</code> exceptions,
+<code>_.invoke</code> dynamically checks whether the resolved target
+property exists and is callable. If the path cannot be resolved or the
+target is not a valid executable function, the library intercepts the
+operation and gracefully returns <code>undefined</code>, keeping the
+script running smoothly.</p>
+<h3 id="path-resolution-via-baseget">Path Resolution via
+<code>baseGet</code></h3>
+<p>Before attempting execution, <code>_.invoke</code> breaks down the
+provided method path using internal traversal logic, primarily through
+<code>castPath</code> and <code>baseGet</code>. Whether the path is
+defined as a dot-notation string (e.g., <code>'a.b.c'</code>) or an
+array of keys (e.g., <code>['a', 'b', 'c']</code>), Lodash navigates the
+object tree step by step. If any intermediate parent in the path is
+<code>null</code> or <code>undefined</code>, the resolution stops
+immediately rather than attempting to read properties of
+non-objects.</p>
+<h3 id="method-validation-and-callable-checks">Method Validation and
+Callable Checks</h3>
+<p>Once the path is traversed, Lodash isolates two components: the
+parent object (which acts as the <code>this</code> context) and the
+target property to be called. Instead of immediately appending
+invocation parentheses <code>()</code>, <code>_.invoke</code> performs
+an internal validation check—similar to
+<code>typeof method === 'function'</code> or Lodash’s internal
+<code>isFunction</code> utility.</p>
+<p>This step ensures that:</p>
+<ol type="1">
+<li>The property actually exists on the object or its prototype
+chain.</li>
+<li>The property is executable, filtering out non-callable types like
+strings, numbers, plain objects, or <code>undefined</code>.</li>
+</ol>
+<h3 id="controlled-execution-and-fallback">Controlled Execution and
+Fallback</h3>
+<p>If the target property passes the callable check, Lodash executes it
+dynamically using standard JavaScript reflection, binding the parent
+object to <code>this</code> and passing any provided arguments:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>method<span class="op">.</span><span class="fu">apply</span>(parent<span class="op">,</span> args)<span class="op">;</span></span></code></pre></div>
+<p>If the validation fails at any point—whether an intermediate path
+segment is missing, the property is absent, or the property is not a
+function—the invocation branch is completely bypassed. No call attempt
+is made, effectively preventing the JavaScript engine from throwing an
+unhandled runtime error. The operation silently completes and returns
+<code>undefined</code>, allowing developers to handle dynamic or
+uncertain object schemas safely.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

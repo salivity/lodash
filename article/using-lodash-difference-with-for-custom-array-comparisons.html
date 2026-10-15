@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Lodash differenceWith for Custom Array Comparisons - lodash</title>
+    <meta name="description" content="The Lodash .differenceWith method allows developers to compare arrays using a custom comparator function instead of relying on default shallow equality. This makes it an essential tool when filtering complex datasets, such as arrays of objects, where valu">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/using-lodash-difference-with-for-custom-array-comparisons">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Lodash differenceWith for Custom Array Comparisons - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/using-lodash-difference-with-for-custom-array-comparisons" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .differenceWith method allows developers to compare arrays using a custom comparator function instead of relying on default shallow equality. This makes it an essential tool when filtering complex datasets, such as arrays of objects, where valu" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-lodash-differencewith-for-custom-array-comparisons">Using
+Lodash differenceWith for Custom Array Comparisons</h1>
+<p>The Lodash <code>_.differenceWith</code> method allows developers to
+compare arrays using a custom comparator function instead of relying on
+default shallow equality. This makes it an essential tool when filtering
+complex datasets, such as arrays of objects, where values need to be
+evaluated based on specific properties or deep structural equality. This
+guide explains how <code>_.differenceWith</code> works and provides
+practical code examples demonstrating how to implement custom comparison
+logic in your JavaScript applications.</p>
+<h2 id="syntax-and-parameters">Syntax and Parameters</h2>
+<p>The syntax for <code>_.differenceWith</code> is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">differenceWith</span>(array<span class="op">,</span> [values]<span class="op">,</span> [comparator])</span></code></pre></div>
+<ul>
+<li><strong><code>array</code></strong>: The primary array from which
+you want to exclude values.</li>
+<li><strong><code>[values]</code></strong>: One or more arrays
+containing the values to exclude.</li>
+<li><strong><code>[comparator]</code></strong>: A function invoked to
+compare elements from <code>array</code> against elements in
+<code>values</code>. It receives two arguments
+<code>(arrVal, othVal)</code> and should return <code>true</code> if the
+values are considered equal, or <code>false</code> otherwise.</li>
+</ul>
+<h2 id="why-use-_differencewith-instead-of-_difference">Why Use
+<code>_.differenceWith</code> Instead of <code>_.difference</code>?</h2>
+<p>Standard array difference methods like <code>_.difference</code> use
+the SameValueZero algorithm (similar to <code>===</code>), which
+compares object references rather than their internal properties. When
+working with arrays of objects, <code>_.difference</code> fails to
+detect identical objects with different memory references:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> listA <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> }]<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> listB <span class="op">=</span> [{ <span class="dt">id</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> }]<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Returns [{ id: 1, name: &#39;Alice&#39; }] because the references differ</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">difference</span>(listA<span class="op">,</span> listB)<span class="op">;</span> </span></code></pre></div>
+<p><code>_.differenceWith</code> solves this issue by letting you define
+the exact condition that determines whether two elements match.</p>
+<h2 id="comparing-objects-by-a-specific-property">Comparing Objects by a
+Specific Property</h2>
+<p>In many scenarios, you only need to check if a specific key—such as
+an ID—matches between two sets of objects.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> currentUsers <span class="op">=</span> [</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">101</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> }<span class="op">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">102</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Bob&#39;</span> }<span class="op">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">103</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Charlie&#39;</span> }</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> inactiveUsers <span class="op">=</span> [</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">id</span><span class="op">:</span> <span class="dv">102</span><span class="op">,</span> <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Bob&#39;</span> }</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Keep only users whose IDs do not appear in inactiveUsers</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> activeUsers <span class="op">=</span> _<span class="op">.</span><span class="fu">differenceWith</span>(</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  currentUsers<span class="op">,</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  inactiveUsers<span class="op">,</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  (userA<span class="op">,</span> userB) <span class="kw">=&gt;</span> userA<span class="op">.</span><span class="at">id</span> <span class="op">===</span> userB<span class="op">.</span><span class="at">id</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(activeUsers)<span class="op">;</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [ { id: 101, name: &#39;Alice&#39; }, { id: 103, name: &#39;Charlie&#39; } ]</span></span></code></pre></div>
+<h2 id="deep-object-comparison-with-_isequal">Deep Object Comparison
+with <code>_.isEqual</code></h2>
+<p>If you need to filter out objects that are identical across all keys
+and nested properties, you can pass Lodash’s <code>_.isEqual</code>
+method directly as the comparator function:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> _ <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;lodash&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> baseInventory <span class="op">=</span> [</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">sku</span><span class="op">:</span> <span class="st">&#39;A1&#39;</span><span class="op">,</span> <span class="dt">stock</span><span class="op">:</span> <span class="dv">10</span><span class="op">,</span> <span class="dt">details</span><span class="op">:</span> { <span class="dt">warehouse</span><span class="op">:</span> <span class="st">&#39;East&#39;</span> } }<span class="op">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">sku</span><span class="op">:</span> <span class="st">&#39;B2&#39;</span><span class="op">,</span> <span class="dt">stock</span><span class="op">:</span> <span class="dv">5</span><span class="op">,</span> <span class="dt">details</span><span class="op">:</span> { <span class="dt">warehouse</span><span class="op">:</span> <span class="st">&#39;West&#39;</span> } }<span class="op">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">sku</span><span class="op">:</span> <span class="st">&#39;C3&#39;</span><span class="op">,</span> <span class="dt">stock</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">details</span><span class="op">:</span> { <span class="dt">warehouse</span><span class="op">:</span> <span class="st">&#39;East&#39;</span> } }</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> processedInventory <span class="op">=</span> [</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">sku</span><span class="op">:</span> <span class="st">&#39;A1&#39;</span><span class="op">,</span> <span class="dt">stock</span><span class="op">:</span> <span class="dv">10</span><span class="op">,</span> <span class="dt">details</span><span class="op">:</span> { <span class="dt">warehouse</span><span class="op">:</span> <span class="st">&#39;East&#39;</span> } }</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> remainingInventory <span class="op">=</span> _<span class="op">.</span><span class="fu">differenceWith</span>(</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  baseInventory<span class="op">,</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  processedInventory<span class="op">,</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  _<span class="op">.</span><span class="at">isEqual</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(remainingInventory)<span class="op">;</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">// Output:</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">// [</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">//   { sku: &#39;B2&#39;, stock: 5, details: { warehouse: &#39;West&#39; } },</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">//   { sku: &#39;C3&#39;, stock: 0, details: { warehouse: &#39;East&#39; } }</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">// ]</span></span></code></pre></div>
+<h2 id="using-multiple-exclusion-arrays">Using Multiple Exclusion
+Arrays</h2>
+<p><code>_.differenceWith</code> accepts multiple arrays of values to
+filter out. The comparator will evaluate items against all subsequent
+arrays:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> numbers <span class="op">=</span> [<span class="fl">1.2</span><span class="op">,</span> <span class="fl">2.4</span><span class="op">,</span> <span class="fl">3.7</span><span class="op">,</span> <span class="fl">4.1</span>]<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> excludeList1 <span class="op">=</span> [<span class="fl">1.8</span>]<span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> excludeList2 <span class="op">=</span> [<span class="fl">3.2</span>]<span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Exclude numbers with the same rounded value</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> filtered <span class="op">=</span> _<span class="op">.</span><span class="fu">differenceWith</span>(</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  numbers<span class="op">,</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  excludeList1<span class="op">,</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  excludeList2<span class="op">,</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  (a<span class="op">,</span> b) <span class="kw">=&gt;</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(a) <span class="op">===</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(b)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(filtered)<span class="op">;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">// Output: [ 2.4, 4.1 ]</span></span></code></pre></div>
+<h2 id="performance-considerations">Performance Considerations</h2>
+<p>Because <code>_.differenceWith</code> executes the comparator
+function by iterating through elements in the exclusion arrays for each
+item in the base array, its time complexity is <span
+class="math inline">\(O(n \times m)\)</span> where <span
+class="math inline">\(n\)</span> is the length of the source array and
+<span class="math inline">\(m\)</span> is the total length of the
+comparison arrays. For very large datasets with simple unique keys,
+mapping to a <code>Set</code> of primitives may provide better
+performance than running nested iterations.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

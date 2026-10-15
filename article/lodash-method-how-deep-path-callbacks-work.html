@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash _.method: How Deep-Path Callbacks Work - lodash</title>
+    <meta name="description" content="The Lodash .method utility creates a reusable function that invokes a method located at a specified property path on a target object. This article explains the internal mechanics of .method, detailing how Lodash decomposes deep property paths, preserves t">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-method-how-deep-path-callbacks-work">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash _.method: How Deep-Path Callbacks Work - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-method-how-deep-path-callbacks-work" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .method utility creates a reusable function that invokes a method located at a specified property path on a target object. This article explains the internal mechanics of .method, detailing how Lodash decomposes deep property paths, preserves t" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-_method-how-deep-path-callbacks-work">Lodash _.method:
+How Deep-Path Callbacks Work</h1>
+<p>The Lodash <code>_.method</code> utility creates a reusable function
+that invokes a method located at a specified property path on a target
+object. This article explains the internal mechanics of
+<code>_.method</code>, detailing how Lodash decomposes deep property
+paths, preserves the correct <code>this</code> execution context,
+applies predetermined arguments, and safely handles non-existent or
+non-callable properties.</p>
+<h3 id="the-purpose-of-_method">The Purpose of
+<code>_.method</code></h3>
+<p>In functional programming workflows, developers frequently need to
+invoke a method across collections of objects. The syntax for
+<code>_.method</code> is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_<span class="op">.</span><span class="fu">method</span>(path<span class="op">,</span> [args])</span></code></pre></div>
+<p>Instead of executing immediately, <code>_.method</code> returns a new
+function (a higher-order callback). When this returned function is
+passed an object, it navigates to the property specified by
+<code>path</code> and calls it as a function, forwarding any provided
+<code>args</code>.</p>
+<h3 id="path-parsing-and-navigation">Path Parsing and Navigation</h3>
+<p>The <code>path</code> argument can be passed as a dot-delimited
+string (e.g., <code>'profile.contact.getEmail'</code>) or as an array of
+property keys (e.g.,
+<code>['profile', 'contact', 'getEmail']</code>).</p>
+<p>Internally, Lodash normalizes string paths into an array of keys
+using an internal path-parsing mechanism (similar to
+<code>_.toPath</code>). To invoke a method correctly, Lodash needs two
+components:</p>
+<ol type="1">
+<li><strong>The method itself:</strong> The function located at the
+final segment of the path.</li>
+<li><strong>The parent object:</strong> The object directly containing
+that function, which serves as the receiver (<code>this</code> context)
+for the invocation.</li>
+</ol>
+<p>Lodash traverses the target object sequentially through each key in
+the path up to the penultimate key. This traversal isolates the parent
+object holding the target method.</p>
+<h3 id="context-preservation-and-execution">Context Preservation and
+Execution</h3>
+<p>A critical aspect of invoking methods on JavaScript objects is
+maintaining the correct <code>this</code> binding. Invoking a nested
+method without its parent context often results in <code>this</code>
+resolving to <code>undefined</code> or the global object.</p>
+<p>When <code>_.method</code> resolves the parent context and the target
+function, it invokes the target using
+<code>Function.prototype.apply</code> or direct method invocation:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>parentObject[methodKey]<span class="op">.</span><span class="fu">apply</span>(parentObject<span class="op">,</span> args)<span class="op">;</span></span></code></pre></div>
+<p>By ensuring that <code>parentObject</code> acts as the context, any
+internal references to <code>this</code> within the resolved method
+function correctly.</p>
+<h3 id="argument-application">Argument Application</h3>
+<p>Arguments supplied to <code>_.method</code> during its creation are
+partially applied. If you provide arguments when calling
+<code>_.method(path, ...args)</code>, those arguments are stored in the
+returned closure. When the callback is subsequently executed on an
+object, it applies those predetermined arguments to the resolved
+method.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> objects <span class="op">=</span> [</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">calculate</span><span class="op">:</span> (factor) <span class="kw">=&gt;</span> <span class="dv">10</span> <span class="op">*</span> factor }<span class="op">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  { <span class="dt">calculate</span><span class="op">:</span> (factor) <span class="kw">=&gt;</span> <span class="dv">20</span> <span class="op">*</span> factor }</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> multiplyByTwo <span class="op">=</span> _<span class="op">.</span><span class="fu">method</span>(<span class="st">&#39;calculate&#39;</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> results <span class="op">=</span> objects<span class="op">.</span><span class="fu">map</span>(multiplyByTwo)<span class="op">;</span> <span class="co">// [20, 40]</span></span></code></pre></div>
+<h3 id="safe-invocation-and-error-prevention">Safe Invocation and Error
+Prevention</h3>
+<p>Standard JavaScript throws a <code>TypeError</code> if an
+intermediate property in a path is <code>null</code> or
+<code>undefined</code>, or if the resolved property is not a callable
+function.</p>
+<p>Lodash safeguards against these runtime exceptions. If the path
+traversal encounters a non-object value before reaching the final key,
+or if the target property is not a function, the invocation is aborted,
+and the callback safely returns <code>undefined</code>.</p>
+<h3 id="summary-of-operation">Summary of Operation</h3>
+<p>When <code>_.method(path, [args])</code> is called:</p>
+<ol type="1">
+<li>It returns a closure that accepts a target <code>object</code>.</li>
+<li>Upon receiving the object, it parses the path and traverses the
+object tree to locate the method and its parent.</li>
+<li>It validates that the property exists and is a function.</li>
+<li>It calls the function with the parent object bound as
+<code>this</code> and passes along the predefined arguments.</li>
+<li>If any stage of the path is missing or non-callable, it safely
+returns <code>undefined</code>.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

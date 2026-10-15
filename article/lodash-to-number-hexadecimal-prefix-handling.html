@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodash toNumber Hexadecimal Prefix Handling - lodash</title>
+    <meta name="description" content="The Lodash .toNumber method converts values into numbers through a structured pipeline that cleans input strings, normalizes custom objects, and validates base-prefixed numeric representations. While binary (0b) and octal (0o) prefixes are explicitly stri">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/lodash-to-number-hexadecimal-prefix-handling">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lodash toNumber Hexadecimal Prefix Handling - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/lodash-to-number-hexadecimal-prefix-handling" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .toNumber method converts values into numbers through a structured pipeline that cleans input strings, normalizes custom objects, and validates base-prefixed numeric representations. While binary (0b) and octal (0o) prefixes are explicitly stri" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="lodash-tonumber-hexadecimal-prefix-handling">Lodash toNumber
+Hexadecimal Prefix Handling</h1>
+<p>The Lodash <code>_.toNumber</code> method converts values into
+numbers through a structured pipeline that cleans input strings,
+normalizes custom objects, and validates base-prefixed numeric
+representations. While binary (<code>0b</code>) and octal
+(<code>0o</code>) prefixes are explicitly stripped via string slicing,
+hexadecimal prefixes (<code>0x</code> or <code>0X</code>) are processed
+through a combination of regex pattern validation for invalid signed
+variants and JavaScript's native numeric coercion mechanism. This
+article breaks down the internal source code mechanics of Lodash to
+demonstrate exactly how hexadecimal inputs are validated, parsed, and
+converted.</p>
+<h3 id="input-sanitization-and-normalization">Input Sanitization and
+Normalization</h3>
+<p>Before inspecting any number format, <code>_.toNumber</code>
+processes non-primitive inputs and cleans whitespace:</p>
+<ol type="1">
+<li><strong>Object Unwrapping:</strong> If the input is an object,
+Lodash attempts to invoke its <code>.valueOf()</code> method. If the
+result remains an object, it falls back to string coercion using
+template literals.</li>
+<li><strong>Type Checking:</strong> If the processed value is not a
+string, Lodash returns symbols as <code>NaN</code> or coerces primitives
+directly using unary <code>+value</code>.</li>
+<li><strong>Trimming:</strong> For string inputs, Lodash applies the
+<code>reTrim</code> regular expression (<code>/^\s+|\s+$/g</code>) to
+strip leading and trailing whitespace characters.</li>
+</ol>
+<h3 id="the-contrast-explicit-slicing-in-binary-and-octal">The Contrast:
+Explicit Slicing in Binary and Octal</h3>
+<p>To understand how hexadecimal values are handled, it helps to observe
+how binary and octal strings are treated in the Lodash source code:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> reIsBinary <span class="op">=</span> <span class="ss">/</span><span class="sc">^</span><span class="ss">0b</span><span class="sc">[01]+$</span><span class="ss">/i</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> reIsOctal <span class="op">=</span> <span class="ss">/</span><span class="sc">^</span><span class="ss">0o</span><span class="sc">[0-7]+$</span><span class="ss">/i</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> isBinary <span class="op">=</span> reIsBinary<span class="op">.</span><span class="fu">test</span>(value)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> (isBinary <span class="op">||</span> reIsOctal<span class="op">.</span><span class="fu">test</span>(value))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">?</span> <span class="pp">parseInt</span>(value<span class="op">.</span><span class="fu">slice</span>(<span class="dv">2</span>)<span class="op">,</span> isBinary <span class="op">?</span> <span class="dv">2</span> <span class="op">:</span> <span class="dv">8</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">:</span> (reIsBadHex<span class="op">.</span><span class="fu">test</span>(value) <span class="op">?</span> NAN <span class="op">:</span> <span class="op">+</span>value)<span class="op">;</span></span></code></pre></div>
+<p>For binary and octal literals, Lodash systematically removes the
+two-character prefix (<code>0b</code> or <code>0o</code>) using
+<code>value.slice(2)</code> and routes the remaining digits into
+<code>parseInt</code> with an explicit radix of <code>2</code> or
+<code>8</code>.</p>
+<h3 id="hexadecimal-handling-the-reisbadhex-filter">Hexadecimal
+Handling: The <code>reIsBadHex</code> Filter</h3>
+<p>Unlike binary and octal numbers, hexadecimal strings are not stripped
+using <code>.slice(2)</code>. Instead, Lodash implements a validation
+guard against invalid hexadecimal formats using the
+<code>reIsBadHex</code> regular expression:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> reIsBadHex <span class="op">=</span> <span class="ss">/</span><span class="sc">^[-+]</span><span class="ss">0x</span><span class="sc">[0-9a-f]+$</span><span class="ss">/i</span><span class="op">;</span></span></code></pre></div>
+<p>In standard JavaScript syntax, signed hexadecimal string literals
+such as <code>"-0x1a"</code> or <code>"+0x1a"</code> are not valid
+numerical representations in modern ECMAScript specifications, causing
+unary <code>+</code> to return <code>NaN</code>, whereas legacy parsers
+such as <code>parseInt</code> might have yielded <code>-26</code>.</p>
+<p>By testing the trimmed string against <code>reIsBadHex</code>, Lodash
+guarantees that any signed hexadecimal input explicitly evaluates to
+<code>NaN</code> across all JavaScript runtimes:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>reIsBadHex<span class="op">.</span><span class="fu">test</span>(value) <span class="op">?</span> NAN <span class="op">:</span> <span class="op">+</span>value</span></code></pre></div>
+<h3 id="delegation-to-the-ecmascript-engine">Delegation to the
+ECMAScript Engine</h3>
+<p>When a string contains a valid, unsigned hexadecimal prefix
+(<code>0x</code> or <code>0X</code>), it bypasses the
+<code>reIsBadHex</code> branch and reaches the fallback expression:
+<code>+value</code>.</p>
+<p>At this stage, the task of stripping the prefix and computing the
+base-16 value is systematically handled by the JavaScript engine's
+internal <code>ToNumber</code> abstract operation:</p>
+<ol type="1">
+<li>The runtime parser encounters a string conforming to the ECMAScript
+<code>HexIntegerLiteral</code> grammar: <code>0x</code> or
+<code>0X</code> followed by one or more hexadecimal digits
+(<code>[0-9a-fA-F]</code>).</li>
+<li>The engine's lexical scanner recognizes the
+<code>0x</code>/<code>0X</code> characters as a base-16 indicator rather
+than part of the numeric value.</li>
+<li>The prefix is internally discarded, and the remaining characters are
+computed using positional base-16 mathematics (<span
+class="math inline">\(d \times 16^n\)</span>).</li>
+</ol>
+<h3 id="summary">Summary</h3>
+<p>Lodash's <code>_.toNumber</code> systematically isolates hexadecimal
+prefix handling from octal and binary conversions. Instead of manually
+invoking string-slicing methods to remove <code>0x</code>, Lodash cleans
+the string, ensures that signed variants are flagged as
+<code>NaN</code>, and delegates the removal of the <code>0x</code>
+prefix directly to the JavaScript engine's native string-to-number
+coercion.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

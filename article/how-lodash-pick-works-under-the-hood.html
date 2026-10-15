@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.pick Works Under the Hood - lodash</title>
+    <meta name="description" content="In JavaScript, creating subsets of objects is a common task, and Lodash provides the .pick utility to handle this efficiently and immutably. This article explains the internal mechanics of .pick, breaking down how it normalizes input paths, resolves value">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-pick-works-under-the-hood">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.pick Works Under the Hood - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-pick-works-under-the-hood" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In JavaScript, creating subsets of objects is a common task, and Lodash provides the .pick utility to handle this efficiently and immutably. This article explains the internal mechanics of .pick, breaking down how it normalizes input paths, resolves value" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_pick-works-under-the-hood">How Lodash _.pick Works
+Under the Hood</h1>
+<p>In JavaScript, creating subsets of objects is a common task, and
+Lodash provides the <code>_.pick</code> utility to handle this
+efficiently and immutably. This article explains the internal mechanics
+of <code>_.pick</code>, breaking down how it normalizes input paths,
+resolves values from a source object, and constructs a brand-new object
+containing only the selected properties.</p>
+<h3 id="input-normalization-and-flattening">Input Normalization and
+Flattening</h3>
+<p>The <code>_.pick</code> function accepts a source object and one or
+more property keys, which can be passed as individual strings, symbols,
+or arrays of paths. Internally, Lodash first handles argument parsing by
+flattening any nested arguments into a single collection of property
+paths. If the source object is <code>null</code> or
+<code>undefined</code>, the function short-circuits immediately and
+returns an empty object.</p>
+<h3 id="the-core-implementation-basepick">The Core Implementation:
+<code>basePick</code></h3>
+<p>Under the hood, <code>_.pick</code> delegates work to an internal
+helper named <code>basePick</code>. This function sets up a new, empty
+target object (<code>{}</code>) to serve as the destination. Because it
+constructs an entirely new object reference rather than deleting
+unwanted keys from the input, the operation is completely
+non-destructive and guarantees that the original source object remains
+immutable.</p>
+<h3 id="path-resolution-and-extraction">Path Resolution and
+Extraction</h3>
+<p>Lodash iterates through each requested path and performs the
+following operations:</p>
+<ol type="1">
+<li><strong>Path Parsing:</strong> Lodash determines whether the target
+key is a simple single-depth property or a deep path (such as
+<code>'user.profile.name'</code> or
+<code>['user', 'profile', 'name']</code>).</li>
+<li><strong>Value Retrieval:</strong> For simple keys, it checks if the
+key exists on the source object. For deep paths, it uses
+<code>baseGet</code>, an internal traversal mechanism that walks down
+the source object's properties step by step, safely handling potentially
+<code>undefined</code> or <code>null</code> intermediate objects without
+throwing runtime errors.</li>
+<li><strong>Existence Verification:</strong> Lodash verifies that the
+requested path actually exists in the source object using checks akin to
+<code>hasIn</code>. If a path does not exist on the source, it is simply
+skipped.</li>
+</ol>
+<h3 id="assembling-the-output-object">Assembling the Output Object</h3>
+<p>When a property is found, Lodash places the value into the newly
+created destination object. For standard keys, it applies a safe
+assignment utility like <code>assignValue</code> to bind the key and
+value to the root of the new object. If the requested property was a
+deep path, Lodash uses its internal <code>baseSet</code> logic to
+reconstruct the necessary nested object hierarchy in the destination
+object, mirroring the source structure only to the depth required to
+hold the selected value.</p>
+<p>Once all specified keys and paths have been evaluated,
+<code>_.pick</code> returns the accumulated target object, containing
+exclusively the requested properties that were present on the
+source.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

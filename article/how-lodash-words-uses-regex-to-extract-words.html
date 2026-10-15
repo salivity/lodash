@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Lodash _.words Uses Regex to Extract Words - lodash</title>
+    <meta name="description" content="The Lodash .words method extracts words from a string by applying regular expressions, either through a user-provided custom pattern or through its own built-in regular expressions designed to handle both standard ASCII and complex Unicode text. By evalua">
+    <link rel="canonical" href="https://salivity.github.io/lodash/article/how-lodash-words-uses-regex-to-extract-words">
+    <link rel="search" type="application/opensearchdescription+xml" title="lodash" href="/lodash/opensearch.xml">
+    <link rel="icon" href="/lodash/favicon.ico">
+    <link rel="stylesheet" href="/lodash/css/style.css">
+    <link media="print" rel="stylesheet" href="/lodash/css/print.css">
+    <script src="/lodash/js/fuse.min.js"></script>
+    <script src="/lodash/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Lodash _.words Uses Regex to Extract Words - lodash" />
+    <meta property="og:url" content="https://salivity.github.io/lodash/article/how-lodash-words-uses-regex-to-extract-words" />
+    <meta property="og:image" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/lodash/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Lodash .words method extracts words from a string by applying regular expressions, either through a user-provided custom pattern or through its own built-in regular expressions designed to handle both standard ASCII and complex Unicode text. By evalua" />
+    <link rel="manifest" href="/lodash/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/lodash/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>lodash</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/lodash/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-lodash-_words-uses-regex-to-extract-words">How Lodash
+_.words Uses Regex to Extract Words</h1>
+<p>The Lodash <code>_.words</code> method extracts words from a string
+by applying regular expressions, either through a user-provided custom
+pattern or through its own built-in regular expressions designed to
+handle both standard ASCII and complex Unicode text. By evaluating
+whether a string contains Unicode sequences or standard characters, the
+method selects an appropriate regular expression to correctly capture
+alphanumeric tokens, compound words, contractions, and symbols while
+discarding unwanted whitespace and punctuation.</p>
+<h3 id="the-custom-pattern-approach">The Custom Pattern Approach</h3>
+<p>When a developer passes a custom regular expression as the second
+argument to <code>_.words(string, [pattern])</code>, Lodash bypasses its
+internal parsing logic. It directly invokes JavaScript's native
+<code>String.prototype.match()</code> method:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> pattern <span class="op">?</span> (string<span class="op">.</span><span class="fu">match</span>(pattern) <span class="op">||</span> []) <span class="op">:</span> <span class="co">/* internal logic */</span><span class="op">;</span></span></code></pre></div>
+<p>If the custom pattern matches substrings, an array of those matches
+is returned; otherwise, it returns an empty array.</p>
+<h3 id="default-detection-ascii-vs-unicode">Default Detection: ASCII vs.
+Unicode</h3>
+<p>When no pattern is provided, Lodash determines whether the input
+string requires Unicode-aware parsing or if standard ASCII processing is
+sufficient. It uses an internal helper function, typically named
+<code>hasUnicodeWord</code>, which tests the string against a regex that
+looks for non-ASCII characters, zero-width joiners, surrogates, or
+combining marks.</p>
+<p>Based on this check, Lodash routes the string to one of two
+specialized regex routines: <code>asciiWords</code> or
+<code>unicodeWords</code>.</p>
+<h3 id="ascii-word-extraction">ASCII Word Extraction</h3>
+<p>If the string contains only standard ASCII characters, Lodash employs
+a streamlined regex pattern designed to capture sequences of characters
+while ignoring standard punctuation and control characters.</p>
+<p>The typical regular expression used for ASCII strings is:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ss">/</span><span class="sc">[^\x00-\x2f\x3a-\x40\x5b-\x60\x7b-\x7f]+</span><span class="ss">/g</span></span></code></pre></div>
+<p>This pattern uses a negated character class that excludes:</p>
+<ul>
+<li>ASCII control characters (<code>\x00-\x1f</code> and
+<code>\x7f</code>)</li>
+<li>Common punctuation and symbols such as spaces, exclamation marks,
+and slashes (<code>\x20-\x2f</code>)</li>
+<li>Colons, semicolons, and comparison operators
+(<code>\x3a-\x40</code>)</li>
+<li>Brackets, backslashes, and carets (<code>\x5b-\x60</code>)</li>
+<li>Braces and tildes (<code>\x7b-\x7e</code>)</li>
+</ul>
+<p>Any contiguous sequence of characters outside these excluded ranges
+is matched as a single word, effectively capturing words separated by
+spaces, commas, hyphens, and other punctuation.</p>
+<h3 id="unicode-word-extraction">Unicode Word Extraction</h3>
+<p>When strings contain characters outside standard ASCII—such as
+accented letters, scripts without whitespace separation, contractions,
+or emojis—the ASCII pattern fails to segment text accurately. In these
+cases, Lodash constructs a comprehensive, multi-part regular expression
+(<code>reUnicodeWord</code>).</p>
+<p>The Unicode regular expression accounts for:</p>
+<ul>
+<li><strong>Letter casing and transitions:</strong> Sequences of
+uppercase letters followed by lowercase letters (handling camelCase and
+PascalCase splitting).</li>
+<li><strong>Ordinals and numbers:</strong> Digits grouped with standard
+numbering conventions.</li>
+<li><strong>Contractions and possessives:</strong> Letters joined by
+apostrophes or typographical quotation marks (such as <code>'s</code> or
+<code>'t</code>).</li>
+<li><strong>Diacritics and combining marks:</strong> Base characters
+combined with accent marks or modifiers.</li>
+<li><strong>Emojis and surrogate pairs:</strong> Multi-byte symbols,
+skin tone modifiers, and zero-width joiner sequences
+(<code>\u200d</code>).</li>
+</ul>
+<p>By matching these specific linguistic and structural rules instead of
+merely excluding delimiters, the Unicode regex isolates discrete
+semantic tokens without fragmenting multi-byte characters or emoji
+sequences.</p>
+<h3 id="summary-of-the-extraction-flow">Summary of the Extraction
+Flow</h3>
+<ol type="1">
+<li><strong>Check for Custom Pattern:</strong> If a regex is explicitly
+passed, execute <code>string.match(pattern)</code> and return the
+result.</li>
+<li><strong>Inspect Encoding:</strong> If no pattern is provided,
+evaluate the string with <code>hasUnicodeWord</code>.</li>
+<li><strong>Execute Internal Regex:</strong> Apply the
+<code>unicodeWords</code> regex if Unicode characteristics are detected;
+otherwise, apply the <code>asciiWords</code> regex.</li>
+<li><strong>Return Results:</strong> Return the matched tokens as an
+array, or an empty array if no matches exist.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/lodash'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/lodash/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/lodash/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>
